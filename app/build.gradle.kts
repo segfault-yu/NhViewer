@@ -68,6 +68,9 @@ dependencies {
     ksp(libs.dagger.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
+    // Security Crypto
+    implementation(libs.androidx.security.crypto)
+
     // Retrofit & OkHttp
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization.converter)

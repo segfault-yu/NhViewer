@@ -29,4 +29,10 @@ abstract class RepositoryModule {
     abstract fun bindTagRepository(
         tagRepositoryImpl: com.example.nhviewer.data.repository.TagRepositoryImpl
     ): com.example.nhviewer.domain.repository.TagRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserRepository(
+        userRepositoryImpl: com.example.nhviewer.data.repository.UserRepositoryImpl
+    ): com.example.nhviewer.domain.repository.UserRepository
 }

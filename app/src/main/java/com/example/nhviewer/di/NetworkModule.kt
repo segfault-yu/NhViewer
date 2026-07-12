@@ -29,13 +29,18 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: com.example.nhviewer.data.remote.interceptor.AuthInterceptor,
+        authenticator: com.example.nhviewer.data.remote.interceptor.TokenRefreshAuthenticator
+    ): OkHttpClient {
         return OkHttpClient.Builder()
             .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .addInterceptor(UserAgentInterceptor())
             .addInterceptor(RateLimitInterceptor())
+            .addInterceptor(authInterceptor)
+            .authenticator(authenticator)
             .build()
     }
 
@@ -66,5 +71,11 @@ object NetworkModule {
     @Singleton
     fun provideTagApi(retrofit: Retrofit): com.example.nhviewer.data.remote.TagApi {
         return retrofit.create(com.example.nhviewer.data.remote.TagApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthApi(retrofit: Retrofit): com.example.nhviewer.data.remote.AuthApi {
+        return retrofit.create(com.example.nhviewer.data.remote.AuthApi::class.java)
     }
 }

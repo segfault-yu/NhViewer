@@ -10,8 +10,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.example.nhviewer.presentation.feature.auth.AuthScreen
 import com.example.nhviewer.presentation.feature.detail.DetailScreen
 import com.example.nhviewer.presentation.feature.home.HomeScreen
+import com.example.nhviewer.presentation.feature.profile.ProfileScreen
 import com.example.nhviewer.presentation.feature.reader.ReaderScreen
 import com.example.nhviewer.presentation.feature.search.SearchScreen
 import com.example.nhviewer.presentation.feature.tagged.TaggedGalleriesScreen
@@ -73,9 +75,19 @@ fun NhViewerNavGraph(
         }
 
         composable<Route.Profile> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Profile Screen (Phase 4)")
-            }
+            ProfileScreen(
+                onNavigateToAuth = {
+                    navController.navigate(Route.Auth)
+                }
+            )
+        }
+
+        composable<Route.Auth> {
+            AuthScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         composable<Route.GalleryDetail> { backStackEntry ->
