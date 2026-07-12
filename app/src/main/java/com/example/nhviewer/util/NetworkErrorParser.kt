@@ -24,3 +24,13 @@ object NetworkErrorParser {
         }
     }
 }
+
+inline fun <T> runCatchingCancelable(block: () -> T): Result<T> {
+    return try {
+        Result.success(block())
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        Result.failure(e)
+    }
+}

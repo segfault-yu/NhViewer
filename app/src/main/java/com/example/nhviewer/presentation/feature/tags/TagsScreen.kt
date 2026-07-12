@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.LoadingIndicator
 
@@ -167,12 +168,7 @@ fun TagsScreen(
                         onRetry = { tags.retry() }
                     )
                 } else if (tags.itemCount == 0 && tags.loadState.refresh is LoadState.NotLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "没有找到标签",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    EmptyState(message = "没有找到标签")
                 } else {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),

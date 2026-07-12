@@ -10,6 +10,7 @@ import com.example.nhviewer.domain.model.SearchHistory
 import com.example.nhviewer.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.example.nhviewer.util.runCatchingCancelable
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,7 +20,7 @@ class SearchRepositoryImpl @Inject constructor(
     private val historyDao: SearchHistoryDao
 ) : SearchRepository {
 
-    override suspend fun searchGalleries(query: String, page: Int, sort: String): Result<List<GalleryListItem>> = runCatching {
+    override suspend fun searchGalleries(query: String, page: Int, sort: String): Result<List<GalleryListItem>> = runCatchingCancelable {
         api.searchGalleries(query, page, sort).result.map { it.toDomain() }
     }
 

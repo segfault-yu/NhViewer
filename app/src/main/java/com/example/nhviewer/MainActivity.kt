@@ -71,7 +71,7 @@ fun NhViewerApp() {
                         selected = currentDestination.hasRoute(dest.route::class),
                         onClick = {
                             navController.navigate(dest.route) {
-                                popUpTo(Route.Home) {
+                                popUpTo(navController.graph.startDestinationId) {
                                     saveState = true
                                 }
                                 launchSingleTop = true

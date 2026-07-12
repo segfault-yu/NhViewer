@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import com.example.nhviewer.util.runCatchingCancelable
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,24 +24,24 @@ class GalleryRepositoryImpl @Inject constructor(
     private val historyDao: ReadingHistoryDao
 ) : GalleryRepository {
 
-    override suspend fun getGalleries(page: Int): Result<List<GalleryListItem>> = runCatching {
+    override suspend fun getGalleries(page: Int): Result<List<GalleryListItem>> = runCatchingCancelable {
         api.getGalleries(page).result.map { it.toDomain() }
     }
 
-    override suspend fun getPopularGalleries(): Result<List<GalleryListItem>> = runCatching {
+    override suspend fun getPopularGalleries(): Result<List<GalleryListItem>> = runCatchingCancelable {
         api.getPopularGalleries().map { it.toDomain() }
     }
 
-    override suspend fun getRandomGalleryId(): Result<Int> = runCatching {
+    override suspend fun getRandomGalleryId(): Result<Int> = runCatchingCancelable {
         api.getRandomGallery()["id"] ?: throw NoSuchElementException("No random gallery ID returned")
     }
 
-    override suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean): Result<GalleryDetail> = runCatching {
+    override suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean): Result<GalleryDetail> = runCatchingCancelable {
         val includeStr = if (includeRelated) "related" else null
         api.getGalleryDetail(galleryId, includeStr).toDomain()
     }
 
-    override suspend fun getRelatedGalleries(galleryId: Int): Result<List<GalleryListItem>> = runCatching {
+    override suspend fun getRelatedGalleries(galleryId: Int): Result<List<GalleryListItem>> = runCatchingCancelable {
         api.getRelatedGalleries(galleryId).result.map { it.toDomain() }
     }
 
@@ -52,7 +53,7 @@ class GalleryRepositoryImpl @Inject constructor(
         cachedCdnConfig?.let { return Result.success(it) }
         return cdnMutex.withLock {
             cachedCdnConfig?.let { return@withLock Result.success(it) }
-            runCatching {
+            runCatchingCancelable {
                 api.getCdnConfig().toDomain().also {
                     cachedCdnConfig = it
                 }

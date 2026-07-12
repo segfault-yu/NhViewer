@@ -9,7 +9,7 @@ import com.example.nhviewer.data.local.entity.SearchHistoryEntity
 
 @Database(
     entities = [ReadingHistoryEntity::class, SearchHistoryEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class NhViewerDatabase : RoomDatabase() {

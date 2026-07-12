@@ -6,6 +6,7 @@ import com.example.nhviewer.data.remote.dto.toDomain
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.Tag
 import com.example.nhviewer.domain.repository.TagRepository
+import com.example.nhviewer.util.runCatchingCancelable
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,19 +15,19 @@ class TagRepositoryImpl @Inject constructor(
     private val api: TagApi
 ) : TagRepository {
 
-    override suspend fun autocompleteTags(query: String, type: String?): Result<List<Tag>> = runCatching {
+    override suspend fun autocompleteTags(query: String, type: String?): Result<List<Tag>> = runCatchingCancelable {
         api.autocompleteTags(TagAutocompleteRequest(query, type)).map { it.toDomain() }
     }
 
-    override suspend fun getTags(tagType: String, page: Int, sort: String): Result<List<Tag>> = runCatching {
+    override suspend fun getTags(tagType: String, page: Int, sort: String): Result<List<Tag>> = runCatchingCancelable {
         api.getTags(tagType, page, sort).result.map { it.toDomain() }
     }
 
-    override suspend fun getTagDetail(tagType: String, slug: String): Result<Tag> = runCatching {
+    override suspend fun getTagDetail(tagType: String, slug: String): Result<Tag> = runCatchingCancelable {
         api.getTagDetail(tagType, slug).toDomain()
     }
 
-    override suspend fun getGalleriesTagged(tagId: Int, page: Int): Result<List<GalleryListItem>> = runCatching {
+    override suspend fun getGalleriesTagged(tagId: Int, page: Int): Result<List<GalleryListItem>> = runCatchingCancelable {
         api.getGalleriesTagged(tagId, page).result.map { it.toDomain() }
     }
 }
