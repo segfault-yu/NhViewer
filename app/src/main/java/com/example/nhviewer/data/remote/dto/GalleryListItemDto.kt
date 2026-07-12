@@ -9,8 +9,13 @@ import kotlinx.serialization.Serializable
 data class GalleryListResponse(
     @SerialName("result") val result: List<GalleryListItemDto>,
     @SerialName("num_pages") val numPages: Int,
-    @SerialName("per_page") val perPage: Int,
-    @SerialName("total") val total: Int
+    @SerialName("per_page") val perPage: Int = 25,
+    @SerialName("total") val total: Int? = null
+)
+
+@Serializable
+data class RelatedGalleriesResponse(
+    @SerialName("result") val result: List<GalleryListItemDto>
 )
 
 @Serializable

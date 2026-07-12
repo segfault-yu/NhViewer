@@ -69,6 +69,7 @@ fun DetailScreen(
     galleryId: Int,
     onBackClick: () -> Unit,
     onStartReading: (Int, Int) -> Unit,
+    onTagClick: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
@@ -272,8 +273,7 @@ fun DetailScreen(
                                 TagGroupSection(
                                     tags = detail.tags,
                                     onTagClick = { tag ->
-                                        // Tag searches are implemented in phase 3. Show a toast for now.
-                                        Toast.makeText(context, "标签搜索将在 Phase 3 实现: ${tag.name}", Toast.LENGTH_SHORT).show()
+                                        onTagClick(tag.id, tag.name)
                                     }
                                 )
                                 Spacer(modifier = Modifier.height(24.dp))

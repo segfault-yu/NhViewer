@@ -29,4 +29,9 @@ object DatabaseModule {
     fun provideReadingHistoryDao(db: NhViewerDatabase): ReadingHistoryDao {
         return db.readingHistoryDao
     }
+
+    @Provides
+    fun provideSearchHistoryDao(db: NhViewerDatabase): com.example.nhviewer.data.local.dao.SearchHistoryDao {
+        return db.searchHistoryDao
+    }
 }

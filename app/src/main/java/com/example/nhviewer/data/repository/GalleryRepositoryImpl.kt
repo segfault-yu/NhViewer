@@ -28,7 +28,7 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getPopularGalleries(): Result<List<GalleryListItem>> = runCatching {
-        api.getPopularGalleries().result.map { it.toDomain() }
+        api.getPopularGalleries().map { it.toDomain() }
     }
 
     override suspend fun getRandomGalleryId(): Result<Int> = runCatching {

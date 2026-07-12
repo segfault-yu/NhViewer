@@ -3,6 +3,7 @@ package com.example.nhviewer.data.remote
 import com.example.nhviewer.data.remote.dto.GalleryDetailResponse
 import com.example.nhviewer.data.remote.dto.GalleryListItemDto
 import com.example.nhviewer.data.remote.dto.GalleryListResponse
+import com.example.nhviewer.data.remote.dto.RelatedGalleriesResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -14,7 +15,7 @@ interface GalleryApi {
     ): GalleryListResponse
 
     @GET("api/v2/galleries/popular")
-    suspend fun getPopularGalleries(): GalleryListResponse
+    suspend fun getPopularGalleries(): List<GalleryListItemDto>
 
     @GET("api/v2/galleries/random")
     suspend fun getRandomGallery(): Map<String, Int>
@@ -28,7 +29,7 @@ interface GalleryApi {
     @GET("api/v2/galleries/{gallery_id}/related")
     suspend fun getRelatedGalleries(
         @Path("gallery_id") galleryId: Int
-    ): GalleryListResponse
+    ): RelatedGalleriesResponse
 
     @GET("api/v2/cdn")
     suspend fun getCdnConfig(): com.example.nhviewer.data.remote.dto.CdnConfigDto

@@ -17,4 +17,16 @@ abstract class RepositoryModule {
     abstract fun bindGalleryRepository(
         galleryRepositoryImpl: GalleryRepositoryImpl
     ): GalleryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSearchRepository(
+        searchRepositoryImpl: com.example.nhviewer.data.repository.SearchRepositoryImpl
+    ): com.example.nhviewer.domain.repository.SearchRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTagRepository(
+        tagRepositoryImpl: com.example.nhviewer.data.repository.TagRepositoryImpl
+    ): com.example.nhviewer.domain.repository.TagRepository
 }

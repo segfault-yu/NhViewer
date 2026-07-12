@@ -55,4 +55,16 @@ object NetworkModule {
     fun provideGalleryApi(retrofit: Retrofit): GalleryApi {
         return retrofit.create(GalleryApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideSearchApi(retrofit: Retrofit): com.example.nhviewer.data.remote.SearchApi {
+        return retrofit.create(com.example.nhviewer.data.remote.SearchApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTagApi(retrofit: Retrofit): com.example.nhviewer.data.remote.TagApi {
+        return retrofit.create(com.example.nhviewer.data.remote.TagApi::class.java)
+    }
 }
