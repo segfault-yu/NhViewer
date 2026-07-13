@@ -78,4 +78,22 @@ object NetworkModule {
     fun provideAuthApi(retrofit: Retrofit): com.example.nhviewer.data.remote.AuthApi {
         return retrofit.create(com.example.nhviewer.data.remote.AuthApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideFavoriteApi(retrofit: Retrofit): com.example.nhviewer.data.remote.FavoriteApi {
+        return retrofit.create(com.example.nhviewer.data.remote.FavoriteApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBlacklistApi(retrofit: Retrofit): com.example.nhviewer.data.remote.BlacklistApi {
+        return retrofit.create(com.example.nhviewer.data.remote.BlacklistApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCommentApi(retrofit: Retrofit): com.example.nhviewer.data.remote.CommentApi {
+        return retrofit.create(com.example.nhviewer.data.remote.CommentApi::class.java)
+    }
 }

@@ -6,11 +6,14 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.filter
 import com.example.nhviewer.data.paging.GalleryPagingSource
 import com.example.nhviewer.domain.model.CdnConfig
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.ReadingHistory
 import com.example.nhviewer.domain.repository.GalleryRepository
+import com.example.nhviewer.domain.repository.BlacklistRepository
+import com.example.nhviewer.domain.repository.FavoriteRepository
 import com.example.nhviewer.domain.usecase.GetCdnConfigUseCase
 import com.example.nhviewer.domain.usecase.GetPopularGalleriesUseCase
 import com.example.nhviewer.domain.usecase.GetRandomGalleryUseCase
@@ -21,8 +24,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.nhviewer.util.NetworkErrorParser
 import javax.inject.Inject
@@ -33,16 +40,40 @@ class HomeViewModel @Inject constructor(
     private val getPopularGalleriesUseCase: GetPopularGalleriesUseCase,
     private val getRandomGalleryUseCase: GetRandomGalleryUseCase,
     private val getCdnConfigUseCase: GetCdnConfigUseCase,
-    private val readingHistoryUseCase: ReadingHistoryUseCase
+    private val readingHistoryUseCase: ReadingHistoryUseCase,
+    private val blacklistRepository: BlacklistRepository,
+    private val favoriteRepository: FavoriteRepository
 ) : ViewModel() {
 
     val latestGalleries: Flow<PagingData<GalleryListItem>> = Pager(
         config = PagingConfig(pageSize = 25, prefetchDistance = 5),
         pagingSourceFactory = { GalleryPagingSource(repository) }
-    ).flow.cachedIn(viewModelScope)
+    ).flow
+        .cachedIn(viewModelScope)
+        .combine(blacklistRepository.blacklistedTagIds) { pagingData, blacklistedIds ->
+            pagingData.filter { item ->
+                !item.tagIds.any { it in blacklistedIds }
+            }
+        }
 
     private val _popularGalleriesState = MutableStateFlow<PopularState>(PopularState.Loading)
-    val popularGalleriesState: StateFlow<PopularState> = _popularGalleriesState.asStateFlow()
+    
+    val popularGalleriesState: StateFlow<PopularState> = _popularGalleriesState
+        .combine(blacklistRepository.blacklistedTagIds) { state, blacklistedIds ->
+            when (state) {
+                is PopularState.Success -> {
+                    PopularState.Success(state.items.filter { item ->
+                        !item.tagIds.any { it in blacklistedIds }
+                    })
+                }
+                else -> state
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PopularState.Loading)
+
+    val favoritedIds: StateFlow<Set<Int>> = favoriteRepository.favoritesFlow
+        .map { list -> list.map { it.id }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     private val _cdnConfig = MutableStateFlow<CdnConfig?>(null)
     val cdnConfig: StateFlow<CdnConfig?> = _cdnConfig.asStateFlow()
@@ -60,11 +91,13 @@ class HomeViewModel @Inject constructor(
     fun loadPopularGalleries() {
         viewModelScope.launch {
             _popularGalleriesState.value = PopularState.Loading
-            getPopularGalleriesUseCase().onSuccess {
-                _popularGalleriesState.value = PopularState.Success(it)
-            }.onFailure { error ->
-                _popularGalleriesState.value = PopularState.Error(NetworkErrorParser.parse(error))
-            }
+            getPopularGalleriesUseCase()
+                .onSuccess { list ->
+                    _popularGalleriesState.value = PopularState.Success(list)
+                }
+                .onFailure { error ->
+                    _popularGalleriesState.value = PopularState.Error(NetworkErrorParser.parse(error))
+                }
         }
     }
 
@@ -76,13 +109,15 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun onRandomClicked() {
+    fun playRandom() {
         viewModelScope.launch {
-            getRandomGalleryUseCase().onSuccess { randomId ->
-                _navigationEvent.emit(HomeNavigationEvent.NavigateToDetail(randomId))
-            }.onFailure {
-                // Emits to navigation or error state
-            }
+            getRandomGalleryUseCase()
+                .onSuccess { id ->
+                    _navigationEvent.emit(HomeNavigationEvent.NavigateToDetail(id))
+                }
+                .onFailure {
+                    // Handle random fetch failure
+                }
         }
     }
 

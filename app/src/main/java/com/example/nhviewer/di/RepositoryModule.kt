@@ -35,4 +35,22 @@ abstract class RepositoryModule {
     abstract fun bindUserRepository(
         userRepositoryImpl: com.example.nhviewer.data.repository.UserRepositoryImpl
     ): com.example.nhviewer.domain.repository.UserRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFavoriteRepository(
+        favoriteRepositoryImpl: com.example.nhviewer.data.repository.FavoriteRepositoryImpl
+    ): com.example.nhviewer.domain.repository.FavoriteRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBlacklistRepository(
+        blacklistRepositoryImpl: com.example.nhviewer.data.repository.BlacklistRepositoryImpl
+    ): com.example.nhviewer.domain.repository.BlacklistRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCommentRepository(
+        commentRepositoryImpl: com.example.nhviewer.data.repository.CommentRepositoryImpl
+    ): com.example.nhviewer.domain.repository.CommentRepository
 }

@@ -34,4 +34,14 @@ object DatabaseModule {
     fun provideSearchHistoryDao(db: NhViewerDatabase): com.example.nhviewer.data.local.dao.SearchHistoryDao {
         return db.searchHistoryDao
     }
+
+    @Provides
+    fun provideFavoriteCacheDao(db: NhViewerDatabase): com.example.nhviewer.data.local.dao.FavoriteCacheDao {
+        return db.favoriteCacheDao
+    }
+
+    @Provides
+    fun provideBlacklistTagDao(db: NhViewerDatabase): com.example.nhviewer.data.local.dao.BlacklistTagDao {
+        return db.blacklistTagDao
+    }
 }

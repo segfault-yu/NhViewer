@@ -22,6 +22,9 @@ sealed interface Route {
     data object Auth : Route
 
     @Serializable
+    data object Blacklist : Route
+
+    @Serializable
     data class TaggedGalleries(val tagId: Int, val tagName: String) : Route
 
     @Serializable

@@ -14,12 +14,23 @@ class TokenManager @Inject constructor(
 ) {
     private val sharedPreferences: SharedPreferences = try {
         createEncryptedPrefs(context)
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         try {
             context.deleteSharedPreferences("secure_tokens_prefs")
+            deleteMasterKeyEntry()
             createEncryptedPrefs(context)
-        } catch (ex: Exception) {
+        } catch (ex: Throwable) {
             context.getSharedPreferences("secure_tokens_prefs_fallback", Context.MODE_PRIVATE)
+        }
+    }
+
+    private fun deleteMasterKeyEntry() {
+        try {
+            val keyStore = java.security.KeyStore.getInstance("AndroidKeyStore")
+            keyStore.load(null)
+            keyStore.deleteEntry("_androidx_security_master_key_")
+        } catch (e: Throwable) {
+            // 忽略 Keystore 清除失败的异常
         }
     }
 

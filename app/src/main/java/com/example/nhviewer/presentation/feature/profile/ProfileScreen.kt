@@ -2,6 +2,7 @@ package com.example.nhviewer.presentation.feature.profile
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.NoAccounts
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -66,6 +68,7 @@ import java.util.Locale
 @Composable
 fun ProfileScreen(
     onNavigateToAuth: () -> Unit,
+    onNavigateToBlacklist: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
@@ -98,6 +101,7 @@ fun ProfileScreen(
                     onRevokeSession = { viewModel.revokeSession(it) },
                     onLogout = { viewModel.logout() },
                     onLogoutAll = { viewModel.logoutAll() },
+                    onNavigateToBlacklist = onNavigateToBlacklist,
                     isLoading = isLoading
                 )
             }
@@ -162,6 +166,7 @@ fun LoggedInContent(
     onRevokeSession: (String) -> Unit,
     onLogout: () -> Unit,
     onLogoutAll: () -> Unit,
+    onNavigateToBlacklist: () -> Unit,
     isLoading: Boolean
 ) {
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
@@ -314,6 +319,31 @@ fun LoggedInContent(
                         }
                     )
                 }
+            }
+        }
+
+        // Blacklist Settings Entry
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                ),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onNavigateToBlacklist() }
+            ) {
+                ListItem(
+                    headlineContent = { Text("黑名单设置", fontWeight = FontWeight.SemiBold) },
+                    supportingContent = { Text("管理您已屏蔽的标签，自动过滤列表内容") },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Block,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
             }
         }
 

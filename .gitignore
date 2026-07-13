@@ -1,12 +1,15 @@
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/shelf/
+/.idea/gradle.xml
+/.idea/deploymentTargetSelector.xml
 .DS_Store
 /build
 **/build/
@@ -14,6 +17,20 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android build outputs
+*.apk
+*.aar
+*.ap_
+*.der
+*.keystore
+*.jks
+
+# Crashlytics keys
+crashlytics.properties
+
+# OS files
+Thumbs.db
 
 # 开发辅助文件
 implementation_plan.md

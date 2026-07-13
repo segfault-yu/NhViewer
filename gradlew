@@ -117,6 +117,17 @@ esac
 CLASSPATH="\\\"\\\""
 
 
+# Detect if JAVA_HOME lacks jlink (e.g. is a JRE or invalid) and override with Android Studio JBR if available
+if [ -z "$JAVA_HOME" ] || { [ ! -x "$JAVA_HOME/bin/jlink" ] && [ ! -x "$JAVA_HOME/bin/jlink.exe" ]; }; then
+    if [ -x "/F/Android Studio/jbr/bin/jlink.exe" ]; then
+        export JAVA_HOME="/F/Android Studio/jbr"
+    elif [ -x "F:/Android Studio/jbr/bin/jlink.exe" ]; then
+        export JAVA_HOME="F:/Android Studio/jbr"
+    elif [ -x "/F/Android Studio/jbr/bin/jlink" ]; then
+        export JAVA_HOME="/F/Android Studio/jbr"
+    fi
+fi
+
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then

@@ -84,6 +84,7 @@ fun HomeScreen(
     val latestGalleries = viewModel.latestGalleries.collectAsLazyPagingItems()
     val popularState by viewModel.popularGalleriesState.collectAsState()
     val readingHistory by viewModel.readingHistory.collectAsState(initial = emptyList())
+    val favoritedIds by viewModel.favoritedIds.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("最新", "热门")
@@ -101,7 +102,7 @@ fun HomeScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.onRandomClicked() },
+                onClick = { viewModel.playRandom() },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -188,6 +189,7 @@ fun HomeScreen(
                                                 item = item,
                                                 cdnHost = cdnHost,
                                                 onClick = { onNavigateToDetail(item.id) },
+                                                isFavorited = item.id in favoritedIds,
                                                 modifier = Modifier.padding(6.dp)
                                             )
                                         }
@@ -270,6 +272,7 @@ fun HomeScreen(
                                                 item = item,
                                                 cdnHost = cdnHost,
                                                 onClick = { onNavigateToDetail(item.id) },
+                                                isFavorited = item.id in favoritedIds,
                                                 modifier = Modifier.padding(6.dp)
                                             )
                                         }

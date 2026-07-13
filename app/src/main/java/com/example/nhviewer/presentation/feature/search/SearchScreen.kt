@@ -83,6 +83,7 @@ fun SearchScreen(
     val searchHistory by viewModel.searchHistory.collectAsState(initial = emptyList())
     val autocompleteSuggestions by viewModel.autocompleteSuggestions.collectAsState()
     val searchResults = viewModel.searchResults.collectAsLazyPagingItems()
+    val favoritedIds by viewModel.favoritedIds.collectAsState()
 
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
@@ -105,7 +106,7 @@ fun SearchScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.clearAllHistory()
+                        viewModel.clearSearchHistory()
                         showClearHistoryDialog = false
                     }
                 ) {
@@ -133,13 +134,13 @@ fun SearchScreen(
         ) {
             SearchBar(
                 query = searchQuery,
-                onQueryChange = { viewModel.onQueryChange(it) },
+                onQueryChange = { viewModel.onSearchQueryChanged(it) },
                 onSearch = {
-                    viewModel.onSearch(it)
+                    viewModel.search(it)
                     focusManager.clearFocus()
                 },
                 active = active,
-                onActiveChange = { viewModel.onActiveChange(it) },
+                onActiveChange = { viewModel.onActiveChanged(it) },
                 placeholder = { Text("搜索画廊 (例如 pages:>10)") },
                 leadingIcon = {
                     Icon(
@@ -149,7 +150,7 @@ fun SearchScreen(
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onQueryChange("") }) {
+                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
                                 contentDescription = "Clear"
@@ -193,10 +194,10 @@ fun SearchScreen(
                                 SwipeToDeleteHistoryItem(
                                     history = history,
                                     onHistoryClick = { query ->
-                                        viewModel.onSearch(query)
+                                        viewModel.search(query)
                                         focusManager.clearFocus()
                                     },
-                                    onDelete = { query -> viewModel.deleteHistory(query) },
+                                    onDelete = { query -> viewModel.deleteSearchHistory(query) },
                                     onLongPress = { showClearHistoryDialog = true }
                                 )
                             }
@@ -235,7 +236,7 @@ fun SearchScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            viewModel.onSearch(tag.name)
+                                            viewModel.search(tag.name)
                                             focusManager.clearFocus()
                                         }
                                 )
@@ -286,7 +287,7 @@ fun SearchScreen(
                             DropdownMenuItem(
                                 text = { Text(label) },
                                 onClick = {
-                                    viewModel.onSortChange(key)
+                                    viewModel.onSortOptionChanged(key)
                                     showSortMenu = false
                                 }
                             )
@@ -325,6 +326,7 @@ fun SearchScreen(
                                     item = item,
                                     cdnHost = cdnHost,
                                     onClick = { onNavigateToDetail(item.id) },
+                                    isFavorited = item.id in favoritedIds,
                                     modifier = Modifier.padding(6.dp)
                                 )
                             }

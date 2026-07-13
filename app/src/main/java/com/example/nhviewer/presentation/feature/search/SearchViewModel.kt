@@ -6,11 +6,14 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.filter
 import com.example.nhviewer.data.paging.SearchPagingSource
 import com.example.nhviewer.domain.model.CdnConfig
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.SearchHistory
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.domain.repository.BlacklistRepository
+import com.example.nhviewer.domain.repository.FavoriteRepository
 import com.example.nhviewer.domain.repository.SearchRepository
 import com.example.nhviewer.domain.usecase.AutocompleteTagsUseCase
 import com.example.nhviewer.domain.usecase.GetCdnConfigUseCase
@@ -23,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -38,7 +42,9 @@ class SearchViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
     private val autocompleteTagsUseCase: AutocompleteTagsUseCase,
     private val getCdnConfigUseCase: GetCdnConfigUseCase,
-    private val searchHistoryUseCase: SearchHistoryUseCase
+    private val searchHistoryUseCase: SearchHistoryUseCase,
+    private val blacklistRepository: BlacklistRepository,
+    private val favoriteRepository: FavoriteRepository
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -68,6 +74,15 @@ class SearchViewModel @Inject constructor(
                 ).flow.cachedIn(viewModelScope)
             }
         }
+        .combine(blacklistRepository.blacklistedTagIds) { pagingData, blacklistedIds ->
+            pagingData.filter { item ->
+                !item.tagIds.any { it in blacklistedIds }
+            }
+        }
+
+    val favoritedIds: StateFlow<Set<Int>> = favoriteRepository.favoritesFlow
+        .map { list -> list.map { it.id }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     val autocompleteSuggestions: StateFlow<List<Tag>> = _searchQuery
         .debounce(300)
@@ -93,42 +108,40 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    fun onQueryChange(query: String) {
+    fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
 
-    fun onActiveChange(active: Boolean) {
+    fun onActiveChanged(active: Boolean) {
         _active.value = active
     }
 
-    fun onSearch(query: String) {
-        _searchQuery.value = query
-        _active.value = false
+    fun onSortOptionChanged(sort: String) {
+        _sortOption.value = sort
+        val query = _searchTrigger.value?.first
+        if (!query.isNullOrBlank()) {
+            _searchTrigger.value = Pair(query, sort)
+        }
+    }
+
+    fun search(query: String) {
         if (query.isNotBlank()) {
+            _searchTrigger.value = Pair(query, _sortOption.value)
             viewModelScope.launch {
                 searchHistoryUseCase.addSearchHistory(query)
             }
-            _searchTrigger.value = Pair(query.trim(), _sortOption.value)
         }
     }
 
-    fun onSortChange(sort: String) {
-        _sortOption.value = sort
-        val query = _searchQuery.value
-        if (query.isNotBlank()) {
-            _searchTrigger.value = Pair(query.trim(), sort)
-        }
-    }
-
-    fun deleteHistory(query: String) {
-        viewModelScope.launch {
-            searchHistoryUseCase.removeSearchHistory(query)
-        }
-    }
-
-    fun clearAllHistory() {
+    fun clearSearchHistory() {
         viewModelScope.launch {
             searchHistoryUseCase.clearSearchHistory()
+        }
+    }
+
+    fun deleteSearchHistory(query: String) {
+        viewModelScope.launch {
+            searchHistoryUseCase.removeSearchHistory(query)
         }
     }
 }

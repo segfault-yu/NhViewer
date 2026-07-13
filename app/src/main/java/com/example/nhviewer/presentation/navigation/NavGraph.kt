@@ -69,15 +69,23 @@ fun NhViewerNavGraph(
         }
 
         composable<Route.Favorites> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Favorites Screen (Phase 5)")
-            }
+            com.example.nhviewer.presentation.feature.favorites.FavoritesScreen(
+                onNavigateToDetail = { galleryId ->
+                    navController.navigate(Route.GalleryDetail(galleryId))
+                },
+                onNavigateToAuth = {
+                    navController.navigate(Route.Auth)
+                }
+            )
         }
 
         composable<Route.Profile> {
             ProfileScreen(
                 onNavigateToAuth = {
                     navController.navigate(Route.Auth)
+                },
+                onNavigateToBlacklist = {
+                    navController.navigate(Route.Blacklist)
                 }
             )
         }
@@ -85,6 +93,14 @@ fun NhViewerNavGraph(
         composable<Route.Auth> {
             AuthScreen(
                 onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable<Route.Blacklist> {
+            com.example.nhviewer.presentation.feature.blacklist.BlacklistScreen(
+                onBackClick = {
                     navController.popBackStack()
                 }
             )
