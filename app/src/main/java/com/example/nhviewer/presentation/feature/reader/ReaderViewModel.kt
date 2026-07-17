@@ -17,12 +17,14 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import com.example.nhviewer.util.NetworkErrorParser
 import javax.inject.Inject
+import com.example.nhviewer.data.local.SettingsManager
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
     private val getGalleryDetailUseCase: GetGalleryDetailUseCase,
     private val getCdnConfigUseCase: GetCdnConfigUseCase,
-    private val readingHistoryUseCase: ReadingHistoryUseCase
+    private val readingHistoryUseCase: ReadingHistoryUseCase,
+    private val settingsManager: SettingsManager
 ) : ViewModel() {
 
     private val _detailState = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)
@@ -49,6 +51,11 @@ class ReaderViewModel @Inject constructor(
                 .collect { (galleryId, page) ->
                     saveHistoryDirectly(galleryId, page)
                 }
+        }
+        viewModelScope.launch {
+            settingsManager.readerDirection.collect { direction ->
+                _isScrollMode.value = (direction == "vertical")
+            }
         }
     }
 

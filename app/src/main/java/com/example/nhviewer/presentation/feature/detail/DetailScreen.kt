@@ -84,6 +84,7 @@ import com.example.nhviewer.domain.model.Tag
 import com.example.nhviewer.presentation.common.CaptchaDialog
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
+import com.example.nhviewer.presentation.common.RelatedGalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import com.example.nhviewer.presentation.common.TagChip
 import kotlinx.coroutines.flow.collectLatest
@@ -180,7 +181,7 @@ fun DetailScreen(
                     }
 
                     LazyVerticalStaggeredGrid(
-                        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                        columns = StaggeredGridCells.Fixed(2),
                         contentPadding = PaddingValues(
                             start = 16.dp,
                             top = innerPadding.calculateTopPadding() + 16.dp,
@@ -402,7 +403,7 @@ fun DetailScreen(
                                     items = relState.list,
                                     key = { it.id }
                                 ) { relatedItem ->
-                                    GalleryCard(
+                                    RelatedGalleryCard(
                                         item = relatedItem,
                                         cdnHost = cdnHost,
                                         onClick = {

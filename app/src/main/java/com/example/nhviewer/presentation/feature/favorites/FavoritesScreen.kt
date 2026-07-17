@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material3.Button
@@ -53,6 +54,7 @@ import kotlinx.coroutines.flow.collectLatest
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(
+    onBackClick: () -> Unit,
     onNavigateToDetail: (Int) -> Unit,
     onNavigateToAuth: () -> Unit,
     modifier: Modifier = Modifier,
@@ -88,6 +90,14 @@ fun FavoritesScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = "我的收藏", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回"
+                        )
+                    }
+                },
                 actions = {
                     IconButton(
                         onClick = { viewModel.playRandomFavorite() },
@@ -160,7 +170,7 @@ fun FavoritesScreen(
                     )
                 } else {
                     LazyVerticalStaggeredGrid(
-                        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                        columns = StaggeredGridCells.Adaptive(minSize = 340.dp),
                         contentPadding = PaddingValues(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {

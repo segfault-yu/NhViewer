@@ -2,6 +2,7 @@ package com.example.nhviewer.domain.repository
 
 import com.example.nhviewer.data.remote.dto.CaptchaResponseDto
 import com.example.nhviewer.data.remote.dto.PowResponseDto
+import com.example.nhviewer.domain.model.ApiKey
 import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.domain.model.User
 import com.example.nhviewer.domain.model.UserSession
@@ -36,6 +37,17 @@ interface UserRepository {
     suspend fun getSessions(): Result<List<UserSession>>
 
     suspend fun revokeSession(sessionId: String): Result<Unit>
+
+    suspend fun getApiKeys(): Result<List<ApiKey>>
+
+    suspend fun createApiKey(
+        name: String,
+        powChallenge: String,
+        powNonce: String,
+        captchaResponse: String
+    ): Result<ApiKey>
+
+    suspend fun revokeApiKey(keyId: String): Result<Unit>
 
     suspend fun requestPasswordReset(
         usernameOrEmail: String,

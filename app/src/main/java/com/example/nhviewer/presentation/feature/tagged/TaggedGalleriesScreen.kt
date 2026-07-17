@@ -94,7 +94,7 @@ fun TaggedGalleriesScreen(
                 }
             } else {
                 LazyVerticalStaggeredGrid(
-                    columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                    columns = StaggeredGridCells.Adaptive(minSize = 340.dp),
                     contentPadding = PaddingValues(12.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {

@@ -63,6 +63,7 @@ import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
+import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -71,6 +72,8 @@ fun SearchScreen(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val gridBaseWidth by settingsViewModel.gridBaseWidth.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val active by viewModel.active.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
@@ -301,7 +304,7 @@ fun SearchScreen(
                     EmptyState(message = "未找到匹配的画廊")
                 } else {
                     LazyVerticalStaggeredGrid(
-                        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                        columns = StaggeredGridCells.Adaptive(minSize = gridBaseWidth.dp),
                         contentPadding = PaddingValues(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {

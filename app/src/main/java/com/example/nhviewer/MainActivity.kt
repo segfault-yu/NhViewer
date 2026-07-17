@@ -15,7 +15,16 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.nhviewer.domain.model.ReadingHistory
+import com.example.nhviewer.presentation.feature.home.HomeViewModel
+import com.example.nhviewer.presentation.navigation.AppDrawerContent
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -27,14 +36,34 @@ import com.example.nhviewer.presentation.navigation.NhViewerNavGraph
 import com.example.nhviewer.presentation.navigation.Route
 import com.example.nhviewer.ui.theme.NhViewerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import com.example.nhviewer.data.local.SettingsManager
+import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var settingsManager: SettingsManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            NhViewerTheme {
+            val themeMode by settingsManager.themeMode.collectAsState(initial = "system")
+            val dynamicColor by settingsManager.dynamicColor.collectAsState(initial = true)
+
+            val isDarkTheme = when (themeMode) {
+                "light" -> false
+                "dark" -> true
+                else -> isSystemInDarkTheme()
+            }
+
+            NhViewerTheme(
+                darkTheme = isDarkTheme,
+                dynamicColor = dynamicColor
+            ) {
                 NhViewerApp()
             }
         }
@@ -47,57 +76,39 @@ fun NhViewerApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Show navigation bar only if the current route is one of the top level destinations
-    val showBottomBar = currentDestination != null && (
-        currentDestination.hasRoute<Route.Home>() ||
-        currentDestination.hasRoute<Route.Search>() ||
-        currentDestination.hasRoute<Route.Tags>() ||
-        currentDestination.hasRoute<Route.Favorites>() ||
-        currentDestination.hasRoute<Route.Profile>()
-    )
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            if (showBottomBar) {
-                AppDestinations.entries.forEach { dest ->
-                    item(
-                        icon = {
-                            Icon(
-                                imageVector = dest.icon,
-                                contentDescription = dest.label
-                            )
-                        },
-                        label = { Text(dest.label) },
-                        selected = currentDestination.hasRoute(dest.route::class),
-                        onClick = {
-                            navController.navigate(dest.route) {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawerContent(
+                currentDestination = currentDestination,
+                onNavigate = { route ->
+                    scope.launch { drawerState.close() }
+                    if (route == Route.Home) {
+                        navController.popBackStack(Route.Home, inclusive = false)
+                    } else {
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                    )
+                    }
+                },
+                onNavigateToAuth = {
+                    scope.launch { drawerState.close() }
+                    navController.navigate(Route.Auth)
                 }
-            }
+            )
         }
     ) {
         NhViewerNavGraph(
             navController = navController,
+            onOpenDrawer = { scope.launch { drawerState.open() } },
             modifier = Modifier.fillMaxSize()
         )
     }
-}
-
-enum class AppDestinations(
-    val label: String,
-    val icon: ImageVector,
-    val route: Route
-) {
-    HOME("首页", Icons.Default.Home, Route.Home),
-    SEARCH("搜索", Icons.Default.Search, Route.Search),
-    TAGS("标签", Icons.Default.LocalOffer, Route.Tags),
-    FAVORITES("收藏", Icons.Default.Favorite, Route.Favorites),
-    PROFILE("我的", Icons.Default.AccountCircle, Route.Profile),
 }

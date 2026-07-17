@@ -33,6 +33,8 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import android.view.WindowManager
+import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -74,11 +76,28 @@ fun ReaderScreen(
     modifier: Modifier = Modifier,
     viewModel: ReaderViewModel = hiltViewModel()
 ) {
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val readerDirection by settingsViewModel.readerDirection.collectAsState()
+    val keepScreenOn by settingsViewModel.keepScreenOn.collectAsState()
+
     val context = LocalContext.current
     val detailState by viewModel.detailState.collectAsState()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     val currentPage by viewModel.currentPage.collectAsState()
     val isScrollMode by viewModel.isScrollMode.collectAsState()
+
+    DisposableEffect(keepScreenOn) {
+        val activity = context as? Activity
+        val window = activity?.window
+        if (window != null && keepScreenOn) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            if (window != null) {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
+    }
 
     val cdnHost = cdnConfig?.primaryImageHost ?: ""
 
@@ -173,6 +192,7 @@ fun ReaderScreen(
                     cdnHost = cdnHost,
                     currentPage = currentPage,
                     isScrollMode = isScrollMode,
+                    readerDirection = readerDirection,
                     onPageChanged = { page -> viewModel.onPageChanged(galleryId, page) },
                     onBackClick = onBackClick,
                     toggleReadingMode = { viewModel.toggleReadingMode() }
@@ -191,6 +211,7 @@ fun ReaderContent(
     cdnHost: String,
     currentPage: Int,
     isScrollMode: Boolean,
+    readerDirection: String,
     onPageChanged: (Int) -> Unit,
     onBackClick: () -> Unit,
     toggleReadingMode: () -> Unit,
@@ -264,6 +285,7 @@ fun ReaderContent(
 
             HorizontalPager(
                 state = pagerState,
+                reverseLayout = (readerDirection == "rtl"),
                 modifier = Modifier.fillMaxSize()
             ) { pageIndex ->
                 val page = detail.pages[pageIndex]

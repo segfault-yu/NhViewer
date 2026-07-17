@@ -25,6 +25,9 @@ sealed interface Route {
     data object Blacklist : Route
 
     @Serializable
+    data object History : Route
+
+    @Serializable
     data class TaggedGalleries(val tagId: Int, val tagName: String) : Route
 
     @Serializable
@@ -32,4 +35,13 @@ sealed interface Route {
 
     @Serializable
     data class Reader(val galleryId: Int, val startPage: Int = 1) : Route
+
+    @Serializable
+    data object Settings : Route
+
+    @Serializable
+    data object Sessions : Route
+
+    @Serializable
+    data object ApiKeys : Route
 }

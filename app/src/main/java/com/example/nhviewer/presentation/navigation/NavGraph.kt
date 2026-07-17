@@ -12,16 +12,21 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.example.nhviewer.presentation.feature.auth.AuthScreen
 import com.example.nhviewer.presentation.feature.detail.DetailScreen
+import com.example.nhviewer.presentation.feature.history.HistoryScreen
 import com.example.nhviewer.presentation.feature.home.HomeScreen
 import com.example.nhviewer.presentation.feature.profile.ProfileScreen
 import com.example.nhviewer.presentation.feature.reader.ReaderScreen
 import com.example.nhviewer.presentation.feature.search.SearchScreen
 import com.example.nhviewer.presentation.feature.tagged.TaggedGalleriesScreen
 import com.example.nhviewer.presentation.feature.tags.TagsScreen
+import com.example.nhviewer.presentation.feature.settings.SettingsScreen
+import com.example.nhviewer.presentation.feature.settings.sessions.SessionScreen
+import com.example.nhviewer.presentation.feature.settings.apikeys.ApiKeyScreen
 
 @Composable
 fun NhViewerNavGraph(
     navController: NavHostController,
+    onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -36,20 +41,14 @@ fun NhViewerNavGraph(
                 },
                 onNavigateToReader = { galleryId, page ->
                     navController.navigate(Route.Reader(galleryId, page))
-                }
-            )
-        }
-
-        composable<Route.Search> {
-            SearchScreen(
-                onNavigateToDetail = { galleryId ->
-                    navController.navigate(Route.GalleryDetail(galleryId))
-                }
+                },
+                onOpenDrawer = onOpenDrawer
             )
         }
 
         composable<Route.Tags> {
             TagsScreen(
+                onBackClick = { navController.popBackStack() },
                 onNavigateToTaggedGalleries = { tagId, tagName ->
                     navController.navigate(Route.TaggedGalleries(tagId, tagName))
                 }
@@ -70,22 +69,12 @@ fun NhViewerNavGraph(
 
         composable<Route.Favorites> {
             com.example.nhviewer.presentation.feature.favorites.FavoritesScreen(
+                onBackClick = { navController.popBackStack() },
                 onNavigateToDetail = { galleryId ->
                     navController.navigate(Route.GalleryDetail(galleryId))
                 },
                 onNavigateToAuth = {
                     navController.navigate(Route.Auth)
-                }
-            )
-        }
-
-        composable<Route.Profile> {
-            ProfileScreen(
-                onNavigateToAuth = {
-                    navController.navigate(Route.Auth)
-                },
-                onNavigateToBlacklist = {
-                    navController.navigate(Route.Blacklist)
                 }
             )
         }
@@ -102,6 +91,17 @@ fun NhViewerNavGraph(
             com.example.nhviewer.presentation.feature.blacklist.BlacklistScreen(
                 onBackClick = {
                     navController.popBackStack()
+                }
+            )
+        }
+
+        composable<Route.History> {
+            HistoryScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onNavigateToReader = { galleryId, page ->
+                    navController.navigate(Route.Reader(galleryId, page))
                 }
             )
         }
@@ -125,6 +125,27 @@ fun NhViewerNavGraph(
             ReaderScreen(
                 galleryId = route.galleryId,
                 startPage = route.startPage,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable<Route.Settings> {
+            SettingsScreen(
+                onBackClick = { navController.popBackStack() },
+                onNavigateToSessions = { navController.navigate(Route.Sessions) },
+                onNavigateToApiKeys = { navController.navigate(Route.ApiKeys) },
+                onNavigateToBlacklist = { navController.navigate(Route.Blacklist) }
+            )
+        }
+
+        composable<Route.Sessions> {
+            SessionScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable<Route.ApiKeys> {
+            ApiKeyScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

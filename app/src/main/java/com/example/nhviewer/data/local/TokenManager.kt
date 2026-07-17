@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,6 +26,9 @@ class TokenManager @Inject constructor(
             context.getSharedPreferences("secure_tokens_prefs_fallback", Context.MODE_PRIVATE)
         }
     }
+
+    private val _accessTokenFlow = MutableStateFlow<String?>(getAccessToken())
+    val accessTokenFlow: StateFlow<String?> = _accessTokenFlow.asStateFlow()
 
     private fun deleteMasterKeyEntry() {
         try {
@@ -52,6 +58,7 @@ class TokenManager @Inject constructor(
             .putString("access_token", accessToken)
             .putString("refresh_token", refreshToken)
             .apply()
+        _accessTokenFlow.value = accessToken
     }
 
     fun getAccessToken(): String? {
@@ -80,5 +87,6 @@ class TokenManager @Inject constructor(
             .remove("refresh_token")
             .remove("expires_at")
             .apply()
+        _accessTokenFlow.value = null
     }
 }

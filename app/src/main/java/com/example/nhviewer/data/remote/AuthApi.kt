@@ -40,4 +40,13 @@ interface AuthApi {
 
     @GET("api/v2/user")
     suspend fun getUserProfile(): UserProfileDto
+
+    @GET("api/v2/user/keys")
+    suspend fun getApiKeys(): List<ApiKeyDto>
+
+    @POST("api/v2/user/keys")
+    suspend fun createApiKey(@Body request: CreateApiKeyRequest): CreateApiKeyResponseDto
+
+    @DELETE("api/v2/user/keys/{key_id}")
+    suspend fun revokeApiKey(@Path("key_id") keyId: String): Response<Unit>
 }

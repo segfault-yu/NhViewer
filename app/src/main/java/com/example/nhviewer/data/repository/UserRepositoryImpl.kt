@@ -3,6 +3,7 @@ package com.example.nhviewer.data.repository
 import com.example.nhviewer.data.local.TokenManager
 import com.example.nhviewer.data.remote.AuthApi
 import com.example.nhviewer.data.remote.dto.*
+import com.example.nhviewer.domain.model.ApiKey
 import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.domain.model.User
 import com.example.nhviewer.domain.model.UserSession
@@ -28,9 +29,13 @@ class UserRepositoryImpl @Inject constructor(
     override val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     init {
-        if (tokenManager.hasRefreshToken()) {
-            CoroutineScope(Dispatchers.IO).launch {
-                loadCurrentUser()
+        CoroutineScope(Dispatchers.IO).launch {
+            tokenManager.accessTokenFlow.collect { token ->
+                if (token == null) {
+                    _authState.value = AuthState.LoggedOut
+                } else if (_authState.value is AuthState.LoggedOut) {
+                    loadCurrentUser()
+                }
             }
         }
     }
@@ -110,6 +115,26 @@ class UserRepositoryImpl @Inject constructor(
         val response = api.revokeSession(sessionId)
         if (!response.isSuccessful) {
             throw Exception("Revoke session failed: ${response.code()}")
+        }
+    }
+
+    override suspend fun getApiKeys(): Result<List<ApiKey>> = runCatchingCancelable {
+        api.getApiKeys().map { it.toDomain() }
+    }
+
+    override suspend fun createApiKey(
+        name: String,
+        powChallenge: String,
+        powNonce: String,
+        captchaResponse: String
+    ): Result<ApiKey> = runCatchingCancelable {
+        api.createApiKey(CreateApiKeyRequest(name, powChallenge, powNonce, captchaResponse)).toDomain()
+    }
+
+    override suspend fun revokeApiKey(keyId: String): Result<Unit> = runCatchingCancelable {
+        val response = api.revokeApiKey(keyId)
+        if (!response.isSuccessful) {
+            throw Exception("Revoke API key failed: ${response.code()}")
         }
     }
 

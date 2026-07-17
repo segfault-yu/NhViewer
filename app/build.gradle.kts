@@ -70,6 +70,7 @@ dependencies {
 
     // Security Crypto
     implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.datastore.preferences)
 
     // Retrofit & OkHttp
     implementation(libs.retrofit)
