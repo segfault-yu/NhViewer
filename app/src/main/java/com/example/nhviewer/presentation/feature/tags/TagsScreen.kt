@@ -15,16 +15,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -40,8 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.presentation.common.EmptyState
@@ -53,7 +52,7 @@ import com.example.nhviewer.presentation.common.LoadingIndicator
 fun TagsScreen(
     onNavigateToTaggedGalleries: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: TagsViewModel = viewModel()
+    viewModel: TagsViewModel = hiltViewModel()
 ) {
     val currentType by viewModel.currentType.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
@@ -82,20 +81,19 @@ fun TagsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Scrollable TabRow for Tag Categories
             PrimaryScrollableTabRow(
                 selectedTabIndex = currentTabIndex,
                 modifier = Modifier.fillMaxWidth(),
                 edgePadding = 16.dp
             ) {
-                tabTypes.forEachIndexed { index, (type, label) ->
+                tabTypes.forEachIndexed { index, (_, label) ->
                     Tab(
                         selected = currentTabIndex == index,
-                        onClick = { viewModel.selectTagType(type) },
+                        onClick = { viewModel.selectTagType(tabTypes[index].first) },
                         text = {
                             Text(
                                 text = label,
-                                fontSize = 14.sp,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = if (currentTabIndex == index) FontWeight.Bold else FontWeight.Normal
                             )
                         }
@@ -103,7 +101,6 @@ fun TagsScreen(
                 }
             }
 
-            // Sort Selector Bar
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -127,7 +124,7 @@ fun TagsScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = if (sortOption == "popular") "按热度排序" else "按字母排序",
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -155,7 +152,6 @@ fun TagsScreen(
                 }
             }
 
-            // Tags Grid list
             Box(modifier = Modifier.fillMaxSize()) {
                 if (tags.loadState.refresh is LoadState.Loading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -171,7 +167,7 @@ fun TagsScreen(
                     EmptyState(message = "没有找到标签")
                 } else {
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
+                        columns = GridCells.Adaptive(minSize = 180.dp),
                         contentPadding = PaddingValues(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
@@ -181,10 +177,7 @@ fun TagsScreen(
                         ) { index ->
                             val tag = tags[index]
                             if (tag != null) {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                    ),
+                                OutlinedCard(
                                     shape = MaterialTheme.shapes.medium,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -200,7 +193,7 @@ fun TagsScreen(
                                         Icon(
                                             imageVector = Icons.Default.Tag,
                                             contentDescription = "Tag",
-                                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                            tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(20.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -208,14 +201,14 @@ fun TagsScreen(
                                             Text(
                                                 text = tag.name,
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 14.sp,
+                                                style = MaterialTheme.typography.bodyMedium,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = "${formatCount(tag.count)} 本书",
-                                                fontSize = 11.sp,
+                                                style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -225,7 +218,7 @@ fun TagsScreen(
                         }
 
                         if (tags.loadState.append is LoadState.Loading) {
-                            item(span = { GridItemSpan(2) }) {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()

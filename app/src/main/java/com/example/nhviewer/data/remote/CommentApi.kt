@@ -1,6 +1,7 @@
 package com.example.nhviewer.data.remote
 
 import com.example.nhviewer.data.remote.dto.CommentDto
+import com.example.nhviewer.data.remote.dto.CommentListResponse
 import com.example.nhviewer.data.remote.dto.PostCommentRequest
 import retrofit2.Response
 import retrofit2.http.*
@@ -11,7 +12,7 @@ interface CommentApi {
     @GET("api/v2/galleries/{gallery_id}/comments")
     suspend fun getComments(
         @Path("gallery_id") galleryId: Int
-    ): List<CommentDto>
+    ): CommentListResponse
 
     // 对画廊发表评论
     @POST("api/v2/galleries/{gallery_id}/comments")

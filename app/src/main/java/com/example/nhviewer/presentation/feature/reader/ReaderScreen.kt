@@ -12,12 +12,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -41,17 +45,14 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -60,11 +61,9 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import com.example.nhviewer.domain.model.GalleryDetail
-import com.example.nhviewer.domain.model.PageInfo
 import coil.compose.AsyncImage
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.LoadingIndicator
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -82,9 +81,8 @@ fun ReaderScreen(
     val isScrollMode by viewModel.isScrollMode.collectAsState()
 
     val cdnHost = cdnConfig?.primaryImageHost ?: ""
-    val coroutineScope = rememberCoroutineScope()
 
-    // Immersive screen support (hides status & navigation bars)
+    // 沉浸式全屏支持（隐去状态栏与导航栏）
     DisposableEffect(Unit) {
         val activity = context as? Activity
         val window = activity?.window
@@ -109,7 +107,7 @@ fun ReaderScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         when (val state = detailState) {
             is ReaderViewModel.ReaderUiState.Loading -> {
@@ -126,9 +124,8 @@ fun ReaderScreen(
             is ReaderViewModel.ReaderUiState.Success -> {
                 val detail = state.detail
 
-                // Prefetch images (preloads current page -2, -1, +1, +2)
+                // 图片预加载
                 LaunchedEffect(currentPage, cdnHost) {
-                    // 防抖：当用户快速滑过时，不发起任何预加载。只有在某页停留超过 300 毫秒才开始预加载
                     delay(300)
 
                     val loader = context.imageLoader
@@ -139,7 +136,6 @@ fun ReaderScreen(
                         "https://i.nhentai.net"
                     }
 
-                    // 优先预加载相邻第 1 页
                     val immediateRange = listOf(currentPage - 1, currentPage + 1)
                     for (p in immediateRange) {
                         if (p in 1..detail.numPages) {
@@ -154,7 +150,6 @@ fun ReaderScreen(
                         }
                     }
 
-                    // 延迟 300 毫秒后再预加载第 2 页，避免与相邻页及当前页抢占带宽
                     delay(300)
                     val outerRange = listOf(currentPage - 2, currentPage + 2)
                     for (p in outerRange) {
@@ -202,7 +197,6 @@ fun ReaderContent(
     modifier: Modifier = Modifier
 ) {
     var showOverlays by remember { mutableStateOf(true) }
-    val coroutineScope = rememberCoroutineScope()
     val hosts = if (cdnHost.isNotEmpty()) {
         if (cdnHost.startsWith("http")) cdnHost else "https://$cdnHost"
     } else {
@@ -240,7 +234,10 @@ fun ReaderContent(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         AsyncImage(
-                            model = pageUrl,
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(pageUrl)
+                                .crossfade(true)
+                                .build(),
                             contentDescription = "Page ${page.number}",
                             contentScale = ContentScale.FillWidth,
                             modifier = Modifier.fillMaxWidth()
@@ -249,9 +246,7 @@ fun ReaderContent(
                 }
             }
 
-            // Seek handling for scroll
             LaunchedEffect(currentPage) {
-                // Prevent scrolling loop when updating page by scroll gesture
                 if (firstVisibleIndex != currentPage - 1) {
                     listState.scrollToItem(currentPage - 1)
                 }
@@ -282,7 +277,10 @@ fun ReaderContent(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         AsyncImage(
-                            model = pageUrl,
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(pageUrl)
+                                .crossfade(true)
+                                .build(),
                             contentDescription = "Page ${page.number}",
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
@@ -291,7 +289,6 @@ fun ReaderContent(
                 }
             }
 
-            // Seek handling for pager
             LaunchedEffect(currentPage) {
                 if (pagerState.currentPage != currentPage - 1) {
                     pagerState.scrollToPage(currentPage - 1)
@@ -339,14 +336,15 @@ fun ReaderTopBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.7f))
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f))
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
             .padding(horizontal = 8.dp, vertical = 12.dp)
     ) {
         IconButton(onClick = onBackClick) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = Color.White
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -354,8 +352,8 @@ fun ReaderTopBar(
 
         Text(
             text = title,
-            color = Color.White,
-            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -376,7 +374,8 @@ fun ReaderBottomBar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.7f))
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f))
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Row(
@@ -385,8 +384,8 @@ fun ReaderBottomBar(
         ) {
             Text(
                 text = "$currentPage / $totalPages",
-                color = Color.White,
-                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Medium
             )
 
@@ -396,7 +395,7 @@ fun ReaderBottomBar(
                 Icon(
                     imageVector = if (isScrollMode) Icons.Default.SwapVert else Icons.AutoMirrored.Filled.MenuBook,
                     contentDescription = "Toggle Reading Mode",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         }

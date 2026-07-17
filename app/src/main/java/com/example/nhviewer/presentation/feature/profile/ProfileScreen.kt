@@ -18,10 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.NoAccounts
@@ -30,9 +28,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -48,13 +45,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.nhviewer.domain.model.AuthState
@@ -123,7 +118,7 @@ fun LoggedOutPlaceholder(
         Icon(
             imageVector = Icons.Default.NoAccounts,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+            tint = MaterialTheme.colorScheme.outline,
             modifier = Modifier.size(96.dp)
         )
 
@@ -131,7 +126,7 @@ fun LoggedOutPlaceholder(
 
         Text(
             text = "您尚未登录",
-            fontSize = 20.sp,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
@@ -140,7 +135,7 @@ fun LoggedOutPlaceholder(
 
         Text(
             text = "登录后即可使用云端收藏夹、设备活跃会话管理等更多精彩功能。",
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
@@ -149,12 +144,9 @@ fun LoggedOutPlaceholder(
 
         Button(
             onClick = onNavigateToAuth,
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("立即登录 / 注册", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text = "立即登录 / 注册", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -176,11 +168,10 @@ fun LoggedInContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. User Info Profile Card
         item {
             ElevatedCard(
                 colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                 ),
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier.fillMaxWidth()
@@ -207,7 +198,7 @@ fun LoggedInContent(
                             Text(
                                 text = user.username.take(1).uppercase(),
                                 color = MaterialTheme.colorScheme.onPrimary,
-                                fontSize = 28.sp,
+                                style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -219,37 +210,36 @@ fun LoggedInContent(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = user.username,
-                                fontSize = 20.sp,
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             SuggestionChip(
                                 onClick = {},
-                                label = { Text(user.role.uppercase(), fontSize = 10.sp) }
+                                label = { Text(user.role.uppercase(), style = MaterialTheme.typography.labelSmall) }
                             )
                         }
                         Text(
                             text = user.email,
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "注册于: ${dateFormat.format(Date(user.registeredAt))}",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
         }
 
-        // 2. Active Sessions Section
         item {
             Text(
                 text = "活跃设备会话",
-                fontSize = 15.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
@@ -274,7 +264,7 @@ fun LoggedInContent(
             ) { session ->
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth()
@@ -285,27 +275,28 @@ fun LoggedInContent(
                                 text = session.userAgent,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold
                             )
                         },
                         supportingContent = {
                             Column {
-                                Text("IP: ${session.ipAddress}")
-                                Text("活跃于: ${dateFormat.format(Date(session.lastActiveAt))}", fontSize = 11.sp)
+                                Text(text = "IP: ${session.ipAddress}", style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "活跃于: ${dateFormat.format(Date(session.lastActiveAt))}", style = MaterialTheme.typography.labelSmall)
                             }
                         },
                         leadingContent = {
                             Icon(
                                 imageVector = Icons.Default.Devices,
                                 contentDescription = null,
-                                tint = if (session.currentSession) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                tint = if (session.currentSession) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
                         trailingContent = {
                             if (session.currentSession) {
                                 SuggestionChip(
                                     onClick = {},
-                                    label = { Text("当前设备", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                                    label = { Text("当前设备", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
                                 )
                             } else {
                                 IconButton(onClick = { onRevokeSession(session.sessionId) }) {
@@ -322,11 +313,10 @@ fun LoggedInContent(
             }
         }
 
-        // Blacklist Settings Entry
         item {
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
@@ -334,8 +324,8 @@ fun LoggedInContent(
                     .clickable { onNavigateToBlacklist() }
             ) {
                 ListItem(
-                    headlineContent = { Text("黑名单设置", fontWeight = FontWeight.SemiBold) },
-                    supportingContent = { Text("管理您已屏蔽的标签，自动过滤列表内容") },
+                    headlineContent = { Text("黑名单设置", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold) },
+                    supportingContent = { Text("管理您已屏蔽的标签，自动过滤列表内容", style = MaterialTheme.typography.bodyMedium) },
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Default.Block,
@@ -347,7 +337,6 @@ fun LoggedInContent(
             }
         }
 
-        // 3. Actions Zone
         item {
             Spacer(modifier = Modifier.height(24.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
@@ -359,14 +348,11 @@ fun LoggedInContent(
             ) {
                 OutlinedButton(
                     onClick = onLogout,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(imageVector = Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("退出当前设备登录", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = "退出当前设备登录", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                 }
 
                 Button(
@@ -375,14 +361,11 @@ fun LoggedInContent(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError
                     ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(imageVector = Icons.Default.Delete, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("退出所有设备的登录 (吊销全部 Token)", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = "退出所有设备的登录 (吊销全部 Token)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                 }
             }
         }

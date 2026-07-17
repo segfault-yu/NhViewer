@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,7 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.presentation.common.ErrorScreen
@@ -43,7 +42,7 @@ fun TaggedGalleriesScreen(
     onBackClick: () -> Unit,
     onNavigateToDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: TaggedGalleriesViewModel = viewModel()
+    viewModel: TaggedGalleriesViewModel = hiltViewModel()
 ) {
     val galleries = viewModel.galleries.collectAsLazyPagingItems()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
@@ -56,7 +55,7 @@ fun TaggedGalleriesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "标签: $tagName", fontWeight = FontWeight.Bold) },
+                title = { Text(text = "标签: $tagName", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -64,10 +63,7 @@ fun TaggedGalleriesScreen(
                             contentDescription = "Back"
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
             )
         },
         modifier = modifier.fillMaxSize()
@@ -92,12 +88,13 @@ fun TaggedGalleriesScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         text = "该标签下暂无画廊数据",
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
                 LazyVerticalStaggeredGrid(
-                    columns = StaggeredGridCells.Fixed(2),
+                    columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
                     contentPadding = PaddingValues(12.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -122,7 +119,7 @@ fun TaggedGalleriesScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp),
-                                  contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.Center
                             ) {
                                 LoadingIndicator()
                             }

@@ -13,6 +13,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+
 private val OffsetSaver = listSaver<Offset, Float>(
     save = { listOf(it.x, it.y) },
     restore = { Offset(it[0], it[1]) }
@@ -28,26 +31,47 @@ fun ZoomableBox(
     var scale by rememberSaveable { mutableStateOf(1f) }
     var offset by rememberSaveable(stateSaver = OffsetSaver) { mutableStateOf(Offset.Zero) }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val newScale = (scale * zoom).coerceIn(minScale, maxScale)
-                    scale = newScale
-                    if (newScale > 1f) {
-                        offset += pan * newScale
-                    } else {
-                        offset = Offset.Zero
+    ) {
+        val width = constraints.maxWidth.toFloat()
+        val height = constraints.maxHeight.toFloat()
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        val newScale = (scale * zoom).coerceIn(minScale, maxScale)
+                        scale = newScale
+                        if (newScale > 1f) {
+                            val maxX = (width * (newScale - 1f)) / 2f
+                            val maxY = if (constraints.hasBoundedHeight) {
+                                (height * (newScale - 1f)) / 2f
+                            } else {
+                                Float.MAX_VALUE
+                            }
+
+                            val nextX = offset.x + pan.x * newScale
+                            val nextY = offset.y + pan.y * newScale
+
+                            offset = Offset(
+                                x = nextX.coerceIn(-maxX, maxX),
+                                y = nextY.coerceIn(-maxY, maxY)
+                            )
+                        } else {
+                            offset = Offset.Zero
+                        }
                     }
                 }
-            }
-            .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
-                translationX = offset.x,
-                translationY = offset.y
-            )
-      ) {
-          content()
-      }
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y
+                )
+        ) {
+            content()
+        }
+    }
 }

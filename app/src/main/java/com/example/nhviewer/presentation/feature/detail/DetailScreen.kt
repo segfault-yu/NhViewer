@@ -4,28 +4,26 @@ import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ContextualFlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Book
@@ -34,20 +32,26 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -60,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -68,11 +73,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.domain.model.GalleryDetail
 import com.example.nhviewer.domain.model.Tag
@@ -126,7 +131,7 @@ fun DetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "画廊详情", fontWeight = FontWeight.Bold) },
+                title = { Text(text = "画廊详情", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -134,30 +139,36 @@ fun DetailScreen(
                             contentDescription = "Back"
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
             )
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize()
         ) {
             when (val state = detailState) {
                 is DetailViewModel.DetailUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        contentAlignment = Alignment.Center
+                    ) {
                         LoadingIndicator()
                     }
                 }
                 is DetailViewModel.DetailUiState.Error -> {
-                    ErrorScreen(
-                        message = state.message,
-                        onRetry = { viewModel.loadGalleryDetail(galleryId) }
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+                        ErrorScreen(
+                            message = state.message,
+                            onRetry = { viewModel.loadGalleryDetail(galleryId) }
+                        )
+                    }
                 }
                 is DetailViewModel.DetailUiState.Success -> {
                     val detail = state.detail
@@ -169,15 +180,28 @@ fun DetailScreen(
                     }
 
                     LazyVerticalStaggeredGrid(
-                        columns = StaggeredGridCells.Fixed(2),
-                        contentPadding = PaddingValues(16.dp),
+                        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            top = innerPadding.calculateTopPadding() + 16.dp,
+                            end = 16.dp,
+                            bottom = innerPadding.calculateBottomPadding() + 16.dp
+                        ),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         // 1. Gallery Info Header
                         item(span = StaggeredGridItemSpan.FullLine) {
-                            Column {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp)
+                            ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .widthIn(max = 600.dp)
                                 ) {
                                     val coverRatio = if (detail.coverWidth > 0 && detail.coverHeight > 0) {
                                         detail.coverWidth.toFloat() / detail.coverHeight.toFloat()
@@ -185,58 +209,63 @@ fun DetailScreen(
                                         0.7f
                                     }
 
-                                    AsyncImage(
-                                        model = coverUrl,
-                                        contentDescription = detail.englishTitle,
-                                        contentScale = ContentScale.Crop,
+                                    ElevatedCard(
+                                        shape = MaterialTheme.shapes.medium,
                                         modifier = Modifier
                                             .weight(0.4f)
                                             .aspectRatio(coverRatio)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    )
-
-                                    Spacer(modifier = Modifier.width(16.dp))
+                                    ) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data(coverUrl)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = detail.englishTitle,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clip(MaterialTheme.shapes.medium)
+                                        )
+                                    }
 
                                     Column(
-                                        modifier = Modifier.weight(0.6f)
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier
+                                            .weight(0.6f)
+                                            .padding(start = 16.dp)
                                     ) {
                                         Text(
                                             text = detail.prettyTitle ?: detail.englishTitle,
-                                            fontSize = 16.sp,
+                                            style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onBackground
                                         )
 
                                         if (!detail.japaneseTitle.isNullOrEmpty()) {
-                                            Spacer(modifier = Modifier.height(4.dp))
                                             Text(
                                                 text = detail.japaneseTitle,
-                                                fontSize = 12.sp,
+                                                style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
 
-                                        Spacer(modifier = Modifier.height(12.dp))
-
                                         Row(
-                                            verticalAlignment = Alignment.CenterVertically
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(top = 6.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Description,
                                                 contentDescription = "Pages",
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.width(14.dp).height(14.dp)
+                                                modifier = Modifier.size(14.dp)
                                             )
-                                            Spacer(modifier = Modifier.width(4.dp))
                                             Text(
-                                                text = "${detail.numPages} 页",
-                                                fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                text = " ${detail.numPages} 页",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(start = 4.dp)
                                             )
                                         }
-
-                                        Spacer(modifier = Modifier.height(6.dp))
 
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically
@@ -245,30 +274,26 @@ fun DetailScreen(
                                                 imageVector = Icons.Default.Favorite,
                                                 contentDescription = "Favorites",
                                                 tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.width(14.dp).height(14.dp)
+                                                modifier = Modifier.size(14.dp)
                                             )
-                                            Spacer(modifier = Modifier.width(4.dp))
                                             Text(
-                                                text = "${detail.numFavorites} 收藏",
-                                                fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                text = " ${detail.numFavorites} 收藏",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(start = 4.dp)
                                             )
                                         }
-
-                                        Spacer(modifier = Modifier.height(6.dp))
 
                                         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                                         val uploadDateStr = sdf.format(Date(detail.uploadDate * 1000))
 
                                         Text(
                                             text = "上传时间: $uploadDateStr",
-                                            fontSize = 11.sp,
+                                            style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
-
-                                Spacer(modifier = Modifier.height(20.dp))
 
                                 // Start / Continue Reading Button + Favorite Button
                                 val startPage = readingHistory?.lastReadPage ?: 1
@@ -279,66 +304,61 @@ fun DetailScreen(
                                 }
 
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .widthIn(max = 600.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Button(
                                         onClick = { onStartReading(detail.id, startPage) },
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary
-                                        ),
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Book,
                                             contentDescription = "Read"
                                         )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(text = buttonText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        Text(
+                                            text = " $buttonText",
+                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                        )
                                     }
 
-                                    Spacer(modifier = Modifier.width(12.dp))
-
                                     val isFav by viewModel.isFavorite.collectAsState()
-                                    IconButton(
-                                        onClick = { viewModel.toggleFavorite() },
+                                    FilledTonalIconToggleButton(
+                                        checked = isFav,
+                                        onCheckedChange = { viewModel.toggleFavorite() },
                                         modifier = Modifier
-                                            .size(50.dp)
-                                            .background(
-                                                color = if (isFav) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
+                                            .padding(start = 12.dp)
+                                            .size(48.dp)
                                     ) {
                                         Icon(
                                             imageVector = if (isFav) Icons.Default.Favorite else Icons.Rounded.FavoriteBorder,
-                                            contentDescription = "Favorite Toggle",
-                                            tint = if (isFav) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                            contentDescription = "Favorite Toggle"
                                         )
                                     }
                                 }
-
-                                Spacer(modifier = Modifier.height(20.dp))
                             }
                         }
 
                         // 2. Tag Sections grouped by type
                         item(span = StaggeredGridItemSpan.FullLine) {
-                            Column {
+                            Column(
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            ) {
                                 Text(
                                     text = "标签列表",
-                                    fontSize = 16.sp,
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onBackground
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                TagGroupSection(
-                                    tags = detail.tags,
-                                    onTagClick = { tag ->
-                                        onTagClick(tag.id, tag.name)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(24.dp))
+                                Box(modifier = Modifier.padding(top = 8.dp)) {
+                                    TagGroupSection(
+                                        tags = detail.tags,
+                                        onTagClick = { tag ->
+                                            onTagClick(tag.id, tag.name)
+                                        }
+                                    )
+                                }
                             }
                         }
 
@@ -346,10 +366,10 @@ fun DetailScreen(
                         item(span = StaggeredGridItemSpan.FullLine) {
                             Text(
                                 text = "相关推荐",
-                                fontSize = 16.sp,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.padding(bottom = 12.dp)
+                                modifier = Modifier.padding(vertical = 12.dp)
                             )
                         }
 
@@ -371,7 +391,7 @@ fun DetailScreen(
                                 item(span = StaggeredGridItemSpan.FullLine) {
                                     Text(
                                         text = "相关推荐加载失败",
-                                        fontSize = 14.sp,
+                                        style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(16.dp)
                                     )
@@ -396,13 +416,12 @@ fun DetailScreen(
 
                         // 5. Comments Section Title
                         item(span = StaggeredGridItemSpan.FullLine) {
-                            Spacer(modifier = Modifier.height(24.dp))
                             Text(
                                 text = "用户评论",
-                                fontSize = 16.sp,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.padding(bottom = 12.dp)
+                                modifier = Modifier.padding(vertical = 12.dp)
                             )
                         }
 
@@ -425,7 +444,7 @@ fun DetailScreen(
                                     Text(
                                         text = cState.message,
                                         color = MaterialTheme.colorScheme.error,
-                                        fontSize = 13.sp,
+                                        style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.padding(16.dp)
                                     )
                                 }
@@ -436,7 +455,7 @@ fun DetailScreen(
                                     item(span = StaggeredGridItemSpan.FullLine) {
                                         Text(
                                             text = "暂无评论，发条评论抢沙发吧~",
-                                            fontSize = 13.sp,
+                                            style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             textAlign = TextAlign.Center,
                                             modifier = Modifier
@@ -464,12 +483,16 @@ fun DetailScreen(
 
                         // 7. Post Comment Input Area
                         item(span = StaggeredGridItemSpan.FullLine) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            CommentInputArea(
-                                isLoggedIn = currentUserState is AuthState.LoggedIn,
-                                onSendComment = { viewModel.startPostComment(it) }
-                            )
-                            Spacer(modifier = Modifier.height(32.dp))
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 16.dp, bottom = 32.dp)
+                                    .imePadding()
+                            ) {
+                                CommentInputArea(
+                                    isLoggedIn = currentUserState is AuthState.LoggedIn,
+                                    onSendComment = { viewModel.startPostComment(it) }
+                                )
+                            }
                         }
                     }
                 }
@@ -488,35 +511,25 @@ fun DetailScreen(
             }
 
             if (powStatus != "Idle" && captchaSiteKey == null) {
-                Dialog(
+                AlertDialog(
                     onDismissRequest = {},
-                    properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
-                ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(24.dp)
-                        ) {
-                            LoadingIndicator()
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = powStatus,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    confirmButton = {},
+                    title = {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            LoadingIndicator(modifier = Modifier.size(48.dp))
                         }
-                    }
-                }
+                    },
+                    text = {
+                        Text(
+                            text = powStatus,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    shape = MaterialTheme.shapes.extraLarge
+                )
             }
         }
     }
@@ -549,7 +562,7 @@ fun TagGroupSection(
             Column {
                 Text(
                     text = displayName,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -586,9 +599,9 @@ fun CommentItemRow(
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -597,37 +610,32 @@ fun CommentItemRow(
             )
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                if (!comment.avatarUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = comment.avatarUrl,
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(androidx.compose.foundation.shape.CircleShape)
-                    )
-                } else {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, androidx.compose.foundation.shape.CircleShape)
-                    ) {
-                        Text(
-                            text = comment.username.take(1).uppercase(),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+            ListItem(
+                leadingContent = {
+                    if (!comment.avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = comment.avatarUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
                         )
+                    } else {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                        ) {
+                            Text(
+                                text = comment.username.take(1).uppercase(),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
+                },
+                headlineContent = {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -635,26 +643,29 @@ fun CommentItemRow(
                     ) {
                         Text(
                             text = comment.username,
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = sdf.format(Date(comment.postDate * 1000)),
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
+                },
+                supportingContent = {
                     Text(
                         text = comment.body,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
-                }
-            }
+                },
+                colors = ListItemDefaults.colors(
+                    containerColor = Color.Transparent
+                )
+            )
 
             DropdownMenu(
                 expanded = showMenu,
@@ -708,18 +719,16 @@ fun CommentInputArea(
             placeholder = {
                 Text(
                     text = if (isLoggedIn) "发表公开评论..." else "请先登录后发表评论",
-                    fontSize = 13.sp
+                    style = MaterialTheme.typography.bodyMedium
                 )
             },
-            shape = RoundedCornerShape(24.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             singleLine = false,
             maxLines = 4,
             modifier = Modifier.weight(1f)
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
-
-        IconButton(
+        FilledIconButton(
             onClick = {
                 if (text.isNotBlank()) {
                     onSendComment(text)
@@ -728,16 +737,12 @@ fun CommentInputArea(
             },
             enabled = isLoggedIn && text.isNotBlank(),
             modifier = Modifier
+                .padding(start = 8.dp)
                 .size(48.dp)
-                .background(
-                    color = if (isLoggedIn && text.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    shape = androidx.compose.foundation.shape.CircleShape
-                )
         ) {
             Icon(
                 imageVector = Icons.Default.Send,
-                contentDescription = "发送",
-                tint = if (isLoggedIn && text.isNotBlank()) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                contentDescription = "发送"
             )
         }
     }

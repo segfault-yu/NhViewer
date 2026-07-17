@@ -1,7 +1,6 @@
 package com.example.nhviewer.presentation.feature.auth
 
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,7 +26,6 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,7 +40,6 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -61,7 +57,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -125,7 +120,7 @@ fun AuthScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = if (selectedTab == 0) "登录" else "注册", fontWeight = FontWeight.Bold) },
+                title = { Text(text = if (selectedTab == 0) "登录" else "注册", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -133,10 +128,7 @@ fun AuthScreen(
                             contentDescription = "Back"
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
             )
         },
         modifier = modifier.fillMaxSize()
@@ -153,12 +145,24 @@ fun AuthScreen(
                     Tab(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        text = { Text("登录", fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+                        text = {
+                            Text(
+                                text = "登录",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     )
                     Tab(
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 },
-                        text = { Text("注册", fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+                        text = {
+                            Text(
+                                text = "注册",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     )
                 }
 
@@ -180,7 +184,6 @@ fun AuthScreen(
                 }
             }
 
-            // PoW Solve and loading overlay
             if (isLoading) {
                 Dialog(
                     onDismissRequest = {},
@@ -190,7 +193,7 @@ fun AuthScreen(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = MaterialTheme.shapes.large,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp)
@@ -204,7 +207,7 @@ fun AuthScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = powStatus,
-                                fontSize = 15.sp,
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -265,7 +268,7 @@ fun LoginTabContent(
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onForgotPasswordClick) {
-                Text("忘记密码？", fontSize = 13.sp)
+                Text(text = "忘记密码？", style = MaterialTheme.typography.bodyMedium)
             }
         }
 
@@ -273,12 +276,9 @@ fun LoginTabContent(
 
         Button(
             onClick = { onLoginClick(identity, password) },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("登录", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text = "登录", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -379,12 +379,9 @@ fun RegisterTabContent(
         Button(
             onClick = { onRegisterClick(username, email, password) },
             enabled = isFormValid,
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("注册", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text = "注册", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -406,7 +403,11 @@ fun ForgotPasswordDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (step == 0) {
-                    Text("系统将发送一封包含凭证 Token 的重置邮件到您的注册邮箱：", fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
+                    Text(
+                        text = "系统将发送一封包含凭证 Token 的重置邮件到您的注册邮箱：",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -415,7 +416,11 @@ fun ForgotPasswordDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
-                    Text("请输入邮件中的重置 Token 和您的新密码：", fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
+                    Text(
+                        text = "请输入邮件中的重置 Token 和您的新密码：",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
                     OutlinedTextField(
                         value = token,
                         onValueChange = { token = it },
@@ -464,6 +469,7 @@ fun ForgotPasswordDialog(
             TextButton(onClick = onDismiss) {
                 Text("关闭")
             }
-        }
+        },
+        shape = MaterialTheme.shapes.extraLarge
     )
 }

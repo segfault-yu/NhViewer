@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Block
@@ -38,7 +37,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.LoadingIndicator
@@ -86,7 +83,7 @@ fun BlacklistScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "黑名单设置", fontWeight = FontWeight.Bold) },
+                title = { Text(text = "黑名单设置", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -94,10 +91,7 @@ fun BlacklistScreen(
                             contentDescription = "返回"
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
             )
         },
         modifier = modifier.fillMaxSize()
@@ -108,7 +102,6 @@ fun BlacklistScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Search autocomplete container to add blacklisted tags
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -147,11 +140,11 @@ fun BlacklistScreen(
                             DropdownMenuItem(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = tag.name)
+                                        Text(text = tag.name, style = MaterialTheme.typography.bodyLarge)
                                         Spacer(modifier = Modifier.width(8.dp))
                                         SuggestionChip(
                                             onClick = {},
-                                            label = { Text(tag.type.uppercase(), fontSize = 9.sp) }
+                                            label = { Text(text = tag.type.uppercase(), style = MaterialTheme.typography.labelSmall) }
                                         )
                                     }
                                 },
@@ -192,19 +185,19 @@ fun BlacklistScreen(
                     ) { tag ->
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = MaterialTheme.shapes.medium,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             ListItem(
                                 headlineContent = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(tag.name, fontWeight = FontWeight.Bold)
+                                        Text(text = tag.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                                         Spacer(modifier = Modifier.width(8.dp))
                                         SuggestionChip(
                                             onClick = {},
-                                            label = { Text(tag.type.uppercase(), fontSize = 10.sp) }
+                                            label = { Text(text = tag.type.uppercase(), style = MaterialTheme.typography.labelSmall) }
                                         )
                                     }
                                 },

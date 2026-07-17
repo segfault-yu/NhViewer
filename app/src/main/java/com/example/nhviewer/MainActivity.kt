@@ -83,12 +83,10 @@ fun NhViewerApp() {
             }
         }
     ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            NhViewerNavGraph(
-                navController = navController,
-                modifier = Modifier.padding(innerPadding)
-            )
-        }
+        NhViewerNavGraph(
+            navController = navController,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 

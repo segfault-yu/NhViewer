@@ -1,17 +1,14 @@
 package com.example.nhviewer.presentation.feature.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,16 +22,17 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -48,26 +46,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.nhviewer.domain.model.ReadingHistory
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -104,7 +102,8 @@ fun HomeScreen(
             FloatingActionButton(
                 onClick = { viewModel.playRandom() },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape
             ) {
                 Icon(
                     imageVector = Icons.Default.Casino,
@@ -130,7 +129,7 @@ fun HomeScreen(
                         text = {
                             Text(
                                 text = title,
-                                fontSize = 15.sp,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
                             )
                         }
@@ -141,7 +140,6 @@ fun HomeScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 when (selectedTabIndex) {
                     0 -> {
-                        // Latest tab
                         val pullRefreshState = rememberPullToRefreshState()
                         var isRefreshing by remember { mutableStateOf(false) }
                         LaunchedEffect(latestGalleries.loadState.refresh) {
@@ -156,17 +154,16 @@ fun HomeScreen(
                         ) {
                             if (latestGalleries.loadState.refresh is LoadState.Error) {
                                 val error = (latestGalleries.loadState.refresh as LoadState.Error).error
-                                 ErrorScreen(
-                                     message = error.localizedMessage ?: "Network Error",
-                                     onRetry = { latestGalleries.retry() }
-                                 )
+                                ErrorScreen(
+                                    message = error.localizedMessage ?: "网络错误",
+                                    onRetry = { latestGalleries.retry() }
+                                )
                             } else {
                                 LazyVerticalStaggeredGrid(
-                                    columns = StaggeredGridCells.Fixed(2),
+                                    columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
                                     contentPadding = PaddingValues(12.dp),
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    // Reading History (header)
                                     if (readingHistory.isNotEmpty()) {
                                         item(span = StaggeredGridItemSpan.FullLine) {
                                             HistorySection(
@@ -175,7 +172,6 @@ fun HomeScreen(
                                                 thumbHost = thumbHost,
                                                 onHistoryClick = onNavigateToReader
                                             )
-                                            Spacer(modifier = Modifier.height(12.dp))
                                         }
                                     }
 
@@ -221,7 +217,6 @@ fun HomeScreen(
                         }
                     }
                     1 -> {
-                        // Popular tab
                         val pullRefreshState = rememberPullToRefreshState()
                         val isRefreshing = popularState is HomeViewModel.PopularState.Loading
 
@@ -241,26 +236,25 @@ fun HomeScreen(
                                     }
                                 }
                                 is HomeViewModel.PopularState.Error -> {
-                                     ErrorScreen(
-                                         message = state.message,
-                                         onRetry = { viewModel.loadPopularGalleries() }
-                                     )
+                                    ErrorScreen(
+                                        message = state.message,
+                                        onRetry = { viewModel.loadPopularGalleries() }
+                                    )
                                 }
                                 is HomeViewModel.PopularState.Success -> {
                                     LazyVerticalGrid(
-                                        columns = GridCells.Fixed(2),
+                                        columns = GridCells.Adaptive(minSize = 160.dp),
                                         contentPadding = PaddingValues(12.dp),
                                         modifier = Modifier.fillMaxSize()
                                     ) {
                                         if (readingHistory.isNotEmpty()) {
-                                            item(span = { GridItemSpan(2) }) {
+                                            item(span = { GridItemSpan(maxLineSpan) }) {
                                                 HistorySection(
                                                     historyList = readingHistory,
                                                     cdnHost = cdnHost,
                                                     thumbHost = thumbHost,
                                                     onHistoryClick = onNavigateToReader
                                                 )
-                                                Spacer(modifier = Modifier.height(12.dp))
                                             }
                                         }
 
@@ -295,10 +289,15 @@ fun HistorySection(
     onHistoryClick: (Int, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 4.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.History,
@@ -306,17 +305,18 @@ fun HistorySection(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
-            Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = "最近阅读",
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 6.dp)
             )
         }
 
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 4.dp)
+            contentPadding = PaddingValues(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(
                 items = historyList,
@@ -346,51 +346,45 @@ fun HistoryCard(
     }
     val imageUrl = "$host/galleries/${history.mediaId}/thumb.webp"
 
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-        ),
+    OutlinedCard(
+        shape = MaterialTheme.shapes.medium,
         modifier = modifier
             .width(260.dp)
-            .padding(end = 12.dp)
             .clickable { onClick() }
     ) {
-        Row(
-            modifier = Modifier.padding(8.dp)
-        ) {
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = history.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(width = 50.dp, height = 70.dp)
-                    .clip(RoundedCornerShape(4.dp))
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+        ListItem(
+            leadingContent = {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = history.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(width = 50.dp, height = 70.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                )
+            },
+            headlineContent = {
                 Text(
                     text = history.title,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
+                    overflow = TextOverflow.Ellipsis
                 )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
+            },
+            supportingContent = {
                 Text(
                     text = "第 ${history.lastReadPage} / ${history.totalPages} 页",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium
                 )
-            }
-        }
+            },
+            colors = ListItemDefaults.colors(
+                containerColor = Color.Transparent
+            )
+        )
     }
 }

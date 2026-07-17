@@ -51,17 +51,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.domain.model.SearchHistory
-import com.example.nhviewer.domain.model.Tag
 import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
@@ -72,7 +69,7 @@ import com.example.nhviewer.presentation.common.LoadingIndicator
 fun SearchScreen(
     onNavigateToDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SearchViewModel = viewModel()
+    viewModel: SearchViewModel = hiltViewModel()
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val active by viewModel.active.collectAsState()
@@ -117,7 +114,8 @@ fun SearchScreen(
                 TextButton(onClick = { showClearHistoryDialog = false }) {
                     Text("取消")
                 }
-            }
+            },
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
 
@@ -126,7 +124,6 @@ fun SearchScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Material 3 SearchBar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -158,14 +155,11 @@ fun SearchScreen(
                         }
                     }
                 },
-                colors = SearchBarDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
+                colors = SearchBarDefaults.colors(),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     if (searchQuery.isBlank()) {
-                        // Show Search History Section
                         if (searchHistory.isNotEmpty()) {
                             item {
                                 Row(
@@ -177,12 +171,12 @@ fun SearchScreen(
                                     Text(
                                         text = "历史记录",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
+                                        style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Spacer(modifier = Modifier.weight(1f))
                                     TextButton(onClick = { showClearHistoryDialog = true }) {
-                                        Text("清空全部", fontSize = 12.sp)
+                                        Text("清空全部", style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
                             }
@@ -203,13 +197,12 @@ fun SearchScreen(
                             }
                         }
                     } else {
-                        // Show Autocomplete Suggestions Section
                         if (autocompleteSuggestions.isNotEmpty()) {
                             item {
                                 Text(
                                     text = "搜索建议",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
+                                    style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                                 )
@@ -221,16 +214,15 @@ fun SearchScreen(
                             ) { tag ->
                                 ListItem(
                                     headlineContent = {
-                                        Text(text = tag.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(text = tag.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
                                     },
                                     supportingContent = {
-                                        Text(text = "类型: ${tag.type}  (${tag.count} 个画廊)")
+                                        Text(text = "类型: ${tag.type}  (${tag.count} 个画廊)", style = MaterialTheme.typography.bodySmall)
                                     },
                                     leadingContent = {
                                         Icon(
                                             imageVector = Icons.Default.Tag,
-                                            contentDescription = "Tag",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            contentDescription = "Tag"
                                         )
                                     },
                                     modifier = Modifier
@@ -247,9 +239,7 @@ fun SearchScreen(
             }
         }
 
-        // Search Results when search bar is not active
         if (!active) {
-            // Sort Header Row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -273,7 +263,7 @@ fun SearchScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = sortLabelMap[sortOption] ?: "排序",
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -296,7 +286,6 @@ fun SearchScreen(
                 }
             }
 
-            // Results grid
             Box(modifier = Modifier.fillMaxSize()) {
                 if (searchResults.loadState.refresh is LoadState.Loading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -312,7 +301,7 @@ fun SearchScreen(
                     EmptyState(message = "未找到匹配的画廊")
                 } else {
                     LazyVerticalStaggeredGrid(
-                        columns = StaggeredGridCells.Fixed(2),
+                        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
                         contentPadding = PaddingValues(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
@@ -377,14 +366,14 @@ fun SwipeToDeleteHistoryItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.error)
+                    .background(MaterialTheme.colorScheme.errorContainer)
                     .padding(horizontal = 24.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
         },
@@ -396,14 +385,14 @@ fun SwipeToDeleteHistoryItem(
                 Text(
                     text = history.query,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodyLarge
                 )
             },
             leadingContent = {
                 Icon(
                     imageVector = Icons.Default.History,
-                    contentDescription = "History",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    contentDescription = "History"
                 )
             },
             trailingContent = {
@@ -411,7 +400,6 @@ fun SwipeToDeleteHistoryItem(
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = "Remove single",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                         modifier = Modifier.size(16.dp)
                     )
                 }

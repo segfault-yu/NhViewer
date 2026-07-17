@@ -5,19 +5,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,11 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.nhviewer.domain.model.GalleryListItem
 
 @Composable
@@ -48,10 +46,10 @@ fun GalleryCard(
         "https://t.nhentai.net/${item.thumbnail}"
     }
 
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ElevatedCard(
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
         modifier = modifier
             .fillMaxWidth()
@@ -66,13 +64,16 @@ fun GalleryCard(
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 AsyncImage(
-                    model = imageUrl,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = item.englishTitle,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(ratio)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                        .clip(MaterialTheme.shapes.medium)
                 )
 
                 if (isFavorited) {
@@ -82,8 +83,8 @@ fun GalleryCard(
                             .padding(8.dp)
                             .size(28.dp)
                             .background(
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                                shape = androidx.compose.foundation.shape.CircleShape
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                shape = CircleShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -97,48 +98,46 @@ fun GalleryCard(
                 }
             }
 
-            Column(modifier = Modifier.padding(8.dp)) {
+            Column(
+                modifier = Modifier.padding(8.dp)
+            ) {
                 Text(
                     text = item.englishTitle,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     minLines = 2,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
-
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Description,
                         contentDescription = "Pages",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.width(14.dp).height(14.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "${item.numPages} P",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = " ${item.numPages} P",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, end = 12.dp)
                     )
-
-                    Spacer(modifier = Modifier.width(12.dp))
 
                     Icon(
                         imageVector = Icons.Default.Favorite,
                         contentDescription = "Favorites",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.width(14.dp).height(14.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = item.numFavorites.toString(),
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = " ${item.numFavorites}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp)
                     )
                 }
             }

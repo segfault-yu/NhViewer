@@ -15,7 +15,7 @@ class CommentRepositoryImpl @Inject constructor(
 ) : CommentRepository {
 
     override suspend fun getComments(galleryId: Int): Result<List<Comment>> = runCatchingCancelable {
-        api.getComments(galleryId).map { it.toDomain() }
+        api.getComments(galleryId).result.map { it.toDomain() }
     }
 
     override suspend fun postComment(

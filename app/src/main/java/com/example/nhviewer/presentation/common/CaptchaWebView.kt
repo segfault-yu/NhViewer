@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -73,11 +75,13 @@ fun CaptchaDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("人机验证") },
+        shape = MaterialTheme.shapes.extraLarge,
         text = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
+                    .padding(vertical = 8.dp)
             ) {
                 AndroidView(
                     factory = { context ->
@@ -85,7 +89,7 @@ fun CaptchaDialog(
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
                             // 设置标准移动端 Chrome User-Agent，防止 Cloudflare 识别为 WebView 机器人而直接重置连接
-                            settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+                            settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
                             
                             webViewClient = object : WebViewClient() {
                                 override fun shouldOverrideUrlLoading(
@@ -101,7 +105,7 @@ fun CaptchaDialog(
                                     handler: android.webkit.SslErrorHandler,
                                     error: android.net.http.SslError
                                 ) {
-                                    // 允许在开发/模拟器环境下忽略证书过期/无效等错误，确保人机验证正常加载
+                                    // 允许在开发/模拟器环境下忽略证书过期
                                     handler.proceed()
                                 }
                             }
