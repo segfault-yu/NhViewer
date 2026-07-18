@@ -19,14 +19,15 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.nhviewer.domain.model.ReadingHistory
 import com.example.nhviewer.presentation.feature.home.HomeViewModel
 import com.example.nhviewer.presentation.navigation.AppDrawerContent
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -40,12 +41,17 @@ import javax.inject.Inject
 import com.example.nhviewer.data.local.SettingsManager
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.isSystemInDarkTheme
+import com.example.nhviewer.domain.model.AuthEvent
+import com.example.nhviewer.domain.repository.UserRepository
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var settingsManager: SettingsManager
+
+    @Inject
+    lateinit var userRepository: UserRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,20 +70,43 @@ class MainActivity : ComponentActivity() {
                 darkTheme = isDarkTheme,
                 dynamicColor = dynamicColor
             ) {
-                NhViewerApp()
+                NhViewerApp(userRepository = userRepository)
             }
         }
     }
 }
 
 @Composable
-fun NhViewerApp() {
+fun NhViewerApp(userRepository: UserRepository) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    LaunchedEffect(key1 = true) {
+        userRepository.authEvents.collect { event ->
+            when (event) {
+                is AuthEvent.SessionExpired -> {
+                    val currentRoute = currentDestination?.route
+                    val needsAuth = currentRoute != null && (
+                        currentRoute.contains("Route.Favorites") ||
+                        currentRoute.contains("Route.Sessions") ||
+                        currentRoute.contains("Route.ApiKeys") ||
+                        currentRoute.contains("Route.Profile")
+                    )
+                    if (needsAuth) {
+                        android.widget.Toast.makeText(context, "您的登录信息已过期，请重新登录", android.widget.Toast.LENGTH_SHORT).show()
+                        navController.navigate(Route.Auth) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,

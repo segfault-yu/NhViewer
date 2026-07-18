@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.graphics.luminance
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -26,9 +27,9 @@ fun CaptchaDialog(
     onSuccess: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // 使用 Turnstile 官方的显式渲染方式：
-    // 1. 先定义全局回调函数 onTurnstileCallback，再通过 onload 参数告知 Turnstile
-    // 2. 避免 async/defer 引起的 window.onload 时 turnstile 对象未就绪问题
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val themeModeStr = if (isDark) "dark" else "light"
+
     val htmlContent = """
         <!DOCTYPE html>
         <html>
@@ -38,11 +39,14 @@ fun CaptchaDialog(
                 body {
                     display: flex;
                     justify-content: center;
-                    align-items: center;
-                    height: 100vh;
+                    align-items: flex-start;
                     margin: 0;
-                    background-color: #121212;
-                    color: #ffffff;
+                    padding: 0;
+                    background-color: transparent;
+                    overflow: hidden;
+                }
+                #turnstile-container {
+                    margin-top: 25px;
                 }
             </style>
         </head>
@@ -64,7 +68,7 @@ fun CaptchaDialog(
                     turnstile.render('#turnstile-container', {
                         sitekey: '$siteKey',
                         callback: onTurnstileCallback,
-                        theme: 'dark'
+                        theme: '$themeModeStr'
                     });
                 }
             </script>
@@ -80,15 +84,15 @@ fun CaptchaDialog(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .height(150.dp)
                     .padding(vertical = 8.dp)
             ) {
                 AndroidView(
                     factory = { context ->
                         WebView(context).apply {
+                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
-                            // 设置标准移动端 Chrome User-Agent，防止 Cloudflare 识别为 WebView 机器人而直接重置连接
                             settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
                             
                             webViewClient = object : WebViewClient() {
@@ -105,7 +109,6 @@ fun CaptchaDialog(
                                     handler: android.webkit.SslErrorHandler,
                                     error: android.net.http.SslError
                                 ) {
-                                    // 允许在开发/模拟器环境下忽略证书过期
                                     handler.proceed()
                                 }
                             }
@@ -115,7 +118,6 @@ fun CaptchaDialog(
                                     post { onSuccess(token) }
                                 }
                             }, "AndroidCaptcha")
-                            // historyUrl 指定为 baseUrl，防止 null 导致回退导航异常
                             loadDataWithBaseURL(
                                 "https://nhentai.net/",
                                 htmlContent,

@@ -6,10 +6,13 @@ import com.example.nhviewer.domain.model.ApiKey
 import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.domain.model.User
 import com.example.nhviewer.domain.model.UserSession
+import com.example.nhviewer.domain.model.AuthEvent
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharedFlow
 
 interface UserRepository {
     val authState: StateFlow<AuthState>
+    val authEvents: SharedFlow<AuthEvent>
 
     suspend fun login(
         username: String,

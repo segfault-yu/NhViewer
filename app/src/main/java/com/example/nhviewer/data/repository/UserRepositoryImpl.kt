@@ -9,8 +9,10 @@ import com.example.nhviewer.domain.model.User
 import com.example.nhviewer.domain.model.UserSession
 import com.example.nhviewer.domain.repository.UserRepository
 import com.example.nhviewer.util.runCatchingCancelable
+import com.example.nhviewer.domain.model.AuthEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +29,7 @@ class UserRepositoryImpl @Inject constructor(
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.LoggedOut)
     override val authState: StateFlow<AuthState> = _authState.asStateFlow()
+    override val authEvents: SharedFlow<AuthEvent> = tokenManager.authEvents
 
     init {
         CoroutineScope(Dispatchers.IO).launch {

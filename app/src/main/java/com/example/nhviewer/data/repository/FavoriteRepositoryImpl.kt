@@ -50,7 +50,7 @@ class FavoriteRepositoryImpl @Inject constructor(
             }
 
             // Cleanup local DB on page 1: if an item is SYNCED in DB but not returned in page 1 and not present in newer pages (or simple purge),
-            // we can clean up local synced entries that are no longer in favorites.
+            // Cleanup local DB on page 1
             if (page == 1) {
                 val apiIds = items.map { it.id }.toSet()
                 val cachedSynced = dao.getFavoritesBySyncStatus(0)

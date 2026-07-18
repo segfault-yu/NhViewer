@@ -8,6 +8,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import com.example.nhviewer.domain.model.AuthEvent
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,6 +33,9 @@ class TokenManager @Inject constructor(
 
     private val _accessTokenFlow = MutableStateFlow<String?>(getAccessToken())
     val accessTokenFlow: StateFlow<String?> = _accessTokenFlow.asStateFlow()
+
+    private val _authEvents = MutableSharedFlow<AuthEvent>(extraBufferCapacity = 64)
+    val authEvents: SharedFlow<AuthEvent> = _authEvents.asSharedFlow()
 
     private fun deleteMasterKeyEntry() {
         try {
@@ -88,5 +95,9 @@ class TokenManager @Inject constructor(
             .remove("expires_at")
             .apply()
         _accessTokenFlow.value = null
+    }
+
+    fun emitSessionExpired() {
+        _authEvents.tryEmit(AuthEvent.SessionExpired)
     }
 }

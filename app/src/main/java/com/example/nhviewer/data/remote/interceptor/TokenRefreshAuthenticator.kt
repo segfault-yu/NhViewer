@@ -3,7 +3,6 @@ package com.example.nhviewer.data.remote.interceptor
 import com.example.nhviewer.data.local.TokenManager
 import com.example.nhviewer.data.remote.AuthApi
 import com.example.nhviewer.data.remote.dto.TokenRefreshRequest
-import dagger.Lazy
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,7 +16,7 @@ import javax.inject.Singleton
 @Singleton
 class TokenRefreshAuthenticator @Inject constructor(
     private val tokenManager: TokenManager,
-    private val authApiLazy: Lazy<AuthApi>
+    private val authApi: AuthApi
 ) : Authenticator {
 
     private val mutex = Mutex()
@@ -36,7 +35,10 @@ class TokenRefreshAuthenticator @Inject constructor(
 
         return runBlocking {
             mutex.withLock {
-                val newAccessToken = tokenManager.getAccessToken() ?: ""
+                val newAccessToken = tokenManager.getAccessToken()
+                if (newAccessToken.isNullOrBlank()) {
+                    return@runBlocking null
+                }
                 val currentTokenNow = "Bearer $newAccessToken"
 
                 if (requestToken != currentTokenNow) {
@@ -46,7 +48,6 @@ class TokenRefreshAuthenticator @Inject constructor(
                 }
 
                 try {
-                    val authApi = authApiLazy.get()
                     val refreshResponse = authApi.refresh(TokenRefreshRequest(refreshToken))
                     tokenManager.saveTokens(
                         accessToken = refreshResponse.accessToken,
@@ -58,6 +59,7 @@ class TokenRefreshAuthenticator @Inject constructor(
                 } catch (e: retrofit2.HttpException) {
                     if (e.code() in 400..403) {
                         tokenManager.clearTokens()
+                        tokenManager.emitSessionExpired()
                     }
                     null
                 } catch (e: Exception) {

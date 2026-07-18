@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,6 +48,96 @@ class AuthViewModel @Inject constructor(
     // 保留 challenge 原文和解算出的 nonce，提交时一并回传给服务端
     private var powChallenge: String = ""
     private var powNonce: String = ""
+
+    sealed interface PrefetchState<out T> {
+        object Idle : PrefetchState<Nothing>
+        object Loading : PrefetchState<Nothing>
+        data class Success<out T>(val data: T) : PrefetchState<T>
+        data class Failure(val error: Throwable) : PrefetchState<Nothing>
+    }
+
+    data class PrefetchedPow(
+        val challenge: String,
+        val nonce: String
+    )
+
+    private val powPrefetchMap = mapOf(
+        "login" to MutableStateFlow<PrefetchState<PrefetchedPow>>(PrefetchState.Idle),
+        "register" to MutableStateFlow<PrefetchState<PrefetchedPow>>(PrefetchState.Idle),
+        "reset" to MutableStateFlow<PrefetchState<PrefetchedPow>>(PrefetchState.Idle)
+    )
+
+    private val captchaPrefetchState = MutableStateFlow<PrefetchState<String>>(PrefetchState.Idle)
+
+    init {
+        prefetchSecurityConfigs()
+    }
+
+    fun prefetchSecurityConfigs() {
+        prefetchPow("login")
+        prefetchPow("register")
+        prefetchPow("reset")
+        prefetchCaptcha()
+    }
+
+    private fun prefetchPow(action: String) {
+        val flow = powPrefetchMap[action] ?: return
+        if (flow.value is PrefetchState.Loading || flow.value is PrefetchState.Success) return
+
+        viewModelScope.launch {
+            flow.value = PrefetchState.Loading
+            getPowChallengeUseCase(action).onSuccess { powDto ->
+                try {
+                    val nonce = PowSolver.solve(powDto.challenge, powDto.difficulty)
+                    flow.value = PrefetchState.Success(PrefetchedPow(powDto.challenge, nonce))
+                } catch (e: Exception) {
+                    flow.value = PrefetchState.Failure(e)
+                }
+            }.onFailure {
+                flow.value = PrefetchState.Failure(it)
+            }
+        }
+    }
+
+    private fun prefetchCaptcha() {
+        if (captchaPrefetchState.value is PrefetchState.Loading || captchaPrefetchState.value is PrefetchState.Success) return
+
+        viewModelScope.launch {
+            captchaPrefetchState.value = PrefetchState.Loading
+            getCaptchaConfigUseCase().onSuccess { captchaDto ->
+                captchaPrefetchState.value = PrefetchState.Success(captchaDto.siteKey)
+            }.onFailure {
+                captchaPrefetchState.value = PrefetchState.Failure(it)
+            }
+        }
+    }
+
+    private fun resetPrefetch(action: String) {
+        powPrefetchMap[action]?.value = PrefetchState.Idle
+        prefetchPow(action)
+    }
+
+    private fun resetCaptchaPrefetch() {
+        captchaPrefetchState.value = PrefetchState.Idle
+        prefetchCaptcha()
+    }
+
+    private suspend fun waitForPowSuccess(action: String): PrefetchedPow {
+        val flow = powPrefetchMap[action] ?: throw Exception("未知的操作类型")
+        val resultState = flow.filter { it is PrefetchState.Success || it is PrefetchState.Failure }.first()
+        if (resultState is PrefetchState.Failure) {
+            throw resultState.error
+        }
+        return (resultState as PrefetchState.Success).data
+    }
+
+    private suspend fun waitForCaptchaSuccess(): String {
+        val resultState = captchaPrefetchState.filter { it is PrefetchState.Success || it is PrefetchState.Failure }.first()
+        if (resultState is PrefetchState.Failure) {
+            throw resultState.error
+        }
+        return (resultState as PrefetchState.Success).data
+    }
 
     sealed interface AuthUiEvent {
         data object Success : AuthUiEvent
@@ -98,28 +190,37 @@ class AuthViewModel @Inject constructor(
 
     private fun executeFlow(action: String) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _powStatus.value = "获取 PoW 挑战配置..."
+            val powFlow = powPrefetchMap[action] ?: return@launch
+            val captchaFlow = captchaPrefetchState
 
-            getPowChallengeUseCase(action).onSuccess { powDto ->
-                _powStatus.value = "解算 PoW 工作量碰撞中..."
-                // 保存 challenge 原文，服务端需要在提交时回传它
-                powChallenge = powDto.challenge
-                powNonce = PowSolver.solve(powDto.challenge, powDto.difficulty)
+            if (powFlow.value is PrefetchState.Failure || powFlow.value is PrefetchState.Idle) {
+                prefetchPow(action)
+            }
+            if (captchaFlow.value is PrefetchState.Failure || captchaFlow.value is PrefetchState.Idle) {
+                prefetchCaptcha()
+            }
 
-                _powStatus.value = "获取验证码安全校验项..."
-                getCaptchaConfigUseCase().onSuccess { captchaDto ->
-                    _powStatus.value = "等待进行人机验证..."
-                    _captchaSiteKey.value = captchaDto.siteKey
-                }.onFailure {
-                    _isLoading.value = false
-                    _powStatus.value = "Idle"
-                    emitError("获取 CAPTCHA 配置失败: ${it.localizedMessage}")
-                }
-            }.onFailure {
+            val isAlreadySuccess = powFlow.value is PrefetchState.Success && captchaFlow.value is PrefetchState.Success
+            
+            if (!isAlreadySuccess) {
+                _isLoading.value = true
+                _powStatus.value = "正在准备安全验证..."
+            }
+
+            try {
+                val powData = waitForPowSuccess(action)
+                val captchaSiteKeyVal = waitForCaptchaSuccess()
+
+                powChallenge = powData.challenge
+                powNonce = powData.nonce
+
+                _isLoading.value = false
+                _captchaSiteKey.value = captchaSiteKeyVal
+            } catch (e: Exception) {
                 _isLoading.value = false
                 _powStatus.value = "Idle"
-                emitError("获取 PoW 挑战失败: ${it.localizedMessage}")
+                emitError("准备安全校验失败: ${e.localizedMessage}")
+                resetPrefetch(action)
             }
         }
     }
@@ -127,9 +228,19 @@ class AuthViewModel @Inject constructor(
     fun onCaptchaSuccess(captchaResponse: String) {
         _captchaSiteKey.value = null
         _powStatus.value = "正在提交凭据..."
+        _isLoading.value = true
 
         viewModelScope.launch {
-            val result = when (val action = pendingAction) {
+            val action = pendingAction
+            val actionStr = when (action) {
+                is PendingAuthAction.Login -> "login"
+                is PendingAuthAction.Register -> "register"
+                is PendingAuthAction.ResetPassword -> "reset"
+                is PendingAuthAction.ConfirmReset -> "reset"
+                null -> null
+            }
+
+            val result = when (action) {
                 is PendingAuthAction.Login -> {
                     loginUseCase(
                         action.username, action.password,
@@ -163,6 +274,11 @@ class AuthViewModel @Inject constructor(
             powChallenge = ""
             powNonce = ""
 
+            if (actionStr != null) {
+                resetPrefetch(actionStr)
+            }
+            resetCaptchaPrefetch()
+
             result.onSuccess {
                 _uiEvent.emit(AuthUiEvent.Success)
             }.onFailure {
@@ -175,9 +291,20 @@ class AuthViewModel @Inject constructor(
         _captchaSiteKey.value = null
         _isLoading.value = false
         _powStatus.value = "Idle"
+        val action = pendingAction
         pendingAction = null
         powChallenge = ""
         powNonce = ""
+
+        if (action != null) {
+            val actionStr = when (action) {
+                is PendingAuthAction.Login -> "login"
+                is PendingAuthAction.Register -> "register"
+                is PendingAuthAction.ResetPassword -> "reset"
+                is PendingAuthAction.ConfirmReset -> "reset"
+            }
+            resetPrefetch(actionStr)
+        }
     }
 
     private fun emitError(msg: String) {
