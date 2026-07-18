@@ -85,8 +85,7 @@ fun GalleryCard(
         "https://t.nhentai.net/${item.thumbnail}"
     }
 
-    val uploadDateSec = item.uploadDate ?: estimateUploadDate(item.id)
-    val dateText = uploadDateSec.let {
+    val dateText = item.uploadDate?.let {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         sdf.format(Date(it * 1000))
     }
@@ -237,37 +236,6 @@ fun GalleryCard(
     }
 }
 
-private fun estimateUploadDate(id: Int): Long {
-    val points = listOf(
-        1 to 1388534400L,        // 2014-01-01
-        120000 to 1420070400L,   // 2015-01-01
-        150000 to 1451606400L,   // 2016-01-01
-        180000 to 1483228800L,   // 2017-01-01
-        210000 to 1514736000L,   // 2018-01-01
-        260000 to 1546300800L,   // 2019-01-01
-        300000 to 1577836800L,   // 2020-01-01
-        340000 to 1609459200L,   // 2021-01-01
-        390000 to 1640995200L,   // 2022-01-01
-        440000 to 1672531200L,   // 2023-01-01
-        490000 to 1704067200L,   // 2024-01-01
-        550000 to 1735689600L,   // 2025-01-01
-        620000 to 1767225600L,   // 2026-01-01
-        700000 to 1784300000L    // 2026-07-18
-    )
-    
-    if (id <= points.first().first) return points.first().second
-    if (id >= points.last().first) return points.last().second
-    
-    for (i in 0 until points.size - 1) {
-        val p1 = points[i]
-        val p2 = points[i + 1]
-        if (id in p1.first..p2.first) {
-            val fraction = (id - p1.first).toDouble() / (p2.first - p1.first)
-            return p1.second + (fraction * (p2.second - p1.second)).toLong()
-        }
-    }
-    return points.last().second
-}
 
 @Composable
 fun RelatedGalleryCard(
@@ -283,8 +251,7 @@ fun RelatedGalleryCard(
         "https://t.nhentai.net/${item.thumbnail}"
     }
 
-    val uploadDateSec = item.uploadDate ?: estimateUploadDate(item.id)
-    val dateText = uploadDateSec.let {
+    val dateText = item.uploadDate?.let {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         sdf.format(Date(it * 1000))
     }
