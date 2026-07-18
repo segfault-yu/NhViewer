@@ -85,6 +85,11 @@ fun GalleryCard(
         "https://t.nhentai.net/${item.thumbnail}"
     }
 
+    val dateText = item.uploadDate?.let {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        sdf.format(Date(it * 1000))
+    }
+
     ElevatedCard(
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.elevatedCardColors(
@@ -159,7 +164,7 @@ fun GalleryCard(
                 }
                 
                 val matchedTags = item.tagIds.mapNotNull { COMMON_TAGS_MAP[it] }.take(4)
-                if (matchedTags.isNotEmpty()) {
+                if (matchedTags.isNotEmpty() || dateText != null) {
                     Spacer(modifier = Modifier.height(6.dp))
                     @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(
@@ -171,6 +176,18 @@ fun GalleryCard(
                             SuggestionChip(
                                 onClick = {},
                                 label = { Text(tagName, style = MaterialTheme.typography.labelSmall) },
+                                colors = SuggestionChipDefaults.suggestionChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                border = null,
+                                modifier = Modifier.height(24.dp)
+                            )
+                        }
+                        if (dateText != null) {
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text(dateText, style = MaterialTheme.typography.labelSmall) },
                                 colors = SuggestionChipDefaults.suggestionChipColors(
                                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                     labelColor = MaterialTheme.colorScheme.onSurfaceVariant
