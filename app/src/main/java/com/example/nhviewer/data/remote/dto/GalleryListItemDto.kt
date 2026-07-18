@@ -30,7 +30,8 @@ data class GalleryListItemDto(
     @SerialName("num_pages") val numPages: Int,
     @SerialName("num_favorites") val numFavorites: Int,
     @SerialName("tag_ids") val tagIds: List<Int> = emptyList(),
-    @SerialName("blacklisted") val blacklisted: Boolean = false
+    @SerialName("blacklisted") val blacklisted: Boolean = false,
+    @SerialName("upload_date") val uploadDate: Long? = null
 )
 
 fun GalleryListItemDto.toDomain(): GalleryListItem = GalleryListItem(
@@ -44,5 +45,6 @@ fun GalleryListItemDto.toDomain(): GalleryListItem = GalleryListItem(
     numPages = numPages,
     numFavorites = numFavorites,
     tagIds = tagIds,
-    blacklisted = blacklisted
+    blacklisted = blacklisted,
+    uploadDate = uploadDate
 )

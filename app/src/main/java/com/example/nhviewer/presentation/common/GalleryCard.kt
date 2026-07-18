@@ -39,6 +39,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.nhviewer.domain.model.GalleryListItem
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val COMMON_TAGS_MAP = mapOf(
     29963 to "Chinese",
@@ -230,6 +233,11 @@ fun RelatedGalleryCard(
         "https://t.nhentai.net/${item.thumbnail}"
     }
 
+    val dateText = item.uploadDate?.let {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        sdf.format(Date(it * 1000))
+    }
+
     ElevatedCard(
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.elevatedCardColors(
@@ -268,6 +276,20 @@ fun RelatedGalleryCard(
                     minLines = 2,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+
+                if (dateText != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text(dateText, style = MaterialTheme.typography.labelSmall) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        border = null,
+                        modifier = Modifier.height(24.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(4.dp))
 

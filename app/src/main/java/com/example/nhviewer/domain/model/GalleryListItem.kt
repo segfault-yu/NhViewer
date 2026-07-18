@@ -11,5 +11,6 @@ data class GalleryListItem(
     val numPages: Int,
     val numFavorites: Int,
     val tagIds: List<Int>,
-    val blacklisted: Boolean
+    val blacklisted: Boolean,
+    val uploadDate: Long? = null
 )
