@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import com.example.nhviewer.util.NetworkErrorParser
 import javax.inject.Inject
@@ -68,13 +69,35 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun loadGallery(galleryId: Int, startPage: Int) {
-        if (currentDetail?.id == galleryId) return // Avoid reload on rotation
+        if (currentDetail?.id == galleryId) {
+            if (_currentPage.value != startPage) {
+                _currentPage.value = startPage
+            }
+            return // Avoid reload on rotation
+        }
         
         viewModelScope.launch {
             _detailState.value = ReaderUiState.Loading
             _currentPage.value = startPage
 
-            getGalleryDetailUseCase(galleryId, includeRelated = false)
+            // 并发拉取 cdnConfig 和 galleryDetail，确保 UI 收到 Success 时 CDN config 已就绪，根除域名闪烁
+            val cdnDeferred = async {
+                if (_cdnConfig.value == null) {
+                    getCdnConfigUseCase().getOrNull()
+                } else {
+                    _cdnConfig.value
+                }
+            }
+            val detailDeferred = async {
+                getGalleryDetailUseCase(galleryId, includeRelated = false)
+            }
+
+            val cdn = cdnDeferred.await()
+            if (cdn != null) {
+                _cdnConfig.value = cdn
+            }
+
+            detailDeferred.await()
                 .onSuccess { detail ->
                     currentDetail = detail
                     _detailState.value = ReaderUiState.Success(detail)

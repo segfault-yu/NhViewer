@@ -57,6 +57,62 @@ class SettingsViewModel @Inject constructor(
             initialValue = false
         )
 
+    val imageScaleMode: StateFlow<String> = settingsManager.imageScaleMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "fit_screen"
+        )
+
+    val readerBackground: StateFlow<String> = settingsManager.readerBackground
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "default"
+        )
+
+    val secureMode: StateFlow<Boolean> = settingsManager.secureMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
+    val readerBrightness: StateFlow<Float> = settingsManager.readerBrightness
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = -1f
+        )
+
+    val colorFilterMode: StateFlow<String> = settingsManager.colorFilterMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "none"
+        )
+
+    val colorFilterAlpha: StateFlow<Float> = settingsManager.colorFilterAlpha
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0.3f
+        )
+
+    val pageTransitionAnim: StateFlow<Boolean> = settingsManager.pageTransitionAnim
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    val showPersistentPageNumber: StateFlow<Boolean> = settingsManager.showPersistentPageNumber
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
             settingsManager.setThemeMode(mode)
@@ -90,6 +146,54 @@ class SettingsViewModel @Inject constructor(
     fun setKeepScreenOn(enabled: Boolean) {
         viewModelScope.launch {
             settingsManager.setKeepScreenOn(enabled)
+        }
+    }
+
+    fun setImageScaleMode(mode: String) {
+        viewModelScope.launch {
+            settingsManager.setImageScaleMode(mode)
+        }
+    }
+
+    fun setReaderBackground(background: String) {
+        viewModelScope.launch {
+            settingsManager.setReaderBackground(background)
+        }
+    }
+
+    fun setSecureMode(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsManager.setSecureMode(enabled)
+        }
+    }
+
+    fun setReaderBrightness(brightness: Float) {
+        viewModelScope.launch {
+            settingsManager.setReaderBrightness(brightness)
+        }
+    }
+
+    fun setColorFilterMode(mode: String) {
+        viewModelScope.launch {
+            settingsManager.setColorFilterMode(mode)
+        }
+    }
+
+    fun setColorFilterAlpha(alpha: Float) {
+        viewModelScope.launch {
+            settingsManager.setColorFilterAlpha(alpha)
+        }
+    }
+
+    fun setPageTransitionAnim(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsManager.setPageTransitionAnim(enabled)
+        }
+    }
+
+    fun setShowPersistentPageNumber(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsManager.setShowPersistentPageNumber(enabled)
         }
     }
 }

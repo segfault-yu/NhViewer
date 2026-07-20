@@ -554,26 +554,36 @@ fun TagGroupSection(
         "tag" to "标签 (Tag)"
     )
 
+    // 分类顺序
+    val targetOrder = listOf("parody", "character", "artist", "group", "language", "category", "tag")
+    val orderedTypes = groupedTags.keys.sortedWith(compareBy<String> {
+        val index = targetOrder.indexOf(it.lowercase())
+        if (index == -1) Int.MAX_VALUE else index
+    })
+
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier.fillMaxWidth()
     ) {
-        groupedTags.forEach { (type, tagList) ->
+        orderedTypes.forEach { type ->
+            val tagList = groupedTags[type] ?: emptyList()
+            // 标签组内排序：按 count 降序、名称升序
+            val sortedTagList = tagList.sortedWith(compareByDescending<Tag> { it.count }.thenBy { it.name })
             val displayName = displayNames[type.lowercase()] ?: type.uppercase()
             Column {
                 Text(
                     text = displayName,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 6.dp)
                 )
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    tagList.forEach { tag ->
+                    sortedTagList.forEach { tag ->
                         TagChip(
                             tag = tag,
                             onClick = { onTagClick(tag) }

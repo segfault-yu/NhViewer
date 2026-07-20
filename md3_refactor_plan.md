@@ -378,7 +378,7 @@ grep -rn "Color\.Black\|Color\.White" app/src/main/java/com/example/nhviewer/pre
 9. ProfileScreen (已登录)
 10. BlacklistScreen
 
-#### 4.3 动效最终检查
+#### 4.3 动效最终检查1
 
 - 图片 `crossfade` 在弱网（模拟 3G）下是否可见
 - `animateContentSize` 是否在标签展开/折叠时触发

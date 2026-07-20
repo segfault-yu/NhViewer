@@ -87,6 +87,7 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+    implementation(libs.telephoto.zoomable.image.coil)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

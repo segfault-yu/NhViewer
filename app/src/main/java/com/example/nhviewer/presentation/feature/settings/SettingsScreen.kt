@@ -94,6 +94,7 @@ fun SettingsScreen(
     val defaultDownloadFormat by viewModel.defaultDownloadFormat.collectAsState()
     val dynamicColor by viewModel.dynamicColor.collectAsState()
     val keepScreenOn by viewModel.keepScreenOn.collectAsState()
+    val secureMode by viewModel.secureMode.collectAsState()
 
     var showDownloadFormatDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
@@ -407,6 +408,30 @@ fun SettingsScreen(
                     )
                 },
                 modifier = Modifier.clickable { viewModel.setKeepScreenOn(!keepScreenOn) }
+            )
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = "安全模式",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = "开启后阅读页面禁止截图并隐藏近期任务预览",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingContent = { Icon(Icons.AutoMirrored.Filled.ChromeReaderMode, contentDescription = null) },
+                trailingContent = {
+                    Switch(
+                        checked = secureMode,
+                        onCheckedChange = { viewModel.setSecureMode(it) }
+                    )
+                },
+                modifier = Modifier.clickable { viewModel.setSecureMode(!secureMode) }
             )
 
             SettingsCategoryHeader(title = "外观与显示")

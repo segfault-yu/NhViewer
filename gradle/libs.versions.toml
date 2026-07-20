@@ -21,6 +21,7 @@ kotlinxSerializationJson = "1.7.3"
 retrofitKotlinxSerializationConverter = "1.0.0"
 paging = "3.3.5"
 coil = "2.6.0"
+telephoto = "0.19.0"
 ksp = "2.2.10-2.0.2"
 
 
@@ -56,6 +57,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+telephoto-zoomable-image-coil = { group = "me.saket.telephoto", name = "zoomable-image-coil", version.ref = "telephoto" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 

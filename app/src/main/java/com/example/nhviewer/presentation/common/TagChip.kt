@@ -12,7 +12,8 @@ import com.example.nhviewer.domain.model.Tag
 fun TagChip(
     tag: Tag,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showCount: Boolean = false
 ) {
     // 依据用户决策 B，将标签类型缩减映射到 3 类 M3 标准语义色容器上
     val (containerColor, labelColor) = when (tag.type.lowercase()) {
@@ -31,7 +32,7 @@ fun TagChip(
         onClick = onClick,
         label = {
             Text(
-                text = "${tag.name} (${tag.count})",
+                text = if (showCount) "${tag.name} (${tag.count})" else tag.name,
                 style = MaterialTheme.typography.labelMedium
             )
         },
@@ -40,6 +41,7 @@ fun TagChip(
             containerColor = containerColor,
             labelColor = labelColor
         ),
+        border = null,
         modifier = modifier
     )
 }

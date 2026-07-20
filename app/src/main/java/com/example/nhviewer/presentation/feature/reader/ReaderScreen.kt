@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import android.view.WindowManager
@@ -38,6 +40,7 @@ import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -58,12 +61,42 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.imageLoader
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import com.example.nhviewer.domain.model.GalleryDetail
+import com.example.nhviewer.domain.model.PageInfo
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.withSaveLayer
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.math.absoluteValue
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.Arrangement
+import me.saket.telephoto.zoomable.zoomable
+import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
+import me.saket.telephoto.zoomable.rememberZoomableState
+import me.saket.telephoto.zoomable.rememberZoomableImageState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.LoadingIndicator
 
@@ -78,13 +111,20 @@ fun ReaderScreen(
 ) {
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val readerDirection by settingsViewModel.readerDirection.collectAsState()
+    val readerBackground by settingsViewModel.readerBackground.collectAsState()
     val keepScreenOn by settingsViewModel.keepScreenOn.collectAsState()
+    val secureMode by settingsViewModel.secureMode.collectAsState()
+    val readerBrightness by settingsViewModel.readerBrightness.collectAsState()
+    val colorFilterMode by settingsViewModel.colorFilterMode.collectAsState()
+    val colorFilterAlpha by settingsViewModel.colorFilterAlpha.collectAsState()
+    val pageTransitionAnim by settingsViewModel.pageTransitionAnim.collectAsState()
+    var isOrientationLocked by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val detailState by viewModel.detailState.collectAsState()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     val currentPage by viewModel.currentPage.collectAsState()
-    val isScrollMode by viewModel.isScrollMode.collectAsState()
+    val isScrollMode = (readerDirection == "vertical")
 
     DisposableEffect(keepScreenOn) {
         val activity = context as? Activity
@@ -99,18 +139,68 @@ fun ReaderScreen(
         }
     }
 
-    val cdnHost = cdnConfig?.primaryImageHost ?: ""
-
-    // 沉浸式全屏支持（隐去状态栏与导航栏）
-    DisposableEffect(Unit) {
+    DisposableEffect(secureMode) {
         val activity = context as? Activity
         val window = activity?.window
         if (window != null) {
-            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-            insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+            if (secureMode) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            } else {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
         }
         onDispose {
+            if (window != null) {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        }
+    }
+
+    DisposableEffect(readerBrightness) {
+        val activity = context as? Activity
+        val window = activity?.window
+        if (window != null) {
+            val lp = window.attributes
+            if (readerBrightness >= 0f) {
+                lp.screenBrightness = readerBrightness
+            } else {
+                lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            }
+            window.attributes = lp
+        }
+        onDispose {
+            if (window != null) {
+                val lp = window.attributes
+                lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                window.attributes = lp
+            }
+        }
+    }
+
+    DisposableEffect(isOrientationLocked) {
+        val activity = context as? Activity
+        if (activity != null && isOrientationLocked) {
+            val currentOrientation = activity.resources.configuration.orientation
+            if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            } else {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            }
+        } else {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    val cdnHost = cdnConfig?.primaryImageHost ?: ""
+
+    // 退出阅读器时恢复系统状态栏与导航栏
+    DisposableEffect(Unit) {
+        onDispose {
+            val activity = context as? Activity
+            val window = activity?.window
             if (window != null) {
                 val insetsController = WindowCompat.getInsetsController(window, window.decorView)
                 insetsController.show(WindowInsetsCompat.Type.systemBars())
@@ -123,10 +213,17 @@ fun ReaderScreen(
         viewModel.loadGallery(galleryId, startPage)
     }
 
+    val backgroundColor = when (readerBackground) {
+        "amoled" -> androidx.compose.ui.graphics.Color.Black
+        "dark_gray" -> androidx.compose.ui.graphics.Color(0xFF1C1C1E)
+        "white" -> androidx.compose.ui.graphics.Color.White
+        else -> MaterialTheme.colorScheme.background
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(backgroundColor)
     ) {
         when (val state = detailState) {
             is ReaderViewModel.ReaderUiState.Loading -> {
@@ -143,10 +240,8 @@ fun ReaderScreen(
             is ReaderViewModel.ReaderUiState.Success -> {
                 val detail = state.detail
 
-                // 图片预加载
+                // 预加载逻辑：防抖、无 OOM 风险、且在取消时自动 disposal 以释放带宽
                 LaunchedEffect(currentPage, cdnHost) {
-                    delay(300)
-
                     val loader = context.imageLoader
                     val pages = detail.pages
                     val hosts = if (cdnHost.isNotEmpty()) {
@@ -155,33 +250,52 @@ fun ReaderScreen(
                         "https://i.nhentai.net"
                     }
 
-                    val immediateRange = listOf(currentPage - 1, currentPage + 1)
-                    for (p in immediateRange) {
-                        if (p in 1..detail.numPages) {
-                            val path = pages.find { it.number == p }?.path
-                            if (path != null) {
-                                val url = "$hosts/$path"
-                                val request = ImageRequest.Builder(context)
-                                    .data(url)
-                                    .build()
-                                loader.enqueue(request)
-                            }
-                        }
-                    }
+                    val disposables = mutableListOf<coil.request.Disposable>()
 
-                    delay(300)
-                    val outerRange = listOf(currentPage - 2, currentPage + 2)
-                    for (p in outerRange) {
-                        if (p in 1..detail.numPages) {
-                            val path = pages.find { it.number == p }?.path
-                            if (path != null) {
-                                val url = "$hosts/$path"
-                                val request = ImageRequest.Builder(context)
-                                    .data(url)
-                                    .build()
-                                loader.enqueue(request)
+                    try {
+                        delay(300)
+
+                        // 1. 预加载前后各 1 页
+                        val immediateRange = listOf(currentPage - 1, currentPage + 1)
+                        for (p in immediateRange) {
+                            if (p in 1..detail.numPages) {
+                                val page = pages.getOrNull(p - 1)
+                                if (page != null) {
+                                    val url = "$hosts/${page.path}"
+                                    val request = ImageRequest.Builder(context)
+                                        .data(url)
+                                        .memoryCachePolicy(CachePolicy.DISABLED)
+                                        .diskCachePolicy(CachePolicy.ENABLED)
+                                        .build()
+                                    val disposable = loader.enqueue(request)
+                                    disposables.add(disposable)
+                                }
                             }
                         }
+
+                        delay(300)
+
+                        // 2. 预加载前后各 2 页
+                        val outerRange = listOf(currentPage - 2, currentPage + 2)
+                        for (p in outerRange) {
+                            if (p in 1..detail.numPages) {
+                                val page = pages.getOrNull(p - 1)
+                                if (page != null) {
+                                    val url = "$hosts/${page.path}"
+                                    val request = ImageRequest.Builder(context)
+                                        .data(url)
+                                        .memoryCachePolicy(CachePolicy.DISABLED)
+                                        .diskCachePolicy(CachePolicy.ENABLED)
+                                        .build()
+                                    val disposable = loader.enqueue(request)
+                                    disposables.add(disposable)
+                                }
+                            }
+                        }
+
+                        kotlinx.coroutines.awaitCancellation()
+                    } finally {
+                        disposables.forEach { it.dispose() }
                     }
                 }
 
@@ -193,16 +307,22 @@ fun ReaderScreen(
                     currentPage = currentPage,
                     isScrollMode = isScrollMode,
                     readerDirection = readerDirection,
+                    readerBackground = readerBackground,
+                    colorFilterMode = colorFilterMode,
+                    colorFilterAlpha = colorFilterAlpha,
+                    pageTransitionAnim = pageTransitionAnim,
+                    isOrientationLocked = isOrientationLocked,
+                    onToggleOrientationLock = { isOrientationLocked = !isOrientationLocked },
                     onPageChanged = { page -> viewModel.onPageChanged(galleryId, page) },
                     onBackClick = onBackClick,
-                    toggleReadingMode = { viewModel.toggleReadingMode() }
+                    settingsViewModel = settingsViewModel
                 )
             }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderContent(
     detail: GalleryDetail,
@@ -212,73 +332,179 @@ fun ReaderContent(
     currentPage: Int,
     isScrollMode: Boolean,
     readerDirection: String,
+    readerBackground: String,
+    colorFilterMode: String,
+    colorFilterAlpha: Float,
+    pageTransitionAnim: Boolean,
+    isOrientationLocked: Boolean,
+    onToggleOrientationLock: () -> Unit,
     onPageChanged: (Int) -> Unit,
     onBackClick: () -> Unit,
-    toggleReadingMode: () -> Unit,
+    settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
-    var showOverlays by remember { mutableStateOf(true) }
+    var showOverlays by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    DisposableEffect(showOverlays) {
+        val activity = context as? Activity
+        val window = activity?.window
+        if (window != null) {
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+            insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (showOverlays) {
+                insetsController.show(WindowInsetsCompat.Type.systemBars())
+            } else {
+                insetsController.hide(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+        onDispose {}
+    }
     val hosts = if (cdnHost.isNotEmpty()) {
         if (cdnHost.startsWith("http")) cdnHost else "https://$cdnHost"
     } else {
         "https://i.nhentai.net"
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) {
-                showOverlays = !showOverlays
+    val scope = rememberCoroutineScope()
+
+    val imageScaleMode by settingsViewModel.imageScaleMode.collectAsState()
+    val showPersistentPageNumber by settingsViewModel.showPersistentPageNumber.collectAsState()
+    val contentScale = when (imageScaleMode) {
+        "fit_width" -> ContentScale.FillWidth
+        "fit_height" -> ContentScale.FillHeight
+        "original" -> ContentScale.None
+        else -> ContentScale.Fit
+    }
+
+    var showSettingsSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+
+    val filterModifier = Modifier.drawWithContent {
+        if (colorFilterMode == "none") {
+            drawContent()
+        } else {
+            val paint = Paint().apply {
+                colorFilter = when (colorFilterMode) {
+                    "grayscale" -> ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+                    "invert" -> ColorFilter.colorMatrix(ColorMatrix(floatArrayOf(
+                        -1f, 0f, 0f, 0f, 255f,
+                        0f, -1f, 0f, 0f, 255f,
+                        0f, 0f, -1f, 0f, 255f,
+                        0f, 0f, 0f, 1f, 0f
+                    )))
+                    else -> null
+                }
             }
+            drawIntoCanvas { canvas ->
+                canvas.withSaveLayer(Rect(0f, 0f, size.width, size.height), paint) {
+                    drawContent()
+                    if (colorFilterMode == "sepia") {
+                        drawRect(
+                            color = Color(0xFFF4ECD8).copy(alpha = colorFilterAlpha),
+                            size = size
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    Box(
+        modifier = modifier.fillMaxSize()
     ) {
         if (isScrollMode) {
-            val listState = rememberLazyListState(initialFirstVisibleItemIndex = startPage - 1)
-            val firstVisibleIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
+            val listState = rememberLazyListState(initialFirstVisibleItemIndex = currentPage - 1)
+            
+            val firstVisibleIndexWithOffset by remember {
+                derivedStateOf {
+                    val visibleItems = listState.layoutInfo.visibleItemsInfo
+                    if (visibleItems.isEmpty()) return@derivedStateOf currentPage - 1
 
-            LaunchedEffect(firstVisibleIndex) {
-                onPageChanged(firstVisibleIndex + 1)
+                    val firstItem = visibleItems.first()
+                    val firstVisibleIndex = firstItem.index
+                    val offset = listState.firstVisibleItemScrollOffset
+                    val size = firstItem.size
+
+                    if (size > 0 && offset > size / 2) {
+                        firstVisibleIndex + 1
+                    } else {
+                        firstVisibleIndex
+                    }
+                }
             }
 
-            LazyColumn(
-                state = listState,
+            LaunchedEffect(firstVisibleIndexWithOffset) {
+                onPageChanged(firstVisibleIndexWithOffset + 1)
+            }
+
+            val zoomableState = rememberZoomableState()
+            BoxWithConstraints(
                 modifier = Modifier.fillMaxSize()
             ) {
-                itemsIndexed(
-                    items = detail.pages,
-                    key = { _, page -> page.number }
-                ) { _, page ->
-                    val pageUrl = "$hosts/${page.path}"
-                    ZoomableBox(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(pageUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = "Page ${page.number}",
-                            contentScale = ContentScale.FillWidth,
+                val height = constraints.maxHeight.toFloat()
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zoomable(
+                            state = zoomableState,
+                            onClick = { offset ->
+                                if ((zoomableState.zoomFraction ?: 1f) <= 1.05f) {
+                                    val topZone = height * 0.15f
+                                    val bottomZone = height * 0.85f
+                                    if (offset.y < topZone) {
+                                        scope.launch {
+                                            listState.animateScrollBy(-height * 0.8f)
+                                        }
+                                    } else if (offset.y > bottomZone) {
+                                        scope.launch {
+                                            listState.animateScrollBy(height * 0.8f)
+                                        }
+                                    } else {
+                                        showOverlays = !showOverlays
+                                    }
+                                }
+                            }
+                        )
+                        .then(filterModifier)
+                ) {
+                LazyColumn(
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    itemsIndexed(
+                        items = detail.pages,
+                        key = { _, page -> page.number }
+                    ) { _, page ->
+                        val thumbHosts = hosts.replace("://i", "://t")
+                        ReaderPageItem(
+                            page = page,
+                            totalPages = detail.pages.size,
+                            hosts = hosts,
+                            thumbHosts = thumbHosts,
+                            contentScale = contentScale,
+                            isScrollMode = true,
+                            zoomableState = null,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
             }
+            }
 
             LaunchedEffect(currentPage) {
-                if (firstVisibleIndex != currentPage - 1) {
+                if (firstVisibleIndexWithOffset != currentPage - 1) {
                     listState.scrollToItem(currentPage - 1)
                 }
             }
 
         } else {
             val pagerState = rememberPagerState(
-                initialPage = startPage - 1,
+                initialPage = currentPage - 1,
                 pageCount = { detail.pages.size }
             )
-
+            
             LaunchedEffect(pagerState.currentPage) {
                 onPageChanged(pagerState.currentPage + 1)
             }
@@ -286,28 +512,82 @@ fun ReaderContent(
             HorizontalPager(
                 state = pagerState,
                 reverseLayout = (readerDirection == "rtl"),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().then(filterModifier)
             ) { pageIndex ->
                 val page = detail.pages[pageIndex]
                 val pageUrl = "$hosts/${page.path}"
 
-                Box(
-                    modifier = Modifier.fillMaxSize(),
+                val pageOffset = ((pagerState.currentPage - pageIndex) + pagerState.currentPageOffsetFraction).absoluteValue
+                val scale = if (pageTransitionAnim) (1f - (pageOffset * 0.15f).coerceIn(0f, 0.15f)) else 1f
+                val alpha = if (pageTransitionAnim) (1f - (pageOffset * 0.5f).coerceIn(0f, 0.5f)) else 1f
+
+                val zoomableState = rememberZoomableState()
+
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            this.alpha = alpha
+                        },
                     contentAlignment = Alignment.Center
                 ) {
-                    ZoomableBox(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(pageUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = "Page ${page.number}",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                    val width = constraints.maxWidth.toFloat()
+                    
+                    LaunchedEffect(pagerState.currentPage) {
+                        if (pagerState.currentPage != pageIndex) {
+                            zoomableState.resetZoom(animationSpec = androidx.compose.animation.core.snap())
+                        }
                     }
+                    val thumbHosts = hosts.replace("://i", "://t")
+                    ReaderPageItem(
+                        page = page,
+                        totalPages = detail.pages.size,
+                        hosts = hosts,
+                        thumbHosts = thumbHosts,
+                        contentScale = contentScale,
+                        isScrollMode = false,
+                        zoomableState = zoomableState,
+                        modifier = Modifier.fillMaxSize(),
+                        onTap = { offset ->
+                            if ((zoomableState.zoomFraction ?: 1f) <= 1.05f) {
+                                val leftZone = width * 0.25f
+                                val rightZone = width * 0.75f
+                                if (offset.x < leftZone) {
+                                    if (readerDirection == "rtl") {
+                                        scope.launch {
+                                            if (pagerState.currentPage < pagerState.pageCount - 1) {
+                                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                            }
+                                        }
+                                    } else {
+                                        scope.launch {
+                                            if (pagerState.currentPage > 0) {
+                                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                            }
+                                        }
+                                    }
+                                } else if (offset.x > rightZone) {
+                                    if (readerDirection == "rtl") {
+                                        scope.launch {
+                                            if (pagerState.currentPage > 0) {
+                                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                            }
+                                        }
+                                    } else {
+                                        scope.launch {
+                                            if (pagerState.currentPage < pagerState.pageCount - 1) {
+                                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    showOverlays = !showOverlays
+                                }
+                            }
+                        }
+                    )
                 }
             }
 
@@ -321,8 +601,8 @@ fun ReaderContent(
         // Overlay Toolbars
         AnimatedVisibility(
             visible = showOverlays,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = slideInVertically { -it } + fadeIn(),
+            exit = slideOutVertically { -it } + fadeOut(),
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
             ReaderTopBar(
@@ -333,18 +613,53 @@ fun ReaderContent(
 
         AnimatedVisibility(
             visible = showOverlays,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
+            val thumbHosts = hosts.replace("://i", "://t")
             ReaderBottomBar(
                 currentPage = currentPage,
                 totalPages = detail.numPages,
-                isScrollMode = isScrollMode,
-                toggleReadingMode = toggleReadingMode,
+                pages = detail.pages,
+                thumbHosts = thumbHosts,
+                isOrientationLocked = isOrientationLocked,
+                onToggleOrientationLock = onToggleOrientationLock,
+                onSettingsClick = { showSettingsSheet = true },
                 onPageSeek = { targetPage -> onPageChanged(targetPage) }
             )
         }
+
+        // 常驻页码提示胶囊
+        AnimatedVisibility(
+            visible = showPersistentPageNumber && !showOverlays,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                .padding(bottom = 16.dp)
+        ) {
+            Surface(
+                color = Color.Black.copy(alpha = 0.55f),
+                shape = CircleShape
+            ) {
+                Text(
+                    text = "$currentPage / ${detail.pages.size}",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
+        }
+    }
+
+    if (showSettingsSheet) {
+        ReaderSettingsSheet(
+            onDismissRequest = { showSettingsSheet = false },
+            sheetState = sheetState,
+            settingsViewModel = settingsViewModel
+        )
     }
 }
 
@@ -388,8 +703,11 @@ fun ReaderTopBar(
 fun ReaderBottomBar(
     currentPage: Int,
     totalPages: Int,
-    isScrollMode: Boolean,
-    toggleReadingMode: () -> Unit,
+    pages: List<PageInfo>,
+    thumbHosts: String,
+    isOrientationLocked: Boolean,
+    onToggleOrientationLock: () -> Unit,
+    onSettingsClick: () -> Unit,
     onPageSeek: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -400,6 +718,16 @@ fun ReaderBottomBar(
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
+        ThumbnailStrip(
+            pages = pages,
+            currentPage = currentPage,
+            thumbHosts = thumbHosts,
+            onPageClick = onPageSeek,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -413,10 +741,18 @@ fun ReaderBottomBar(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            IconButton(onClick = toggleReadingMode) {
+            IconButton(onClick = onToggleOrientationLock) {
                 Icon(
-                    imageVector = if (isScrollMode) Icons.Default.SwapVert else Icons.AutoMirrored.Filled.MenuBook,
-                    contentDescription = "Toggle Reading Mode",
+                    imageVector = if (isOrientationLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                    contentDescription = if (isOrientationLocked) "Unlock Orientation" else "Lock Orientation",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            IconButton(onClick = onSettingsClick) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
