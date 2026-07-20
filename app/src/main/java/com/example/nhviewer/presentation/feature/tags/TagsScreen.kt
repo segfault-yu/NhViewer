@@ -229,7 +229,7 @@ fun TagsScreen(
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = TagTranslationProvider.getFormattedName(tag.name, tagLanguage, tagDisplayMode),
+                                                text = TagTranslationProvider.getFormattedName(tag, tagLanguage, tagDisplayMode),
                                                 fontWeight = FontWeight.Bold,
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 maxLines = 1,

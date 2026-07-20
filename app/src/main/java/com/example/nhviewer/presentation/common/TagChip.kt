@@ -13,6 +13,7 @@ import com.example.nhviewer.util.i18n.LocalTagLanguage
 import com.example.nhviewer.util.i18n.TagTranslationProvider
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +74,9 @@ fun TagChip(
         label = {
             Text(
                 text = displayText,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         },
         shape = RoundedCornerShape(50),

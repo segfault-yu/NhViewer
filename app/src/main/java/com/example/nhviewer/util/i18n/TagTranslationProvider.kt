@@ -1,15 +1,17 @@
 package com.example.nhviewer.util.i18n
 
 import android.content.Context
+import android.util.JsonReader
+import android.util.Log
 import com.example.nhviewer.domain.model.Tag
-import kotlinx.serialization.json.Json
 import java.io.InputStreamReader
 import java.util.concurrent.ConcurrentHashMap
 
-// 标签翻译提供者
+// 标签翻译提供者 (高性能流式按需加载版)
 object TagTranslationProvider {
 
-    private val dictionaries = ConcurrentHashMap<String, Map<String, String>>()
+    // 格式: ${lang}_${type} -> Map<String, String>
+    private val categoryDictionaries = ConcurrentHashMap<String, ConcurrentHashMap<String, String>>()
     private var appContext: Context? = null
 
     // 初始化保存 Application Context
@@ -19,63 +21,49 @@ object TagTranslationProvider {
         }
     }
 
-    private fun getDictionary(lang: String): Map<String, String> {
-        val safeLang = if (lang.isBlank()) "zh" else lang.lowercase()
-        return dictionaries.getOrPut(safeLang) {
-            loadDictionary(safeLang)
-        }
-    }
-
-    private fun loadDictionary(lang: String): Map<String, String> {
+    private fun getDictionary(lang: String, type: String): Map<String, String> {
         val context = appContext ?: return emptyMap()
-        val mergedMap = HashMap<String, String>()
+        val key = "${lang}_$type"
 
-        val dirPath = "tags/$lang"
-        try {
-            val assetFiles = context.assets.list(dirPath)
-            if (!assetFiles.isNullOrEmpty()) {
-                for (file in assetFiles) {
-                    if (file.endsWith(".json")) {
-                        try {
-                            context.assets.open("$dirPath/$file").use { inputStream ->
-                                InputStreamReader(inputStream, Charsets.UTF_8).use { reader ->
-                                    val jsonString = reader.readText()
-                                    val map = Json.decodeFromString<Map<String, String>>(jsonString)
-                                    mergedMap.putAll(map)
-                                }
+        return categoryDictionaries.getOrPut(key) {
+            val map = ConcurrentHashMap<String, String>()
+            val fileName = "tags/$lang/$type.json"
+            try {
+                val assetManager = context.assets
+                // 检查文件是否存在
+                val exists = try {
+                    assetManager.open(fileName).use { }
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+
+                if (exists) {
+                    // 使用原生的流式解析 JsonReader，内存消耗极低，速度极快
+                    assetManager.open(fileName).use { inputStream ->
+                        InputStreamReader(inputStream, Charsets.UTF_8).use { reader ->
+                            val jsonReader = JsonReader(reader)
+                            jsonReader.beginObject()
+                            while (jsonReader.hasNext()) {
+                                val name = jsonReader.nextName()
+                                val value = jsonReader.nextString()
+                                map[name] = value
                             }
-                        } catch (e: Exception) {
-                            // 忽略单个文件解析异常
+                            jsonReader.endObject()
                         }
                     }
                 }
-            }
-        } catch (e: Exception) {
-            // 忽略目录读取异常
-        }
-
-        // 若分类目录为空，读取旧版单 JSON 资产文件
-        if (mergedMap.isEmpty()) {
-            val fallbackFile = "tag_translations_$lang.json"
-            try {
-                context.assets.open(fallbackFile).use { inputStream ->
-                    InputStreamReader(inputStream, Charsets.UTF_8).use { reader ->
-                        val jsonString = reader.readText()
-                        val map = Json.decodeFromString<Map<String, String>>(jsonString)
-                        mergedMap.putAll(map)
-                    }
-                }
             } catch (e: Exception) {
-                // 忽略兜底文件读取异常
+                Log.e("TagTranslation", "Failed to load dictionary: $fileName", e)
             }
+            map
         }
-
-        return mergedMap
     }
 
-    // 根据标签语言与显示模式获取格式化名称
+    // 根据标签语言与显示模式获取格式化名称（指定 type 会触发按需加载）
     fun getFormattedName(
         rawName: String,
+        type: String?,
         targetLang: String = "zh",
         displayMode: String = "only_translation"
     ): String {
@@ -83,9 +71,26 @@ object TagTranslationProvider {
             return rawName
         }
 
-        val dict = getDictionary(targetLang)
+        val safeLang = if (targetLang.isBlank()) "zh" else targetLang.lowercase()
         val lowerKey = rawName.lowercase().trim()
-        val translation = dict[lowerKey]?.trim()
+
+        var translation: String? = null
+
+        if (type != null) {
+            val dict = getDictionary(safeLang, type)
+            translation = dict[lowerKey]
+        } else {
+            // 如果不知道 type，只能去已加载的字典里碰运气
+            for (dict in categoryDictionaries.values) {
+                val t = dict[lowerKey]
+                if (t != null) {
+                    translation = t
+                    break
+                }
+            }
+        }
+
+        translation = translation?.trim()
 
         if (translation.isNullOrEmpty()) {
             return rawName
@@ -97,23 +102,33 @@ object TagTranslationProvider {
         }
     }
 
+    // 兼容之前的旧接口（不知道 type）
+    fun getFormattedName(
+        rawName: String,
+        targetLang: String = "zh",
+        displayMode: String = "only_translation"
+    ): String {
+        return getFormattedName(rawName, null, targetLang, displayMode)
+    }
+
+    // 新增：知道 tag type 的入口
     fun getFormattedName(
         tag: Tag,
         targetLang: String = "zh",
         displayMode: String = "only_translation"
     ): String {
-        return getFormattedName(tag.name, targetLang, displayMode)
+        return getFormattedName(tag.name, tag.type, targetLang, displayMode)
     }
 
     fun getTranslation(tag: Tag, targetLang: String = "zh"): String {
-        return getFormattedName(tag.name, targetLang, "only_translation")
+        return getFormattedName(tag, targetLang, "only_translation")
     }
 
     fun getTranslation(rawName: String, targetLang: String = "zh"): String {
-        return getFormattedName(rawName, targetLang, "only_translation")
+        return getFormattedName(rawName, null, targetLang, "only_translation")
     }
 
     fun getDisplayWithOriginal(rawName: String, targetLang: String = "zh"): String {
-        return getFormattedName(rawName, targetLang, "bilingual")
+        return getFormattedName(rawName, null, targetLang, "bilingual")
     }
 }

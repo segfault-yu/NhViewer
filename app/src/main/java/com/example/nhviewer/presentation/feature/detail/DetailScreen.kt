@@ -441,7 +441,9 @@ fun DetailScreen(
                                         onClick = {
                                             viewModel.loadGalleryDetail(relatedItem.id)
                                         },
-                                        modifier = Modifier.padding(6.dp)
+                                        modifier = Modifier.padding(6.dp),
+                                        showTags = false,
+                                        isGridMode = true
                                     )
                                 }
                             }

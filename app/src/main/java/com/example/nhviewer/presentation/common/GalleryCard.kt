@@ -88,7 +88,9 @@ fun GalleryCard(
     cdnHost: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isFavorited: Boolean = false
+    isFavorited: Boolean = false,
+    showTags: Boolean = true,
+    isGridMode: Boolean = false
 ) {
     val tagLanguage = LocalTagLanguage.current
     val tagDisplayMode = LocalTagDisplayMode.current
@@ -108,17 +110,108 @@ fun GalleryCard(
             .fillMaxWidth()
             .clickable { onClick() }
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-        ) {
-            Box(
+        if (isGridMode) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.72f)
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = item.englishTitle,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    if (isFavorited) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(6.dp)
+                                .size(24.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Favorited",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = item.englishTitle,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = "Pages",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = " ${item.numPages} P",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Favorites",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = " ${item.numFavorites}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            Row(
                 modifier = Modifier
-                    .width(110.dp)
-                    .fillMaxHeight()
-                    .aspectRatio(0.72f)
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
             ) {
+                Box(
+                    modifier = Modifier
+                        .width(110.dp)
+                        .fillMaxHeight()
+                        .aspectRatio(0.72f)
+                ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(imageUrl)
@@ -177,35 +270,37 @@ fun GalleryCard(
                         )
                     }
 
-                    val categoryTagId = item.tagIds.firstOrNull { CATEGORY_TAGS_MAP.containsKey(it) }
-                    val categoryRawName = categoryTagId?.let { CATEGORY_TAGS_MAP[it] } ?: "doujinshi"
-
-                    Spacer(modifier = Modifier.height(6.dp))
-                    @OptIn(ExperimentalLayoutApi::class)
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        maxItemsInEachRow = 3,
-                        maxLines = 1,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // 分类常驻
-                        TagChip(
-                            tag = Tag(id = categoryTagId ?: 0, type = "category", name = categoryRawName),
-                            onClick = {},
-                            tagLanguage = tagLanguage,
-                            tagDisplayMode = tagDisplayMode
-                        )
-
-                        // 最多展示 2 个常用普通标签
-                        val matchedTags = item.tagIds.mapNotNull { COMMON_TAGS_MAP[it] }.take(2)
-                        matchedTags.forEach { tagName ->
+                    if (showTags) {
+                        val categoryTagId = item.tagIds.firstOrNull { CATEGORY_TAGS_MAP.containsKey(it) }
+                        val categoryRawName = categoryTagId?.let { CATEGORY_TAGS_MAP[it] } ?: "doujinshi"
+    
+                        Spacer(modifier = Modifier.height(6.dp))
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            maxItemsInEachRow = 3,
+                            maxLines = 1,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // 分类常驻
                             TagChip(
-                                tag = Tag(id = 0, type = "tag", name = tagName),
+                                tag = Tag(id = categoryTagId ?: 0, type = "category", name = categoryRawName),
                                 onClick = {},
                                 tagLanguage = tagLanguage,
                                 tagDisplayMode = tagDisplayMode
                             )
+    
+                            // 最多展示 2 个常用普通标签
+                            val matchedTags = item.tagIds.mapNotNull { COMMON_TAGS_MAP[it] }.take(2)
+                            matchedTags.forEach { tagName ->
+                                TagChip(
+                                    tag = Tag(id = 0, type = "tag", name = tagName),
+                                    onClick = {},
+                                    tagLanguage = tagLanguage,
+                                    tagDisplayMode = tagDisplayMode
+                                )
+                            }
                         }
                     }
                 }
@@ -244,4 +339,5 @@ fun GalleryCard(
             }
         }
     }
+}
 }
