@@ -42,6 +42,8 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -91,18 +93,18 @@ fun SearchScreen(
     val focusManager = LocalFocusManager.current
 
     val sortLabelMap = mapOf(
-        "date" to "最新时间",
-        "popular" to "最热门",
-        "popular-today" to "今日热门",
-        "popular-week" to "本周热门",
-        "popular-month" to "本月热门"
+        "date" to stringResource(R.string.sort_date),
+        "popular" to stringResource(R.string.sort_popular),
+        "popular-today" to stringResource(R.string.sort_popular_today),
+        "popular-week" to stringResource(R.string.sort_popular_week),
+        "popular-month" to stringResource(R.string.sort_popular_month)
     )
 
     if (showClearHistoryDialog) {
         AlertDialog(
             onDismissRequest = { showClearHistoryDialog = false },
-            title = { Text("清空历史记录") },
-            text = { Text("确定要清除所有的搜索历史记录吗？此操作无法撤销。") },
+            title = { Text(stringResource(R.string.home_clear_history_title)) },
+            text = { Text(stringResource(R.string.home_clear_history_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -110,12 +112,12 @@ fun SearchScreen(
                         showClearHistoryDialog = false
                     }
                 ) {
-                    Text("清空", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_clear), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearHistoryDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.common_cancel))
                 }
             },
             shape = MaterialTheme.shapes.extraLarge
@@ -141,7 +143,7 @@ fun SearchScreen(
                 },
                 active = active,
                 onActiveChange = { viewModel.onActiveChanged(it) },
-                placeholder = { Text("搜索画廊 (例如 pages:>10)") },
+                placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -172,14 +174,14 @@ fun SearchScreen(
                                         .padding(horizontal = 16.dp, vertical = 8.dp)
                                 ) {
                                     Text(
-                                        text = "历史记录",
+                                        text = stringResource(R.string.home_search_history),
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Spacer(modifier = Modifier.weight(1f))
                                     TextButton(onClick = { showClearHistoryDialog = true }) {
-                                        Text("清空全部", style = MaterialTheme.typography.bodySmall)
+                                        Text(stringResource(R.string.home_search_history_clear), style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
                             }
@@ -203,7 +205,7 @@ fun SearchScreen(
                         if (autocompleteSuggestions.isNotEmpty()) {
                             item {
                                 Text(
-                                    text = "搜索建议",
+                                    text = stringResource(R.string.home_search_suggestions),
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.primary,
@@ -220,7 +222,7 @@ fun SearchScreen(
                                         Text(text = tag.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
                                     },
                                     supportingContent = {
-                                        Text(text = "类型: ${tag.type}  (${tag.count} 个画廊)", style = MaterialTheme.typography.bodySmall)
+                                        Text(text = stringResource(R.string.home_search_tag_sub, tag.type, tag.count), style = MaterialTheme.typography.bodySmall)
                                     },
                                     leadingContent = {
                                         Icon(
@@ -265,7 +267,7 @@ fun SearchScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = sortLabelMap[sortOption] ?: "排序",
+                            text = sortLabelMap[sortOption] ?: stringResource(R.string.sort_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -297,11 +299,11 @@ fun SearchScreen(
                 } else if (searchResults.loadState.refresh is LoadState.Error) {
                     val error = (searchResults.loadState.refresh as LoadState.Error).error
                     ErrorScreen(
-                        message = error.localizedMessage ?: "搜索发生错误",
+                        message = error.localizedMessage ?: stringResource(R.string.home_search_error),
                         onRetry = { searchResults.retry() }
                     )
                 } else if (searchResults.itemCount == 0 && searchResults.loadState.refresh is LoadState.NotLoading) {
-                    EmptyState(message = "未找到匹配的画廊")
+                    EmptyState(message = stringResource(R.string.home_search_empty))
                 } else {
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Adaptive(minSize = gridBaseWidth.dp),

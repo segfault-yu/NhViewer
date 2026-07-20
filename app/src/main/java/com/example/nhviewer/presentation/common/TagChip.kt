@@ -1,5 +1,6 @@
 package com.example.nhviewer.presentation.common
 
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
@@ -7,24 +8,63 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.util.i18n.LocalTagDisplayMode
+import com.example.nhviewer.util.i18n.LocalTagLanguage
+import com.example.nhviewer.util.i18n.TagTranslationProvider
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TagChip(
     tag: Tag,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    showCount: Boolean = false
+    showCount: Boolean = false,
+    tagLanguage: String = LocalTagLanguage.current,
+    tagDisplayMode: String = LocalTagDisplayMode.current
 ) {
-    // 依据用户决策 B，将标签类型缩减映射到 3 类 M3 标准语义色容器上
+    val formattedName = TagTranslationProvider.getFormattedName(tag, tagLanguage, tagDisplayMode)
+    val displayText = if (showCount) "$formattedName (${tag.count})" else formattedName
+
+    // 分配固定的 M3 语义化容器与字体色彩
     val (containerColor, labelColor) = when (tag.type.lowercase()) {
-        "artist", "character" -> {
-            MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        "language" -> {
+            MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.primary
         }
-        "parody", "group" -> {
+        "parody" -> {
+            MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        }
+        "character" -> {
             MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
         }
-        else -> { // "language", "category", "tag" 等
+        "artist" -> {
+            MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        }
+        "group" -> {
+            MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+        }
+        "female" -> {
             MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        }
+        "male" -> {
+            MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        }
+        "category" -> {
+            when (tag.name.lowercase()) {
+                "doujinshi", "同人志" -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+                "manga", "漫画" -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onTertiary
+                "artistcg", "artist cg", "画集" -> MaterialTheme.colorScheme.secondary to MaterialTheme.colorScheme.onSecondary
+                "gamecg", "game cg", "游戏 cg" -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
+                "western", "欧美" -> MaterialTheme.colorScheme.inverseSurface to MaterialTheme.colorScheme.inverseOnSurface
+                "non-h", "非 h" -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+                "imageset", "图集" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+                "cosplay" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+                else -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+            }
+        }
+        else -> { // "tag" / "other"
+            MaterialTheme.colorScheme.surfaceContainer to MaterialTheme.colorScheme.onSurface
         }
     }
 
@@ -32,11 +72,11 @@ fun TagChip(
         onClick = onClick,
         label = {
             Text(
-                text = if (showCount) "${tag.name} (${tag.count})" else tag.name,
-                style = MaterialTheme.typography.labelMedium
+                text = displayText,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
             )
         },
-        shape = MaterialTheme.shapes.small,
+        shape = RoundedCornerShape(50),
         colors = SuggestionChipDefaults.suggestionChipColors(
             containerColor = containerColor,
             labelColor = labelColor

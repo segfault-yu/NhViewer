@@ -17,6 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+import com.example.nhviewer.R
+
 @HiltViewModel
 class ApiKeyViewModel @Inject constructor(
     private val getApiKeysUseCase: GetApiKeysUseCase,
@@ -31,8 +33,8 @@ class ApiKeyViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val _errorMessageRes = MutableStateFlow<Int?>(null)
+    val errorMessageRes: StateFlow<Int?> = _errorMessageRes.asStateFlow()
 
     private val _powStatus = MutableStateFlow("Idle")
     val powStatus: StateFlow<String> = _powStatus.asStateFlow()
@@ -56,9 +58,9 @@ class ApiKeyViewModel @Inject constructor(
             _isLoading.value = true
             getApiKeysUseCase().onSuccess {
                 _apiKeys.value = it
-                _errorMessage.value = null
+                _errorMessageRes.value = null
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "获取 API 密钥列表失败"
+                _errorMessageRes.value = R.string.sessions_error_fetch
             }
             _isLoading.value = false
         }
@@ -66,33 +68,33 @@ class ApiKeyViewModel @Inject constructor(
 
     fun initiateCreateApiKey(name: String) {
         if (name.isBlank()) {
-            _errorMessage.value = "密钥名称不能为空"
+            _errorMessageRes.value = R.string.apikeys_name_required
             return
         }
         pendingKeyName = name
         viewModelScope.launch {
             _isLoading.value = true
-            _powStatus.value = "获取 PoW 挑战配置..."
+            _powStatus.value = "Preparing..."
             userRepository.getPowChallenge("api_key").onSuccess { powDto ->
-                _powStatus.value = "解算 PoW 工作量碰撞中..."
+                _powStatus.value = "Solving PoW..."
                 powChallenge = powDto.challenge
                 val solvedNonce = withContext(Dispatchers.Default) {
                     PowSolver.solve(powDto.challenge, powDto.difficulty)
                 }
                 powNonce = solvedNonce
 
-                _powStatus.value = "获取验证码安全校验项..."
+                _powStatus.value = "Fetching Captcha..."
                 userRepository.getCaptchaConfig().onSuccess { captchaDto ->
-                    _powStatus.value = "等待进行人机验证..."
+                    _powStatus.value = "Waiting Captcha..."
                     _captchaSiteKey.value = captchaDto.siteKey
                 }.onFailure {
                     _powStatus.value = "Idle"
-                    _errorMessage.value = it.localizedMessage ?: "获取验证码配置失败"
+                    _errorMessageRes.value = R.string.common_unknown_error
                     _isLoading.value = false
                 }
             }.onFailure {
                 _powStatus.value = "Idle"
-                _errorMessage.value = it.localizedMessage ?: "获取 PoW 挑战失败"
+                _errorMessageRes.value = R.string.common_unknown_error
                 _isLoading.value = false
             }
         }
@@ -100,14 +102,14 @@ class ApiKeyViewModel @Inject constructor(
 
     fun onCaptchaSuccess(captchaResponse: String) {
         _captchaSiteKey.value = null
-        _powStatus.value = "正在生成 API 密钥..."
+        _powStatus.value = "Generating..."
         viewModelScope.launch {
             createApiKeyUseCase(pendingKeyName, powChallenge, powNonce, captchaResponse).onSuccess { apiKey ->
                 _newlyCreatedApiKey.value = apiKey
                 loadApiKeys()
                 clearCreationState()
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "申请 API 密钥失败"
+                _errorMessageRes.value = R.string.common_unknown_error
             }
             _powStatus.value = "Idle"
             _isLoading.value = false
@@ -127,7 +129,7 @@ class ApiKeyViewModel @Inject constructor(
             revokeApiKeyUseCase(keyId).onSuccess {
                 loadApiKeys()
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "吊销 API 密钥失败"
+                _errorMessageRes.value = R.string.sessions_error_revoke
             }
             _isLoading.value = false
         }
@@ -138,7 +140,7 @@ class ApiKeyViewModel @Inject constructor(
     }
 
     fun clearError() {
-        _errorMessage.value = null
+        _errorMessageRes.value = null
     }
 
     private fun clearCreationState() {

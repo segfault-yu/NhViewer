@@ -94,6 +94,8 @@ import com.example.nhviewer.domain.model.SearchHistory
 import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.feature.profile.ProfileViewModel
 import com.example.nhviewer.presentation.feature.search.SearchViewModel
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -124,18 +126,21 @@ fun HomeScreen(
     val searchResults = searchViewModel.searchResults.collectAsLazyPagingItems()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("最新", "热门")
+    val tabs = listOf(
+        stringResource(R.string.home_tab_latest),
+        stringResource(R.string.home_tab_popular)
+    )
 
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     val sortLabelMap = mapOf(
-        "date" to "最新时间",
-        "popular" to "最热门",
-        "popular-today" to "今日热门",
-        "popular-week" to "本周热门",
-        "popular-month" to "本月热门"
+        "date" to stringResource(R.string.sort_date),
+        "popular" to stringResource(R.string.sort_popular),
+        "popular-today" to stringResource(R.string.sort_popular_today),
+        "popular-week" to stringResource(R.string.sort_popular_week),
+        "popular-month" to stringResource(R.string.sort_popular_month)
     )
 
     LaunchedEffect(key1 = true) {
@@ -151,8 +156,8 @@ fun HomeScreen(
     if (showClearHistoryDialog) {
         AlertDialog(
             onDismissRequest = { showClearHistoryDialog = false },
-            title = { Text("清空历史记录") },
-            text = { Text("确定要清除所有的搜索历史记录吗？此操作无法撤销。") },
+            title = { Text(stringResource(R.string.home_clear_history_title)) },
+            text = { Text(stringResource(R.string.home_clear_history_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -160,12 +165,12 @@ fun HomeScreen(
                         showClearHistoryDialog = false
                     }
                 ) {
-                    Text("清空", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_clear), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearHistoryDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.common_cancel))
                 }
             },
             shape = MaterialTheme.shapes.extraLarge
@@ -209,7 +214,7 @@ fun HomeScreen(
                     },
                     active = active,
                     onActiveChange = { searchViewModel.onActiveChanged(it) },
-                    placeholder = { Text("搜索画廊 (例如 pages:>10)") },
+                    placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -283,14 +288,14 @@ fun HomeScreen(
                                             .padding(horizontal = 16.dp, vertical = 8.dp)
                                     ) {
                                         Text(
-                                            text = "历史记录",
+                                            text = stringResource(R.string.home_search_history),
                                             fontWeight = FontWeight.Bold,
                                             style = MaterialTheme.typography.titleSmall,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                         Spacer(modifier = Modifier.weight(1f))
                                         TextButton(onClick = { showClearHistoryDialog = true }) {
-                                            Text("清空全部", style = MaterialTheme.typography.bodySmall)
+                                            Text(stringResource(R.string.home_search_history_clear), style = MaterialTheme.typography.bodySmall)
                                         }
                                     }
                                 }
@@ -314,7 +319,7 @@ fun HomeScreen(
                             if (autocompleteSuggestions.isNotEmpty()) {
                                 item {
                                     Text(
-                                        text = "搜索建议",
+                                        text = stringResource(R.string.home_search_suggestions),
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.primary,
@@ -331,7 +336,7 @@ fun HomeScreen(
                                             Text(text = tag.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
                                         },
                                         supportingContent = {
-                                            Text(text = "类型: ${tag.type}  (${tag.count} 个画廊)", style = MaterialTheme.typography.bodySmall)
+                                            Text(text = stringResource(R.string.home_search_tag_sub, tag.type, tag.count), style = MaterialTheme.typography.bodySmall)
                                         },
                                         leadingContent = {
                                             Icon(
@@ -377,7 +382,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = sortLabelMap[sortOption] ?: "排序",
+                                text = sortLabelMap[sortOption] ?: stringResource(R.string.sort_title),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -409,11 +414,11 @@ fun HomeScreen(
                     } else if (searchResults.loadState.refresh is LoadState.Error) {
                         val error = (searchResults.loadState.refresh as LoadState.Error).error
                         ErrorScreen(
-                            message = error.localizedMessage ?: "搜索发生错误",
+                            message = error.localizedMessage ?: stringResource(R.string.home_search_error),
                             onRetry = { searchResults.retry() }
                         )
                     } else if (searchResults.itemCount == 0 && searchResults.loadState.refresh is LoadState.NotLoading) {
-                        EmptyState(message = "未找到匹配的画廊")
+                        EmptyState(message = stringResource(R.string.home_search_empty))
                     } else {
                         LazyVerticalStaggeredGrid(
                             columns = StaggeredGridCells.Adaptive(minSize = 340.dp),
@@ -494,7 +499,7 @@ fun HomeScreen(
                             if (latestGalleries.loadState.refresh is LoadState.Error) {
                                 val error = (latestGalleries.loadState.refresh as LoadState.Error).error
                                 ErrorScreen(
-                                    message = error.localizedMessage ?: "网络错误",
+                                    message = error.localizedMessage ?: stringResource(R.string.common_error_network),
                                     onRetry = { latestGalleries.retry() }
                                 )
                             } else {
@@ -540,7 +545,7 @@ fun HomeScreen(
                                         item(span = StaggeredGridItemSpan.FullLine) {
                                             val error = (latestGalleries.loadState.append as LoadState.Error).error
                                             ErrorScreen(
-                                                message = error.localizedMessage ?: "加载下一页失败",
+                                                message = error.localizedMessage ?: stringResource(R.string.common_error_load_more_failed),
                                                 onRetry = { latestGalleries.retry() },
                                                 modifier = Modifier.padding(16.dp)
                                             )

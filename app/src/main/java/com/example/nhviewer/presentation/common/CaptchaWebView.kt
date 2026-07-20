@@ -20,6 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.graphics.luminance
 
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun CaptchaDialog(
@@ -78,7 +81,7 @@ fun CaptchaDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("人机验证") },
+        title = { Text(stringResource(R.string.captcha_title)) },
         shape = MaterialTheme.shapes.extraLarge,
         text = {
             Box(
@@ -134,7 +137,7 @@ fun CaptchaDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )

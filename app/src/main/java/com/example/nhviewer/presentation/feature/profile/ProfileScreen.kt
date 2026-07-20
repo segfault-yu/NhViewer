@@ -57,6 +57,8 @@ import com.example.nhviewer.domain.model.User
 import com.example.nhviewer.domain.model.UserSession
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import java.text.SimpleDateFormat
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import java.util.Date
 import java.util.Locale
 
@@ -125,7 +127,7 @@ fun LoggedOutPlaceholder(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "您尚未登录",
+            text = stringResource(R.string.profile_not_logged_in),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -134,7 +136,7 @@ fun LoggedOutPlaceholder(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "登录后即可使用云端收藏夹、设备活跃会话管理等更多精彩功能。",
+            text = stringResource(R.string.profile_guest_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -146,7 +148,7 @@ fun LoggedOutPlaceholder(
             onClick = onNavigateToAuth,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "立即登录 / 注册", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(text = stringResource(R.string.nav_login_or_register), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -227,7 +229,7 @@ fun LoggedInContent(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "注册于: ${dateFormat.format(Date(user.registeredAt))}",
+                            text = stringResource(R.string.profile_registered_at, dateFormat.format(Date(user.registeredAt))),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -238,7 +240,7 @@ fun LoggedInContent(
 
         item {
             Text(
-                text = "活跃设备会话",
+                text = stringResource(R.string.profile_active_sessions),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -282,7 +284,7 @@ fun LoggedInContent(
                         supportingContent = {
                             Column {
                                 Text(text = "IP: ${session.ipAddress}", style = MaterialTheme.typography.bodyMedium)
-                                Text(text = "活跃于: ${dateFormat.format(Date(session.lastActiveAt))}", style = MaterialTheme.typography.labelSmall)
+                                Text(text = stringResource(R.string.profile_last_active, dateFormat.format(Date(session.lastActiveAt))), style = MaterialTheme.typography.labelSmall)
                             }
                         },
                         leadingContent = {
@@ -296,7 +298,7 @@ fun LoggedInContent(
                             if (session.currentSession) {
                                 SuggestionChip(
                                     onClick = {},
-                                    label = { Text("当前设备", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                                    label = { Text(stringResource(R.string.profile_current_device), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
                                 )
                             } else {
                                 IconButton(onClick = { onRevokeSession(session.sessionId) }) {
@@ -324,8 +326,8 @@ fun LoggedInContent(
                     .clickable { onNavigateToBlacklist() }
             ) {
                 ListItem(
-                    headlineContent = { Text("黑名单设置", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold) },
-                    supportingContent = { Text("管理您已屏蔽的标签，自动过滤列表内容", style = MaterialTheme.typography.bodyMedium) },
+                    headlineContent = { Text(stringResource(R.string.blacklist_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold) },
+                    supportingContent = { Text(stringResource(R.string.profile_blacklist_desc), style = MaterialTheme.typography.bodyMedium) },
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Default.Block,
@@ -352,7 +354,7 @@ fun LoggedInContent(
                 ) {
                     Icon(imageVector = Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "退出当前设备登录", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                    Text(text = stringResource(R.string.profile_logout_current), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                 }
 
                 Button(
@@ -365,7 +367,7 @@ fun LoggedInContent(
                 ) {
                     Icon(imageVector = Icons.Default.Delete, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "退出所有设备的登录 (吊销全部 Token)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                    Text(text = stringResource(R.string.profile_logout_all), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                 }
             }
         }

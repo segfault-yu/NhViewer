@@ -1,3 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App & Common -->
     <string name="app_name">NhViewer</string>
+    <string name="common_ok">确定</string>
+    <string name="common_cancel">取消</string>
+    <string name="common_retry">重试</string>
+    <string name="common_back">返回</string>
+    <string name="common_delete">删除</string>
+    <string name="common_clear">清空</string>
+    <string name="common_close">关闭</string>
+    <string name="common_save">保存</string>
+    <string name="common_error_title">出现错误</string>
+    <string name="common_error_network">网络错误</string>
+    <string name="common_error_load_failed">加载失败，点击重试</string>
+    <string name="common_error_load_more_failed">加载更多失败</string>
+    <string name="common_error_load_gallery_failed">加载画廊列表失败</string>
+
+    <!-- Navigation Drawer & TopBar -->
+    <string name="nav_home">首页</string>
+    <string name="nav_history">最近阅读</string>
+    <string name="nav_tags">标签浏览</string>
+    <string name="nav_favorites">我的收藏</string>
+    <string name="nav_settings">设置</string>
+    <string name="nav_blacklist">黑名单设置</string>
+    <string name="nav_not_logged_in">您尚未登录</string>
+    <string name="nav_login_sync_hint">登录后同步云端收藏夹</string>
+    <string name="nav_login_or_register">立即登录 / 注册</string>
+    <string name="nav_logout">退出登录</string>
+
+    <!-- Home Screen -->
+    <string name="home_tab_latest">最新</string>
+    <string name="home_tab_popular">热门</string>
+    <string name="home_search_placeholder">搜索画廊 (例如 pages:>10)</string>
+    <string name="home_search_history">历史记录</string>
+    <string name="home_search_history_clear">清空全部</string>
+    <string name="home_search_suggestions">搜索建议</string>
+    <string name="home_search_tag_sub">类型: %1$s  (%2$d 个画廊)</string>
+    <string name="home_search_error">搜索发生错误</string>
+    <string name="home_search_empty">未找到匹配的画廊</string>
+    <string name="home_clear_history_title">清空历史记录</string>
+    <string name="home_clear_history_confirm">确定要清除所有的搜索历史记录吗？此操作无法撤销。</string>
+
+    <!-- Sort Options -->
+    <string name="sort_title">排序</string>
+    <string name="sort_date">最新时间</string>
+    <string name="sort_popular">最热门</string>
+    <string name="sort_popular_today">今日热门</string>
+    <string name="sort_popular_week">本周热门</string>
+    <string name="sort_popular_month">本月热门</string>
+
+    <!-- Detail Screen -->
+    <string name="detail_title">画廊详情</string>
+    <string name="detail_pages_count">%d 页</string>
+    <string name="detail_favorites_count">%d 收藏</string>
+    <string name="detail_upload_time">上传时间: %s</string>
+    <string name="detail_start_reading">开始阅读</string>
+    <string name="detail_continue_reading">继续阅读 (第 %d 页)</string>
+    <string name="detail_section_tags">标签列表</string>
+    <string name="detail_section_recommendations">相关推荐</string>
+    <string name="detail_recommendations_failed">相关推荐加载失败</string>
+    <string name="detail_section_comments">用户评论</string>
+    <string name="detail_comments_empty">暂无评论，发条评论抢沙发吧~</string>
+    <string name="detail_comment_copy">复制内容</string>
+    <string name="detail_comment_delete">删除评论</string>
+    <string name="detail_comment_report">举报评论</string>
+    <string name="detail_comment_placeholder_logged_in">发表公开评论...</string>
+    <string name="detail_comment_placeholder_guest">请先登录后发表评论</string>
+    <string name="detail_comment_send">发送</string>
+    <string name="detail_comment_success">评论发表成功</string>
+    <string name="detail_login_required_favorite">请先登录后使用收藏功能</string>
+    <string name="detail_comment_empty_error">评论内容不能为空</string>
+    <string name="detail_comment_reported_success">已成功举报该评论</string>
+
+    <!-- Tags Screen -->
+    <string name="tags_title">标签浏览</string>
+    <string name="tags_sort_popular">按热度排序</string>
+    <string name="tags_sort_name">按字母排序</string>
+    <string name="tags_load_error">加载标签列表失败</string>
+    <string name="tags_empty">没有找到标签</string>
+    <string name="tags_galleries_count">%s 本书</string>
+
+    <!-- Tag Categories -->
+    <string name="tag_type_artist">画师</string>
+    <string name="tag_type_character">角色</string>
+    <string name="tag_type_parody">原作</string>
+    <string name="tag_type_group">社团</string>
+    <string name="tag_type_language">语言</string>
+    <string name="tag_type_category">分类</string>
+    <string name="tag_type_female">女性</string>
+    <string name="tag_type_male">男性</string>
+    <string name="tag_type_tag">其他</string>
+    
+    <string name="tag_type_artist_full">画师 (Artist)</string>
+    <string name="tag_type_character_full">角色 (Character)</string>
+    <string name="tag_type_parody_full">原作 (Parody)</string>
+    <string name="tag_type_group_full">社团 (Group)</string>
+    <string name="tag_type_language_full">语言 (Language)</string>
+    <string name="tag_type_category_full">分类 (Category)</string>
+    <string name="tag_type_female_full">女性 (Female)</string>
+    <string name="tag_type_male_full">男性 (Male)</string>
+    <string name="tag_type_tag_full">其他 (Other)</string>
+
+    <!-- Tagged Galleries Screen -->
+    <string name="tagged_title">标签: %s</string>
+    <string name="tagged_empty">该标签下暂无画廊数据</string>
+
+    <!-- History Screen -->
+    <string name="history_title">最近阅读</string>
+    <string name="history_empty_title">暂无最近阅读记录</string>
+    <string name="history_empty_subtitle">快去画廊详情页开始您的阅读旅程吧</string>
+    <string name="history_page_progress">第 %1$d / %2$d 页</string>
+
+    <!-- Favorites Screen -->
+    <string name="favorites_title">我的收藏</string>
+    <string name="favorites_random">随机收藏</string>
+    <string name="favorites_login_title">请先登录以查看我的收藏</string>
+    <string name="favorites_go_login">去登录</string>
+    <string name="favorites_load_error">拉取收藏夹失败</string>
+    <string name="favorites_empty_title">收藏夹是空的</string>
+    <string name="favorites_empty_subtitle">在画廊详情页点击收藏，即可在此处查看</string>
+
+    <!-- Auth Screen -->
+    <string name="auth_login_title">登录</string>
+    <string name="auth_register_title">注册</string>
+    <string name="auth_username_email">用户名 / 邮箱</string>
+    <string name="auth_username">用户名</string>
+    <string name="auth_email">邮箱地址</string>
+    <string name="auth_password">密码</string>
+    <string name="auth_password_hint">密码 (至少6位)</string>
+    <string name="auth_confirm_password">确认密码</string>
+    <string name="auth_forgot_password">忘记密码？</string>
+    <string name="auth_email_invalid">请输入有效的邮箱地址</string>
+    <string name="auth_password_too_short">密码长度必须大于或等于6位</string>
+    <string name="auth_password_mismatch">两次输入的密码不一致</string>
+    <string name="auth_forgot_title">找回密码</string>
+    <string name="auth_reset_title">重置密码凭证</string>
+    <string name="auth_forgot_desc">系统将发送一封包含凭证 Token 的重置邮件到您的注册邮箱：</string>
+    <string name="auth_reset_desc">请输入邮件中的重置 Token 和您的新密码：</string>
+    <string name="auth_reset_token">重置 Token</string>
+    <string name="auth_new_password">新密码</string>
+    <string name="auth_have_token">已有 Token</string>
+    <string name="auth_get_token">获取 Token</string>
+    <string name="auth_confirm_reset">确认重置</string>
+    <string name="auth_op_success">操作成功！</string>
+
+    <!-- Auth ViewModel Errors -->
+    <string name="auth_err_username_pwd_empty">账号和密码不能为空</string>
+    <string name="auth_err_all_fields_required">所有字段均不能为空</string>
+    <string name="auth_err_account_email_empty">账号或邮箱不能为空</string>
+    <string name="auth_err_token_pwd_empty">重置凭证与新密码不能为空</string>
+    <string name="auth_err_no_action">无可执行的操作</string>
+
+    <!-- Blacklist Screen -->
+    <string name="blacklist_title">黑名单设置</string>
+    <string name="blacklist_search_placeholder">搜索并添加要屏蔽的标签</string>
+    <string name="blacklist_empty_title">黑名单为空</string>
+    <string name="blacklist_empty_subtitle">搜索并添加标签至黑名单后，首页及搜索列表中含有该标签的画廊卡片将会被自动隐藏。</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_not_logged_in">您尚未登录</string>
+    <string name="profile_guest_subtitle">登录后即可使用云端收藏夹、设备活跃会话管理等更多精彩功能。</string>
+    <string name="profile_registered_at">注册于: %s</string>
+    <string name="profile_active_sessions">活跃设备会话</string>
+    <string name="profile_last_active">活跃于: %s</string>
+    <string name="profile_current_device">当前设备</string>
+    <string name="profile_blacklist_desc">管理您已屏蔽的标签，自动过滤列表内容</string>
+    <string name="profile_logout_current">退出当前设备登录</string>
+    <string name="profile_logout_all">退出所有设备的登录 (吊销全部 Token)</string>
+
+    <!-- Reader Screen & Settings -->
+    <string name="reader_settings_title">阅读器设置</string>
+    <string name="reader_mode_title">阅读模式</string>
+    <string name="reader_mode_rtl">日漫 (RTL)</string>
+    <string name="reader_mode_ltr">美漫 (LTR)</string>
+    <string name="reader_mode_vertical">条漫 (垂直)</string>
+    <string name="reader_scale_title">图片缩放</string>
+    <string name="reader_scale_fit_screen">适应屏幕</string>
+    <string name="reader_scale_fit_width">适应宽度</string>
+    <string name="reader_scale_fit_height">适应高度</string>
+    <string name="reader_scale_original">原图</string>
+    <string name="reader_bg_title">背景色</string>
+    <string name="reader_bg_default">默认</string>
+    <string name="reader_bg_black">纯黑 (AMOLED)</string>
+    <string name="reader_bg_dark_gray">深灰</string>
+    <string name="reader_bg_white">白色</string>
+    <string name="reader_brightness_title">屏幕亮度</string>
+    <string name="reader_brightness_auto">自动</string>
+    <string name="reader_filter_title">色彩滤镜</string>
+    <string name="reader_filter_none">无</string>
+    <string name="reader_filter_gray">灰度</string>
+    <string name="reader_filter_invert">反色</string>
+    <string name="reader_filter_amber">护眼 (琥珀色)</string>
+    <string name="reader_filter_alpha">滤镜浓度: %d%%</string>
+    <string name="reader_keep_screen_on">屏幕常亮</string>
+    <string name="reader_transition_anim">页面过渡动画</string>
+    <string name="reader_show_page_number">常驻显示页码</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">设置</string>
+    <string name="settings_theme_title">主题模式</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
+    <string name="settings_reader_direction_title">默认阅读方向</string>
+    <string name="settings_reader_direction_rtl">从右向左 (日漫)</string>
+    <string name="settings_reader_direction_ltr">从左向右 (美漫)</string>
+    <string name="settings_reader_direction_vertical">上下滚动 (条漫)</string>
+    <string name="settings_account_security">账户与安全</string>
+    <string name="settings_device_sessions">设备与会话管理</string>
+    <string name="settings_calculating">正在计算...</string>
+    <string name="settings_download_format_title">默认下载格式</string>
+    <string name="settings_download_format_desc">打包为 ZIP 或 CBZ</string>
+    <string name="settings_cat_account">账户与安全</string>
+    <string name="settings_sessions_title">设备与会话管理</string>
+    <string name="settings_sessions_desc">查看并管理您登录的活跃设备</string>
+    <string name="settings_apikeys_title">API 密钥管理</string>
+    <string name="settings_apikeys_desc">申请和吊销您的 API Token</string>
+    <string name="settings_cat_download">下载与存储</string>
+    <string name="settings_clear_cache_title">缓存清理</string>
+    <string name="settings_clear_cache_desc">清理本地 Coil 图片缓存</string>
+    <string name="settings_cache_cleared">缓存清理成功</string>
+    <string name="settings_cat_reader">阅读器偏好</string>
+    <string name="settings_current_fmt">当前: %s</string>
+    <string name="settings_keep_screen_on_desc">阅读页面强制保持屏幕常亮</string>
+    <string name="settings_secure_mode_title">安全模式</string>
+    <string name="settings_secure_mode_desc">开启后阅读页面禁止截图并隐藏近期任务预览</string>
+    <string name="settings_cat_appearance">外观与显示</string>
+    <string name="settings_dynamic_color_title">动态取色</string>
+    <string name="settings_dynamic_color_desc">基于壁纸的主题配色 (Android 12+)</string>
+    <string name="settings_grid_density_title">网格密度 (自适应宽度)</string>
+    <string name="settings_grid_base_width">当前基准宽度: %ddp</string>
+    <string name="settings_cat_filter">内容过滤</string>
+    <string name="settings_blacklist_desc">屏蔽特定标签的画廊</string>
+    <string name="settings_cat_language">语言与标签</string>
+    <string name="settings_app_language_title">软件界面语言</string>
+    <string name="settings_app_language_system">跟随系统</string>
+    <string name="settings_app_language_zh">简体中文</string>
+    <string name="settings_app_language_en">English</string>
+    <string name="settings_tag_language_title">标签显示模式</string>
+    <string name="settings_tag_mode_only_translation">仅翻译</string>
+    <string name="settings_tag_mode_only_original">仅英文原文</string>
+    <string name="settings_tag_mode_bilingual">双语对照 (翻译 + 英文)</string>
+
+    <string name="sessions_empty">暂无活跃会话</string>
+    <string name="sessions_ip_fmt">IP 地址: %s</string>
+    <string name="sessions_last_active_fmt">最近活跃: %s</string>
+    <string name="sessions_current_device">当前设备</string>
+    <string name="sessions_revoke">强制退出</string>
+    <string name="sessions_error_fetch">获取设备列表失败</string>
+    <string name="sessions_error_revoke">吊销设备会话失败</string>
+
+    <string name="apikeys_success_title">API 密钥申请成功</string>
+    <string name="apikeys_success_warning">注意！该密钥明文只会展示这一次。如果您离开此页面或关闭提示，明文密钥将永久无法复现。</string>
+    <string name="apikeys_key_plain">密钥明文 (API Key)</string>
+    <string name="apikeys_copied">密钥已复制到剪贴板</string>
+    <string name="apikeys_ack">我已保存并关闭</string>
+    <string name="apikeys_create_title">申请 API 密钥</string>
+    <string name="apikeys_name_label">密钥名称/备注</string>
+    <string name="apikeys_name_placeholder">例如：我的电脑端</string>
+    <string name="apikeys_generate_btn">申请</string>
+    <string name="apikeys_empty">暂无 API 密钥，请点击右下角申请</string>
+    <string name="apikeys_unnamed">未命名密钥</string>
+    <string name="apikeys_created_at_fmt">创建时间: %s</string>
+    <string name="apikeys_revoke">吊销密钥</string>
+    <string name="apikeys_add">申请新密钥</string>
+    <string name="apikeys_name_required">密钥名称不能为空</string>
+    <string name="common_unknown_error">发生未知错误，请稍后重试</string>
+
+    <!-- Captcha / Verification -->
+    <string name="captcha_title">人机验证</string>
 </resources>

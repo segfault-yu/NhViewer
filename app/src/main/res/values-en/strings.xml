@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & Common -->
+    <string name="app_name">NhViewer</string>
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_retry">Retry</string>
+    <string name="common_back">Back</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_clear">Clear</string>
+    <string name="common_close">Close</string>
+    <string name="common_save">Save</string>
+    <string name="common_error_title">An error occurred</string>
+    <string name="common_error_network">Network error</string>
+    <string name="common_error_load_failed">Failed to load. Click to retry.</string>
+    <string name="common_error_load_more_failed">Failed to load more</string>
+    <string name="common_error_load_gallery_failed">Failed to load galleries</string>
+
+    <!-- Navigation Drawer & TopBar -->
+    <string name="nav_home">Home</string>
+    <string name="nav_history">History</string>
+    <string name="nav_tags">Tags</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_blacklist">Blacklist</string>
+    <string name="nav_not_logged_in">Not logged in</string>
+    <string name="nav_login_sync_hint">Log in to sync cloud favorites</string>
+    <string name="nav_login_or_register">Log In / Register</string>
+    <string name="nav_logout">Log Out</string>
+
+    <!-- Home Screen -->
+    <string name="home_tab_latest">Latest</string>
+    <string name="home_tab_popular">Popular</string>
+    <string name="home_search_placeholder">Search galleries (e.g. pages:>10)</string>
+    <string name="home_search_history">History</string>
+    <string name="home_search_history_clear">Clear All</string>
+    <string name="home_search_suggestions">Suggestions</string>
+    <string name="home_search_tag_sub">Type: %1$s  (%2$d galleries)</string>
+    <string name="home_search_error">Search error</string>
+    <string name="home_search_empty">No matching galleries found</string>
+    <string name="home_clear_history_title">Clear Search History</string>
+    <string name="home_clear_history_confirm">Are you sure you want to clear all search history? This action cannot be undone.</string>
+
+    <!-- Sort Options -->
+    <string name="sort_title">Sort</string>
+    <string name="sort_date">Latest</string>
+    <string name="sort_popular">Popular</string>
+    <string name="sort_popular_today">Popular Today</string>
+    <string name="sort_popular_week">Popular This Week</string>
+    <string name="sort_popular_month">Popular This Month</string>
+
+    <!-- Detail Screen -->
+    <string name="detail_title">Gallery Detail</string>
+    <string name="detail_pages_count">%d Pages</string>
+    <string name="detail_favorites_count">%d Favorites</string>
+    <string name="detail_upload_time">Uploaded: %s</string>
+    <string name="detail_start_reading">Start Reading</string>
+    <string name="detail_continue_reading">Continue (Page %d)</string>
+    <string name="detail_section_tags">Tags</string>
+    <string name="detail_section_recommendations">Recommended</string>
+    <string name="detail_recommendations_failed">Failed to load recommendations</string>
+    <string name="detail_section_comments">Comments</string>
+    <string name="detail_comments_empty">No comments yet. Be the first to leave one!</string>
+    <string name="detail_comment_copy">Copy Content</string>
+    <string name="detail_comment_delete">Delete Comment</string>
+    <string name="detail_comment_report">Report Comment</string>
+    <string name="detail_comment_placeholder_logged_in">Leave a comment...</string>
+    <string name="detail_comment_placeholder_guest">Log in to leave a comment</string>
+    <string name="detail_comment_send">Send</string>
+    <string name="detail_comment_success">Comment posted successfully</string>
+    <string name="detail_login_required_favorite">Please log in to use favorites</string>
+    <string name="detail_comment_empty_error">Comment content cannot be empty</string>
+    <string name="detail_comment_reported_success">Comment reported successfully</string>
+
+    <!-- Tags Screen -->
+    <string name="tags_title">Browse Tags</string>
+    <string name="tags_sort_popular">Sort by Popularity</string>
+    <string name="tags_sort_name">Sort Alphabetically</string>
+    <string name="tags_load_error">Failed to load tag list</string>
+    <string name="tags_empty">No tags found</string>
+    <string name="tags_galleries_count">%s books</string>
+
+    <!-- Tag Categories -->
+    <string name="tag_type_artist">Artist</string>
+    <string name="tag_type_character">Character</string>
+    <string name="tag_type_parody">Parody</string>
+    <string name="tag_type_group">Group</string>
+    <string name="tag_type_language">Language</string>
+    <string name="tag_type_category">Category</string>
+    <string name="tag_type_female">Female</string>
+    <string name="tag_type_male">Male</string>
+    <string name="tag_type_tag">Other</string>
+    
+    <string name="tag_type_artist_full">Artist</string>
+    <string name="tag_type_character_full">Character</string>
+    <string name="tag_type_parody_full">Parody</string>
+    <string name="tag_type_group_full">Group</string>
+    <string name="tag_type_language_full">Language</string>
+    <string name="tag_type_category_full">Category</string>
+    <string name="tag_type_female_full">Female</string>
+    <string name="tag_type_male_full">Male</string>
+    <string name="tag_type_tag_full">Other</string>
+
+    <!-- Tagged Galleries Screen -->
+    <string name="tagged_title">Tag: %s</string>
+    <string name="tagged_empty">No galleries under this tag</string>
+
+    <!-- History Screen -->
+    <string name="history_title">Recent History</string>
+    <string name="history_empty_title">No reading history</string>
+    <string name="history_empty_subtitle">Start your reading journey from gallery details!</string>
+    <string name="history_page_progress">Page %1$d / %2$d</string>
+
+    <!-- Favorites Screen -->
+    <string name="favorites_title">My Favorites</string>
+    <string name="favorites_random">Random Favorite</string>
+    <string name="favorites_login_title">Please log in to view your favorites</string>
+    <string name="favorites_go_login">Log In</string>
+    <string name="favorites_load_error">Failed to load favorites</string>
+    <string name="favorites_empty_title">Favorites list is empty</string>
+    <string name="favorites_empty_subtitle">Click favorite on gallery details to add items here</string>
+
+    <!-- Auth Screen -->
+    <string name="auth_login_title">Log In</string>
+    <string name="auth_register_title">Register</string>
+    <string name="auth_username_email">Username / Email</string>
+    <string name="auth_username">Username</string>
+    <string name="auth_email">Email Address</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_password_hint">Password (at least 6 chars)</string>
+    <string name="auth_confirm_password">Confirm Password</string>
+    <string name="auth_forgot_password">Forgot password?</string>
+    <string name="auth_email_invalid">Please enter a valid email address</string>
+    <string name="auth_password_too_short">Password must be at least 6 characters</string>
+    <string name="auth_password_mismatch">Passwords do not match</string>
+    <string name="auth_forgot_title">Forgot Password</string>
+    <string name="auth_reset_title">Reset Credentials</string>
+    <string name="auth_forgot_desc">A reset email containing a token will be sent to your registered email:</string>
+    <string name="auth_reset_desc">Enter the reset token from your email and your new password:</string>
+    <string name="auth_reset_token">Reset Token</string>
+    <string name="auth_new_password">New Password</string>
+    <string name="auth_have_token">Have Token</string>
+    <string name="auth_get_token">Get Token</string>
+    <string name="auth_confirm_reset">Confirm Reset</string>
+    <string name="auth_op_success">Operation successful!</string>
+
+    <!-- Auth ViewModel Errors -->
+    <string name="auth_err_username_pwd_empty">Account and password cannot be empty</string>
+    <string name="auth_err_all_fields_required">All fields are required</string>
+    <string name="auth_err_account_email_empty">Account or email cannot be empty</string>
+    <string name="auth_err_token_pwd_empty">Token and new password cannot be empty</string>
+    <string name="auth_err_no_action">No action to execute</string>
+
+    <!-- Blacklist Screen -->
+    <string name="blacklist_title">Blacklist Settings</string>
+    <string name="blacklist_search_placeholder">Search and add tags to block</string>
+    <string name="blacklist_empty_title">Blacklist is empty</string>
+    <string name="blacklist_empty_subtitle">Galleries containing blocked tags will be automatically hidden from home and search lists.</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_not_logged_in">Not logged in</string>
+    <string name="profile_guest_subtitle">Log in to sync cloud favorites, manage active sessions, and more.</string>
+    <string name="profile_registered_at">Registered: %s</string>
+    <string name="profile_active_sessions">Active Sessions</string>
+    <string name="profile_last_active">Active: %s</string>
+    <string name="profile_current_device">Current Device</string>
+    <string name="profile_blacklist_desc">Manage blocked tags to filter gallery content</string>
+    <string name="profile_logout_current">Log out current device</string>
+    <string name="profile_logout_all">Log out all devices (Revoke all tokens)</string>
+
+    <!-- Reader Screen & Settings -->
+    <string name="reader_settings_title">Reader Settings</string>
+    <string name="reader_mode_title">Reading Mode</string>
+    <string name="reader_mode_rtl">Manga (RTL)</string>
+    <string name="reader_mode_ltr">Comic (LTR)</string>
+    <string name="reader_mode_vertical">Webtoon (Vertical)</string>
+    <string name="reader_scale_title">Image Scaling</string>
+    <string name="reader_scale_fit_screen">Fit Screen</string>
+    <string name="reader_scale_fit_width">Fit Width</string>
+    <string name="reader_scale_fit_height">Fit Height</string>
+    <string name="reader_scale_original">Original Size</string>
+    <string name="reader_bg_title">Background Color</string>
+    <string name="reader_bg_default">Default</string>
+    <string name="reader_bg_black">Black (AMOLED)</string>
+    <string name="reader_bg_dark_gray">Dark Gray</string>
+    <string name="reader_bg_white">White</string>
+    <string name="reader_brightness_title">Screen Brightness</string>
+    <string name="reader_brightness_auto">Auto</string>
+    <string name="reader_filter_title">Color Filter</string>
+    <string name="reader_filter_none">None</string>
+    <string name="reader_filter_gray">Grayscale</string>
+    <string name="reader_filter_invert">Invert</string>
+    <string name="reader_filter_amber">Eye Care (Amber)</string>
+    <string name="reader_filter_alpha">Filter Opacity: %d%%</string>
+    <string name="reader_keep_screen_on">Keep Screen On</string>
+    <string name="reader_transition_anim">Page Transition Animation</string>
+    <string name="reader_show_page_number">Always Show Page Number</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme_title">Theme Mode</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_reader_direction_title">Default Reading Direction</string>
+    <string name="settings_reader_direction_rtl">Right to Left (Manga)</string>
+    <string name="settings_reader_direction_ltr">Left to Right (Comic)</string>
+    <string name="settings_reader_direction_vertical">Vertical (Webtoon)</string>
+    <string name="settings_account_security">Account &amp; Security</string>
+    <string name="settings_device_sessions">Device &amp; Session Management</string>
+    <string name="settings_calculating">Calculating...</string>
+    <string name="settings_download_format_title">Default Download Format</string>
+    <string name="settings_download_format_desc">Package as ZIP or CBZ</string>
+    <string name="settings_cat_account">Account &amp; Security</string>
+    <string name="settings_sessions_title">Device &amp; Session Management</string>
+    <string name="settings_sessions_desc">Manage your active logged-in devices</string>
+    <string name="settings_apikeys_title">API Key Management</string>
+    <string name="settings_apikeys_desc">Generate and revoke your API Tokens</string>
+    <string name="settings_cat_download">Download &amp; Storage</string>
+    <string name="settings_clear_cache_title">Clear Cache</string>
+    <string name="settings_clear_cache_desc">Clear local Coil image cache</string>
+    <string name="settings_cache_cleared">Cache cleared successfully</string>
+    <string name="settings_cat_reader">Reader Preferences</string>
+    <string name="settings_current_fmt">Current: %s</string>
+    <string name="settings_keep_screen_on_desc">Force screen to stay awake while reading</string>
+    <string name="settings_secure_mode_title">Secure Mode</string>
+    <string name="settings_secure_mode_desc">Prevent screenshots and hide recent app preview</string>
+    <string name="settings_cat_appearance">Appearance &amp; Display</string>
+    <string name="settings_dynamic_color_title">Dynamic Color</string>
+    <string name="settings_dynamic_color_desc">Theme based on wallpaper colors (Android 12+)</string>
+    <string name="settings_grid_density_title">Grid Density (Adaptive Width)</string>
+    <string name="settings_grid_base_width">Current Base Width: %ddp</string>
+    <string name="settings_cat_filter">Content Filtering</string>
+    <string name="settings_blacklist_desc">Block galleries containing specific tags</string>
+    <string name="settings_cat_language">Language &amp; Tags</string>
+    <string name="settings_app_language_title">App Interface Language</string>
+    <string name="settings_app_language_system">System Default</string>
+    <string name="settings_app_language_zh">Simplified Chinese</string>
+    <string name="settings_app_language_en">English</string>
+    <string name="settings_tag_language_title">Tag Display Mode</string>
+    <string name="settings_tag_mode_only_translation">Only Translation</string>
+    <string name="settings_tag_mode_only_original">Only Original Name</string>
+    <string name="settings_tag_mode_bilingual">Bilingual (Translation + Original)</string>
+
+    <string name="sessions_empty">No active sessions</string>
+    <string name="sessions_ip_fmt">IP Address: %s</string>
+    <string name="sessions_last_active_fmt">Last Active: %s</string>
+    <string name="sessions_current_device">Current Device</string>
+    <string name="sessions_revoke">Revoke</string>
+    <string name="sessions_error_fetch">Failed to fetch session list</string>
+    <string name="sessions_error_revoke">Failed to revoke session</string>
+
+    <string name="apikeys_success_title">API Key Created Successfully</string>
+    <string name="apikeys_success_warning">Warning! This plain text API key will only be shown once. If you leave or close this dialog, it cannot be recovered.</string>
+    <string name="apikeys_key_plain">API Key Plaintext</string>
+    <string name="apikeys_copied">API Key copied to clipboard</string>
+    <string name="apikeys_ack">I have saved it</string>
+    <string name="apikeys_create_title">Generate API Key</string>
+    <string name="apikeys_name_label">Key Name / Note</string>
+    <string name="apikeys_name_placeholder">e.g. My Laptop</string>
+    <string name="apikeys_generate_btn">Generate</string>
+    <string name="apikeys_empty">No API keys. Click bottom-right to create one.</string>
+    <string name="apikeys_unnamed">Unnamed Key</string>
+    <string name="apikeys_created_at_fmt">Created: %s</string>
+    <string name="apikeys_revoke">Revoke Key</string>
+    <string name="apikeys_add">Create New Key</string>
+    <string name="apikeys_name_required">Key name cannot be empty</string>
+    <string name="common_unknown_error">An unknown error occurred. Please try again later.</string>
+
+    <!-- Captcha / Verification -->
+    <string name="captcha_title">Security Verification</string>
+</resources>

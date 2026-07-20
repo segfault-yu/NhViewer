@@ -41,6 +41,9 @@ import coil.request.ImageRequest
 import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.feature.home.HomeViewModel
 
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
@@ -56,12 +59,12 @@ fun HistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "最近阅读", fontWeight = FontWeight.Bold) },
+                title = { Text(text = stringResource(R.string.history_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -76,8 +79,8 @@ fun HistoryScreen(
         ) {
             if (readingHistory.isEmpty()) {
                 EmptyState(
-                    message = "暂无最近阅读记录",
-                    subtitle = "快去画廊详情页开始您的阅读旅程吧",
+                    message = stringResource(R.string.history_empty_title),
+                    subtitle = stringResource(R.string.history_empty_subtitle),
                     icon = Icons.Default.History
                 )
             } else {
@@ -133,7 +136,7 @@ fun HistoryScreen(
                                     Column {
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = "第 ${history.lastReadPage} / ${history.totalPages} 页",
+                                            text = stringResource(R.string.history_page_progress, history.lastReadPage, history.totalPages),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.primary,
                                             fontWeight = FontWeight.Medium

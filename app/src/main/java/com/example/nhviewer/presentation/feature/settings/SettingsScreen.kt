@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -51,6 +53,8 @@ import coil.imageLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import androidx.compose.runtime.LaunchedEffect
 
 @OptIn(ExperimentalMaterial3Api::class, coil.annotation.ExperimentalCoilApi::class)
@@ -65,7 +69,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var cacheSize by remember { mutableStateOf("正在计算...") }
+    var cacheSize by remember { mutableStateOf(context.getString(R.string.settings_calculating)) }
 
     fun formatCacheSize(bytes: Long): String {
         if (bytes <= 0) return "0.0 B"
@@ -95,34 +99,51 @@ fun SettingsScreen(
     val dynamicColor by viewModel.dynamicColor.collectAsState()
     val keepScreenOn by viewModel.keepScreenOn.collectAsState()
     val secureMode by viewModel.secureMode.collectAsState()
+    val appLanguage by viewModel.appLanguage.collectAsState()
+    val tagLanguage by viewModel.tagLanguage.collectAsState()
+    val tagDisplayMode by viewModel.tagDisplayMode.collectAsState()
 
     var showDownloadFormatDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showDirectionDialog by remember { mutableStateOf(false) }
+    var showAppLanguageDialog by remember { mutableStateOf(false) }
+    var showTagLanguageDialog by remember { mutableStateOf(false) }
 
     val themeModeText = when (themeMode) {
-        "light" -> "浅色"
-        "dark" -> "深色"
-        else -> "跟随系统"
+        "light" -> stringResource(R.string.settings_theme_light)
+        "dark" -> stringResource(R.string.settings_theme_dark)
+        else -> stringResource(R.string.settings_theme_system)
     }
 
     val directionText = when (readerDirection) {
-        "ltr" -> "从左向右 (美漫)"
-        "vertical" -> "上下滚动 (条漫)"
-        else -> "从右向左 (日漫)"
+        "ltr" -> stringResource(R.string.reader_mode_ltr)
+        "vertical" -> stringResource(R.string.reader_mode_vertical)
+        else -> stringResource(R.string.reader_mode_rtl)
+    }
+
+    val appLanguageText = when (appLanguage) {
+        "zh" -> stringResource(R.string.settings_app_language_zh)
+        "en" -> stringResource(R.string.settings_app_language_en)
+        else -> stringResource(R.string.settings_app_language_system)
+    }
+
+    val tagDisplayModeText = when (tagDisplayMode) {
+        "only_original" -> stringResource(R.string.settings_tag_mode_only_original)
+        "bilingual" -> stringResource(R.string.settings_tag_mode_bilingual)
+        else -> stringResource(R.string.settings_tag_mode_only_translation)
     }
 
     // Theme Mode Dialog
     if (showThemeDialog) {
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
-            title = { Text("主题模式", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.settings_theme_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val themes = listOf(
-                        "system" to "跟随系统",
-                        "light" to "浅色",
-                        "dark" to "深色"
+                        "system" to stringResource(R.string.settings_theme_system),
+                        "light" to stringResource(R.string.settings_theme_light),
+                        "dark" to stringResource(R.string.settings_theme_dark)
                     )
                     themes.forEach { (value, label) ->
                         Row(
@@ -150,7 +171,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showThemeDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -160,13 +181,13 @@ fun SettingsScreen(
     if (showDirectionDialog) {
         AlertDialog(
             onDismissRequest = { showDirectionDialog = false },
-            title = { Text("默认阅读方向", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.settings_reader_direction_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val directions = listOf(
-                        "rtl" to "从右向左 (日漫)",
-                        "ltr" to "从左向右 (美漫)",
-                        "vertical" to "上下滚动 (条漫)"
+                        "rtl" to stringResource(R.string.reader_mode_rtl),
+                        "ltr" to stringResource(R.string.reader_mode_ltr),
+                        "vertical" to stringResource(R.string.reader_mode_vertical)
                     )
                     directions.forEach { (value, label) ->
                         Row(
@@ -194,7 +215,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showDirectionDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -204,7 +225,7 @@ fun SettingsScreen(
     if (showDownloadFormatDialog) {
         AlertDialog(
             onDismissRequest = { showDownloadFormatDialog = false },
-            title = { Text("默认下载格式", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.settings_download_format_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val formats = listOf("ZIP", "CBZ")
@@ -235,7 +256,95 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showDownloadFormatDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
+        )
+    }
+
+    // App Language Dialog
+    if (showAppLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showAppLanguageDialog = false },
+            title = { Text(stringResource(R.string.settings_app_language_title), fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val options = listOf(
+                        "system" to stringResource(R.string.settings_app_language_system),
+                        "zh" to stringResource(R.string.settings_app_language_zh),
+                        "en" to stringResource(R.string.settings_app_language_en)
+                    )
+                    options.forEach { (value, label) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setAppLanguage(value)
+                                    showAppLanguageDialog = false
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = appLanguage == value,
+                                onClick = {
+                                    viewModel.setAppLanguage(value)
+                                    showAppLanguageDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAppLanguageDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
+        )
+    }
+
+    // Tag Display Mode Dialog
+    if (showTagLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showTagLanguageDialog = false },
+            title = { Text(stringResource(R.string.settings_tag_language_title), fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val options = listOf(
+                        "only_translation" to stringResource(R.string.settings_tag_mode_only_translation),
+                        "only_original" to stringResource(R.string.settings_tag_mode_only_original),
+                        "bilingual" to stringResource(R.string.settings_tag_mode_bilingual)
+                    )
+                    options.forEach { (value, label) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setTagDisplayMode(value)
+                                    showTagLanguageDialog = false
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = tagDisplayMode == value,
+                                onClick = {
+                                    viewModel.setTagDisplayMode(value)
+                                    showTagLanguageDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTagLanguageDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -244,12 +353,12 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设置") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -264,18 +373,18 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(vertical = 8.dp)
         ) {
-            SettingsCategoryHeader(title = "账户与安全")
+            SettingsCategoryHeader(title = stringResource(R.string.settings_cat_account))
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "设备与会话管理",
+                        text = stringResource(R.string.settings_sessions_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "查看并管理您登录的活跃设备",
+                        text = stringResource(R.string.settings_sessions_desc),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -287,14 +396,14 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "API 密钥管理",
+                        text = stringResource(R.string.settings_apikeys_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "申请和吊销您的 API Token",
+                        text = stringResource(R.string.settings_apikeys_desc),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -304,18 +413,18 @@ fun SettingsScreen(
                 modifier = Modifier.clickable { onNavigateToApiKeys() }
             )
 
-            SettingsCategoryHeader(title = "下载与存储")
+            SettingsCategoryHeader(title = stringResource(R.string.settings_cat_download))
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "默认下载格式",
+                        text = stringResource(R.string.settings_download_format_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "打包为 ZIP 或 CBZ",
+                        text = stringResource(R.string.settings_download_format_desc),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -333,14 +442,14 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "缓存清理",
+                        text = stringResource(R.string.settings_clear_cache_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "清理本地 Coil 图片缓存",
+                        text = stringResource(R.string.settings_clear_cache_desc),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -360,24 +469,24 @@ fun SettingsScreen(
                         val formatted = formatCacheSize(sizeBytes)
                         withContext(Dispatchers.Main) {
                             cacheSize = formatted
-                            Toast.makeText(context, "缓存清理成功", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.settings_cache_cleared), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             )
 
-            SettingsCategoryHeader(title = "阅读器偏好")
+            SettingsCategoryHeader(title = stringResource(R.string.settings_cat_reader))
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "默认阅读方向",
+                        text = stringResource(R.string.settings_reader_direction_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "当前: $directionText",
+                        text = stringResource(R.string.settings_current_fmt, directionText),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -388,14 +497,14 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "屏幕常亮",
+                        text = stringResource(R.string.reader_keep_screen_on),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "阅读页面强制保持屏幕常亮",
+                        text = stringResource(R.string.settings_keep_screen_on_desc),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -412,14 +521,14 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "安全模式",
+                        text = stringResource(R.string.settings_secure_mode_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "开启后阅读页面禁止截图并隐藏近期任务预览",
+                        text = stringResource(R.string.settings_secure_mode_desc),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -434,18 +543,18 @@ fun SettingsScreen(
                 modifier = Modifier.clickable { viewModel.setSecureMode(!secureMode) }
             )
 
-            SettingsCategoryHeader(title = "外观与显示")
+            SettingsCategoryHeader(title = stringResource(R.string.settings_cat_appearance))
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "主题模式",
+                        text = stringResource(R.string.settings_theme_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "当前: $themeModeText",
+                        text = stringResource(R.string.settings_current_fmt, themeModeText),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -456,14 +565,14 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "动态取色",
+                        text = stringResource(R.string.settings_dynamic_color_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "基于壁纸的主题配色 (Android 12+)",
+                        text = stringResource(R.string.settings_dynamic_color_desc),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -480,7 +589,7 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "网格密度 (自适应宽度)",
+                        text = stringResource(R.string.settings_grid_density_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -488,7 +597,7 @@ fun SettingsScreen(
                 supportingContent = {
                     Column {
                         Text(
-                            text = "当前基准宽度: ${gridBaseWidth}dp",
+                            text = stringResource(R.string.settings_grid_base_width, gridBaseWidth),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -503,18 +612,18 @@ fun SettingsScreen(
                 leadingContent = { Icon(Icons.Default.Palette, contentDescription = null) }
             )
 
-            SettingsCategoryHeader(title = "内容过滤")
+            SettingsCategoryHeader(title = stringResource(R.string.settings_cat_filter))
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "黑名单管理",
+                        text = stringResource(R.string.blacklist_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 supportingContent = {
                     Text(
-                        text = "屏蔽特定标签的画廊",
+                        text = stringResource(R.string.settings_blacklist_desc),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -522,6 +631,44 @@ fun SettingsScreen(
                 leadingContent = { Icon(Icons.Default.FilterList, contentDescription = null) },
                 trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
                 modifier = Modifier.clickable { onNavigateToBlacklist() }
+            )
+
+            SettingsCategoryHeader(title = stringResource(R.string.settings_cat_language))
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.settings_app_language_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.settings_current_fmt, appLanguageText),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.Language, contentDescription = null) },
+                modifier = Modifier.clickable { showAppLanguageDialog = true }
+            )
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.settings_tag_language_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.settings_current_fmt, tagDisplayModeText),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.Translate, contentDescription = null) },
+                modifier = Modifier.clickable { showTagLanguageDialog = true }
             )
         }
     }

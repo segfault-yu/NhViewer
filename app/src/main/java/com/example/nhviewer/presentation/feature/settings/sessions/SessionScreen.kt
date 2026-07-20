@@ -36,6 +36,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,11 +49,11 @@ fun SessionScreen(
     val context = LocalContext.current
     val sessions by viewModel.sessions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
+    val errorMessageRes by viewModel.errorMessageRes.collectAsState()
 
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+    LaunchedEffect(errorMessageRes) {
+        errorMessageRes?.let { resId ->
+            Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
     }
@@ -59,12 +61,12 @@ fun SessionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设备与会话管理", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(stringResource(R.string.settings_sessions_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -85,7 +87,7 @@ fun SessionScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "暂无活跃会话",
+                        text = stringResource(R.string.sessions_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -114,14 +116,14 @@ fun SessionScreen(
                             supportingContent = {
                                 Column {
                                     Text(
-                                        text = "IP 地址: ${session.ipAddress}",
+                                        text = stringResource(R.string.sessions_ip_fmt, session.ipAddress),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "最近活跃: $formattedDate",
+                                        text = stringResource(R.string.sessions_last_active_fmt, formattedDate),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         style = MaterialTheme.typography.bodySmall,
@@ -141,7 +143,7 @@ fun SessionScreen(
                                 if (session.currentSession) {
                                     SuggestionChip(
                                         onClick = {},
-                                        label = { Text("当前设备") }
+                                        label = { Text(stringResource(R.string.sessions_current_device)) }
                                     )
                                 } else {
                                     IconButton(
@@ -149,7 +151,7 @@ fun SessionScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "强制退出",
+                                            contentDescription = stringResource(R.string.sessions_revoke),
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }

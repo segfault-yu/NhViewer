@@ -27,6 +27,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,7 +63,7 @@ fun ReaderSettingsSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "阅读器设置",
+                text = stringResource(R.string.reader_settings_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -71,7 +73,7 @@ fun ReaderSettingsSheet(
             // 1. 阅读模式
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "阅读模式",
+                    text = stringResource(R.string.reader_mode_title),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -82,17 +84,17 @@ fun ReaderSettingsSheet(
                     FilterChip(
                         selected = readerDirection == "rtl",
                         onClick = { settingsViewModel.setReaderDirection("rtl") },
-                        label = { Text("日漫 (RTL)") }
+                        label = { Text(stringResource(R.string.reader_mode_rtl)) }
                     )
                     FilterChip(
                         selected = readerDirection == "ltr",
                         onClick = { settingsViewModel.setReaderDirection("ltr") },
-                        label = { Text("美漫 (LTR)") }
+                        label = { Text(stringResource(R.string.reader_mode_ltr)) }
                     )
                     FilterChip(
                         selected = readerDirection == "vertical",
                         onClick = { settingsViewModel.setReaderDirection("vertical") },
-                        label = { Text("条漫 (垂直)") }
+                        label = { Text(stringResource(R.string.reader_mode_vertical)) }
                     )
                 }
             }
@@ -100,7 +102,7 @@ fun ReaderSettingsSheet(
             // 2. 图片缩放模式
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "图片缩放",
+                    text = stringResource(R.string.reader_scale_title),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -111,22 +113,22 @@ fun ReaderSettingsSheet(
                     FilterChip(
                         selected = imageScaleMode == "fit_screen",
                         onClick = { settingsViewModel.setImageScaleMode("fit_screen") },
-                        label = { Text("适应屏幕") }
+                        label = { Text(stringResource(R.string.reader_scale_fit_screen)) }
                     )
                     FilterChip(
                         selected = imageScaleMode == "fit_width",
                         onClick = { settingsViewModel.setImageScaleMode("fit_width") },
-                        label = { Text("适应宽度") }
+                        label = { Text(stringResource(R.string.reader_scale_fit_width)) }
                     )
                     FilterChip(
                         selected = imageScaleMode == "fit_height",
                         onClick = { settingsViewModel.setImageScaleMode("fit_height") },
-                        label = { Text("适应高度") }
+                        label = { Text(stringResource(R.string.reader_scale_fit_height)) }
                     )
                     FilterChip(
                         selected = imageScaleMode == "original",
                         onClick = { settingsViewModel.setImageScaleMode("original") },
-                        label = { Text("原图") }
+                        label = { Text(stringResource(R.string.reader_scale_original)) }
                     )
                 }
             }
@@ -134,7 +136,7 @@ fun ReaderSettingsSheet(
             // 3. 背景色
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "背景色",
+                    text = stringResource(R.string.reader_bg_title),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -145,22 +147,22 @@ fun ReaderSettingsSheet(
                     FilterChip(
                         selected = readerBackground == "default",
                         onClick = { settingsViewModel.setReaderBackground("default") },
-                        label = { Text("默认") }
+                        label = { Text(stringResource(R.string.reader_bg_default)) }
                     )
                     FilterChip(
                         selected = readerBackground == "amoled",
                         onClick = { settingsViewModel.setReaderBackground("amoled") },
-                        label = { Text("纯黑 (AMOLED)") }
+                        label = { Text(stringResource(R.string.reader_bg_black)) }
                     )
                     FilterChip(
                         selected = readerBackground == "dark_gray",
                         onClick = { settingsViewModel.setReaderBackground("dark_gray") },
-                        label = { Text("深灰") }
+                        label = { Text(stringResource(R.string.reader_bg_dark_gray)) }
                     )
                     FilterChip(
                         selected = readerBackground == "white",
                         onClick = { settingsViewModel.setReaderBackground("white") },
-                        label = { Text("白色") }
+                        label = { Text(stringResource(R.string.reader_bg_white)) }
                     )
                 }
             }
@@ -173,13 +175,13 @@ fun ReaderSettingsSheet(
                     horizontalArrangement = SpaceBetween
                 ) {
                     Text(
-                        text = "屏幕亮度",
+                        text = stringResource(R.string.reader_brightness_title),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "自动",
+                            text = stringResource(R.string.reader_brightness_auto),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -211,7 +213,7 @@ fun ReaderSettingsSheet(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = if (isAuto) "自动" else "${(sliderValue * 100).toInt()}%",
+                        text = if (isAuto) stringResource(R.string.reader_brightness_auto) else "${(sliderValue * 100).toInt()}%",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -221,7 +223,7 @@ fun ReaderSettingsSheet(
             // 5. 色彩滤镜
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "色彩滤镜",
+                    text = stringResource(R.string.reader_filter_title),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -232,28 +234,28 @@ fun ReaderSettingsSheet(
                     FilterChip(
                         selected = colorFilterMode == "none",
                         onClick = { settingsViewModel.setColorFilterMode("none") },
-                        label = { Text("无") }
+                        label = { Text(stringResource(R.string.reader_filter_none)) }
                     )
                     FilterChip(
                         selected = colorFilterMode == "grayscale",
                         onClick = { settingsViewModel.setColorFilterMode("grayscale") },
-                        label = { Text("灰度") }
+                        label = { Text(stringResource(R.string.reader_filter_gray)) }
                     )
                     FilterChip(
                         selected = colorFilterMode == "invert",
                         onClick = { settingsViewModel.setColorFilterMode("invert") },
-                        label = { Text("反色") }
+                        label = { Text(stringResource(R.string.reader_filter_invert)) }
                     )
                     FilterChip(
                         selected = colorFilterMode == "sepia",
                         onClick = { settingsViewModel.setColorFilterMode("sepia") },
-                        label = { Text("护眼 (琥珀色)") }
+                        label = { Text(stringResource(R.string.reader_filter_amber)) }
                     )
                 }
                 if (colorFilterMode == "sepia") {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "滤镜浓度: ${(colorFilterAlpha * 100).toInt()}%",
+                        text = stringResource(R.string.reader_filter_alpha, (colorFilterAlpha * 100).toInt()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -272,7 +274,7 @@ fun ReaderSettingsSheet(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "屏幕常亮",
+                        text = stringResource(R.string.reader_keep_screen_on),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 },
@@ -288,7 +290,7 @@ fun ReaderSettingsSheet(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "页面过渡动画",
+                        text = stringResource(R.string.reader_transition_anim),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 },
@@ -304,7 +306,7 @@ fun ReaderSettingsSheet(
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "常驻显示页码",
+                        text = stringResource(R.string.reader_show_page_number),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 },

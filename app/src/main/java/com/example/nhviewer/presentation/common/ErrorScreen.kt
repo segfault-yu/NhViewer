@@ -24,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
+
 /**
  * 全屏错误占位界面，显示错误信息并可提供重试操作。
  *
@@ -65,7 +68,7 @@ fun ErrorScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "出现错误",
+                    text = stringResource(R.string.common_error_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -83,7 +86,7 @@ fun ErrorScreen(
                     onClick = onRetry,
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
-                    Text("重试")
+                    Text(stringResource(R.string.common_retry))
                 }
             }
         }

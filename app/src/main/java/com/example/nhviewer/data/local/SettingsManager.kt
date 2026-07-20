@@ -34,7 +34,46 @@ class SettingsManager @Inject constructor(
         val COLOR_FILTER_ALPHA = floatPreferencesKey("color_filter_alpha")
         val PAGE_TRANSITION_ANIM = booleanPreferencesKey("page_transition_anim")
         val SHOW_PERSISTENT_PAGE_NUMBER = booleanPreferencesKey("show_persistent_page_number")
+        val APP_LANGUAGE = stringPreferencesKey("app_language")
+        val TAG_LANGUAGE = stringPreferencesKey("tag_language")
+        val TAG_DISPLAY_MODE = stringPreferencesKey("tag_display_mode")
     }
+
+    val appLanguage: Flow<String> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.APP_LANGUAGE] ?: "system"
+        }
+
+    val tagLanguage: Flow<String> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.TAG_LANGUAGE] ?: "zh"
+        }
+
+    val tagDisplayMode: Flow<String> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.TAG_DISPLAY_MODE] ?: "only_translation"
+        }
 
     val themeMode: Flow<String> = dataStore.data
         .catch { exception ->
@@ -285,6 +324,24 @@ class SettingsManager @Inject constructor(
     suspend fun setShowPersistentPageNumber(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.SHOW_PERSISTENT_PAGE_NUMBER] = enabled
+        }
+    }
+
+    suspend fun setAppLanguage(language: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.APP_LANGUAGE] = language
+        }
+    }
+
+    suspend fun setTagLanguage(language: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.TAG_LANGUAGE] = language
+        }
+    }
+
+    suspend fun setTagDisplayMode(mode: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.TAG_DISPLAY_MODE] = mode
         }
     }
 }

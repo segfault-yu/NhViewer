@@ -113,6 +113,27 @@ class SettingsViewModel @Inject constructor(
             initialValue = true
         )
 
+    val appLanguage: StateFlow<String> = settingsManager.appLanguage
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "system"
+        )
+
+    val tagLanguage: StateFlow<String> = settingsManager.tagLanguage
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "zh"
+        )
+
+    val tagDisplayMode: StateFlow<String> = settingsManager.tagDisplayMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "only_translation"
+        )
+
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
             settingsManager.setThemeMode(mode)
@@ -194,6 +215,24 @@ class SettingsViewModel @Inject constructor(
     fun setShowPersistentPageNumber(enabled: Boolean) {
         viewModelScope.launch {
             settingsManager.setShowPersistentPageNumber(enabled)
+        }
+    }
+
+    fun setAppLanguage(language: String) {
+        viewModelScope.launch {
+            settingsManager.setAppLanguage(language)
+        }
+    }
+
+    fun setTagLanguage(language: String) {
+        viewModelScope.launch {
+            settingsManager.setTagLanguage(language)
+        }
+    }
+
+    fun setTagDisplayMode(mode: String) {
+        viewModelScope.launch {
+            settingsManager.setTagDisplayMode(mode)
         }
     }
 }

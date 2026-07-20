@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.example.nhviewer.R
+
 @HiltViewModel
 class SessionViewModel @Inject constructor(
     private val getSessionsUseCase: GetSessionsUseCase,
@@ -24,8 +26,8 @@ class SessionViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val _errorMessageRes = MutableStateFlow<Int?>(null)
+    val errorMessageRes: StateFlow<Int?> = _errorMessageRes.asStateFlow()
 
     init {
         loadSessions()
@@ -36,9 +38,9 @@ class SessionViewModel @Inject constructor(
             _isLoading.value = true
             getSessionsUseCase().onSuccess {
                 _sessions.value = it
-                _errorMessage.value = null
+                _errorMessageRes.value = null
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "获取设备列表失败"
+                _errorMessageRes.value = R.string.sessions_error_fetch
             }
             _isLoading.value = false
         }
@@ -50,13 +52,13 @@ class SessionViewModel @Inject constructor(
             revokeSessionUseCase(sessionId).onSuccess {
                 loadSessions()
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "吊销设备会话失败"
+                _errorMessageRes.value = R.string.sessions_error_revoke
             }
             _isLoading.value = false
         }
     }
 
     fun clearError() {
-        _errorMessage.value = null
+        _errorMessageRes.value = null
     }
 }

@@ -49,6 +49,8 @@ import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import com.example.nhviewer.domain.model.AuthState
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,12 +91,12 @@ fun FavoritesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "我的收藏", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(text = stringResource(R.string.favorites_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 },
@@ -105,7 +107,7 @@ fun FavoritesScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Casino,
-                            contentDescription = "随机收藏"
+                            contentDescription = stringResource(R.string.favorites_random)
                         )
                     }
                 }
@@ -134,7 +136,7 @@ fun FavoritesScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "请先登录以查看我的收藏",
+                        text = stringResource(R.string.favorites_login_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -143,7 +145,7 @@ fun FavoritesScreen(
                     Button(
                         onClick = onNavigateToAuth
                     ) {
-                        Text(text = "去登录")
+                        Text(text = stringResource(R.string.favorites_go_login))
                     }
                 }
             }
@@ -159,13 +161,13 @@ fun FavoritesScreen(
                 if (favorites.loadState.refresh is LoadState.Error) {
                     val error = (favorites.loadState.refresh as LoadState.Error).error
                     ErrorScreen(
-                        message = error.localizedMessage ?: "拉取收藏夹失败",
+                        message = error.localizedMessage ?: stringResource(R.string.favorites_load_error),
                         onRetry = { favorites.retry() }
                     )
                 } else if (favorites.itemCount == 0 && favorites.loadState.refresh is LoadState.NotLoading) {
                     EmptyState(
-                        message = "收藏夹是空的",
-                        subtitle = "在画廊详情页点击收藏，即可在此处查看",
+                        message = stringResource(R.string.favorites_empty_title),
+                        subtitle = stringResource(R.string.favorites_empty_subtitle),
                         icon = Icons.Rounded.FavoriteBorder
                     )
                 } else {
@@ -205,8 +207,9 @@ fun FavoritesScreen(
                             item(span = StaggeredGridItemSpan.FullLine) {
                                 val error = (favorites.loadState.append as LoadState.Error).error
                                 ErrorScreen(
-                                    message = error.localizedMessage ?: "加载更多失败",
-                                    onRetry = { favorites.retry() }
+                                    message = error.localizedMessage ?: stringResource(R.string.common_error_load_more_failed),
+                                    onRetry = { favorites.retry() },
+                                    modifier = Modifier.padding(16.dp)
                                 )
                             }
                         }

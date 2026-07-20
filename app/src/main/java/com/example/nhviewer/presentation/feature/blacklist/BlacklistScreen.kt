@@ -51,6 +51,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.nhviewer.presentation.common.EmptyState
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import com.example.nhviewer.presentation.common.LoadingIndicator
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,18 +62,18 @@ fun BlacklistScreen(
     modifier: Modifier = Modifier,
     viewModel: BlacklistViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     val blacklist by viewModel.blacklist.collectAsState()
-    val suggestions by viewModel.suggestions.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val suggestions by viewModel.suggestions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val context = LocalContext.current
 
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
     }
@@ -83,12 +85,12 @@ fun BlacklistScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "黑名单设置", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(text = stringResource(R.string.blacklist_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -117,7 +119,7 @@ fun BlacklistScreen(
                             viewModel.onSearchQueryChanged(it)
                             isDropdownExpanded = it.isNotBlank()
                         },
-                        label = { Text("搜索并添加要屏蔽的标签") },
+                        label = { Text(stringResource(R.string.blacklist_search_placeholder)) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
@@ -169,8 +171,8 @@ fun BlacklistScreen(
                 }
             } else if (blacklist.isEmpty()) {
                 EmptyState(
-                    message = "黑名单为空",
-                    subtitle = "搜索并添加标签至黑名单后，首页及搜索列表中含有该标签的画廊卡片将会被自动隐藏。",
+                    message = stringResource(R.string.blacklist_empty_title),
+                    subtitle = stringResource(R.string.blacklist_empty_subtitle),
                     icon = Icons.Default.Block
                 )
             } else {
@@ -205,7 +207,7 @@ fun BlacklistScreen(
                                     IconButton(onClick = { viewModel.removeTagFromBlacklist(tag.id) }) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "删除",
+                                            contentDescription = stringResource(R.string.common_delete),
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }

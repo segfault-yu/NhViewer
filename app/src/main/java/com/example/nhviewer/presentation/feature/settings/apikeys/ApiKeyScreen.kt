@@ -54,6 +54,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.nhviewer.presentation.common.CaptchaDialog
 
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ApiKeyScreen(
@@ -66,7 +69,7 @@ fun ApiKeyScreen(
 
     val apiKeys by viewModel.apiKeys.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
+    val errorMessageRes by viewModel.errorMessageRes.collectAsState()
     val powStatus by viewModel.powStatus.collectAsState()
     val captchaSiteKey by viewModel.captchaSiteKey.collectAsState()
     val newlyCreatedApiKey by viewModel.newlyCreatedApiKey.collectAsState()
@@ -74,9 +77,9 @@ fun ApiKeyScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var keyNameInput by remember { mutableStateOf("") }
 
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+    LaunchedEffect(errorMessageRes) {
+        errorMessageRes?.let { resId ->
+            Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
     }
@@ -89,14 +92,16 @@ fun ApiKeyScreen(
         )
     }
 
+    val copiedMessage = stringResource(R.string.apikeys_copied)
+
     newlyCreatedApiKey?.let { apiKey ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissNewlyCreatedKey() },
-            title = { Text("API 密钥申请成功", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.apikeys_success_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "注意！该密钥明文只会展示这一次。如果您离开此页面或关闭提示，明文密钥将永久无法复现。",
+                        text = stringResource(R.string.apikeys_success_warning),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
@@ -105,15 +110,15 @@ fun ApiKeyScreen(
                         value = apiKey.key ?: "",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("密钥明文 (API Key)") },
+                        label = { Text(stringResource(R.string.apikeys_key_plain)) },
                         trailingIcon = {
                             IconButton(onClick = {
                                 apiKey.key?.let {
                                     clipboardManager.setText(AnnotatedString(it))
-                                    Toast.makeText(context, "密钥已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, copiedMessage, Toast.LENGTH_SHORT).show()
                                 }
                             }) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = "复制")
+                                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.common_retry))
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -122,7 +127,7 @@ fun ApiKeyScreen(
             },
             confirmButton = {
                 Button(onClick = { viewModel.dismissNewlyCreatedKey() }) {
-                    Text("我已保存并关闭")
+                    Text(stringResource(R.string.apikeys_ack))
                 }
             }
         )
@@ -134,14 +139,14 @@ fun ApiKeyScreen(
                 showCreateDialog = false
                 keyNameInput = ""
             },
-            title = { Text("申请 API 密钥", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.apikeys_create_title), fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = keyNameInput,
                     onValueChange = { keyNameInput = it },
-                    label = { Text("密钥名称/备注") },
+                    label = { Text(stringResource(R.string.apikeys_name_label)) },
                     singleLine = true,
-                    placeholder = { Text("例如：我的电脑端") },
+                    placeholder = { Text(stringResource(R.string.apikeys_name_placeholder)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -156,7 +161,7 @@ fun ApiKeyScreen(
                     },
                     enabled = keyNameInput.isNotBlank()
                 ) {
-                    Text("申请")
+                    Text(stringResource(R.string.apikeys_generate_btn))
                 }
             },
             dismissButton = {
@@ -164,13 +169,13 @@ fun ApiKeyScreen(
                     showCreateDialog = false
                     keyNameInput = ""
                 }) {
-                    Text("取消")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
     }
 
-    if (powStatus != "Idle" && powStatus != "等待进行人机验证...") {
+    if (powStatus != "Idle" && powStatus != "Waiting Captcha...") {
         Dialog(onDismissRequest = {}) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -180,19 +185,17 @@ fun ApiKeyScreen(
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         shape = MaterialTheme.shapes.medium
                     )
-                    .padding(24.dp)
+                    .padding(16.dp)
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                    CircularProgressIndicator()
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = powStatus,
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -203,12 +206,12 @@ fun ApiKeyScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("API 密钥管理", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(stringResource(R.string.settings_apikeys_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -218,7 +221,7 @@ fun ApiKeyScreen(
             FloatingActionButton(
                 onClick = { showCreateDialog = true }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "申请新密钥")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.apikeys_add))
             }
         },
         modifier = modifier
@@ -236,7 +239,7 @@ fun ApiKeyScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "暂无 API 密钥，请点击右下角申请",
+                        text = stringResource(R.string.apikeys_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -252,7 +255,7 @@ fun ApiKeyScreen(
                         ListItem(
                             headlineContent = {
                                 Text(
-                                    text = apiKey.name ?: "未命名密钥",
+                                    text = apiKey.name ?: stringResource(R.string.apikeys_unnamed),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.bodyLarge
@@ -268,7 +271,7 @@ fun ApiKeyScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "创建时间: ${apiKey.createdAt}",
+                                        text = stringResource(R.string.apikeys_created_at_fmt, apiKey.createdAt),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         style = MaterialTheme.typography.bodySmall,
@@ -290,7 +293,7 @@ fun ApiKeyScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
-                                        contentDescription = "吊销密钥",
+                                        contentDescription = stringResource(R.string.apikeys_revoke),
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 }

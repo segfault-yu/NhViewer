@@ -43,12 +43,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.nhviewer.util.i18n.LocalTagDisplayMode
+import com.example.nhviewer.util.i18n.LocalTagLanguage
+import com.example.nhviewer.util.i18n.TagTranslationProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.LoadingIndicator
+
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +64,8 @@ fun TagsScreen(
     modifier: Modifier = Modifier,
     viewModel: TagsViewModel = hiltViewModel()
 ) {
+    val tagLanguage = LocalTagLanguage.current
+    val tagDisplayMode = LocalTagDisplayMode.current
     val currentType by viewModel.currentType.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
     val tags = viewModel.tagsFlow.collectAsLazyPagingItems()
@@ -65,13 +73,13 @@ fun TagsScreen(
     var showSortMenu by remember { mutableStateOf(false) }
 
     val tabTypes = listOf(
-        Pair("tag", "标签"),
-        Pair("artist", "画师"),
-        Pair("parody", "原作"),
-        Pair("character", "角色"),
-        Pair("group", "社团"),
-        Pair("language", "语言"),
-        Pair("category", "分类")
+        Pair("tag", stringResource(R.string.tag_type_tag)),
+        Pair("artist", stringResource(R.string.tag_type_artist)),
+        Pair("parody", stringResource(R.string.tag_type_parody)),
+        Pair("character", stringResource(R.string.tag_type_character)),
+        Pair("group", stringResource(R.string.tag_type_group)),
+        Pair("language", stringResource(R.string.tag_type_language)),
+        Pair("category", stringResource(R.string.tag_type_category))
     )
 
     val currentTabIndex = tabTypes.indexOfFirst { it.first == currentType }.coerceAtLeast(0)
@@ -81,7 +89,7 @@ fun TagsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "标签浏览",
+                        text = stringResource(R.string.tags_title),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
@@ -89,7 +97,7 @@ fun TagsScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -145,7 +153,7 @@ fun TagsScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (sortOption == "popular") "按热度排序" else "按字母排序",
+                            text = if (sortOption == "popular") stringResource(R.string.tags_sort_popular) else stringResource(R.string.tags_sort_name),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -157,14 +165,14 @@ fun TagsScreen(
                         onDismissRequest = { showSortMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("按热度排序") },
+                            text = { Text(stringResource(R.string.tags_sort_popular)) },
                             onClick = {
                                 viewModel.setSortOption("popular")
                                 showSortMenu = false
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("按字母排序") },
+                            text = { Text(stringResource(R.string.tags_sort_name)) },
                             onClick = {
                                 viewModel.setSortOption("name")
                                 showSortMenu = false
@@ -182,11 +190,11 @@ fun TagsScreen(
                 } else if (tags.loadState.refresh is LoadState.Error) {
                     val error = (tags.loadState.refresh as LoadState.Error).error
                     ErrorScreen(
-                        message = error.localizedMessage ?: "加载标签列表失败",
+                        message = error.localizedMessage ?: stringResource(R.string.tags_load_error),
                         onRetry = { tags.retry() }
                     )
                 } else if (tags.itemCount == 0 && tags.loadState.refresh is LoadState.NotLoading) {
-                    EmptyState(message = "没有找到标签")
+                    EmptyState(message = stringResource(R.string.tags_empty))
                 } else {
                     LazyVerticalGrid(
                         columns = GridCells.Adaptive(minSize = 180.dp),
@@ -221,7 +229,7 @@ fun TagsScreen(
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = tag.name,
+                                                text = TagTranslationProvider.getFormattedName(tag.name, tagLanguage, tagDisplayMode),
                                                 fontWeight = FontWeight.Bold,
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 maxLines = 1,
@@ -229,7 +237,7 @@ fun TagsScreen(
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
-                                                text = "${formatCount(tag.count)} 本书",
+                                                text = stringResource(R.string.tags_galleries_count, formatCount(tag.count)),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )

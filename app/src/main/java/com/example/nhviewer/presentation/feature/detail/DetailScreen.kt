@@ -50,6 +50,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -57,6 +58,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -81,10 +85,12 @@ import coil.request.ImageRequest
 import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.domain.model.GalleryDetail
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.util.i18n.LocalTagDisplayMode
+import com.example.nhviewer.util.i18n.LocalTagLanguage
+import com.example.nhviewer.util.i18n.TagTranslationProvider
 import com.example.nhviewer.presentation.common.CaptchaDialog
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
-import com.example.nhviewer.presentation.common.RelatedGalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import com.example.nhviewer.presentation.common.TagChip
 import kotlinx.coroutines.flow.collectLatest
@@ -120,10 +126,13 @@ fun DetailScreen(
         viewModel.uiEvent.collectLatest { event ->
             when (event) {
                 is DetailViewModel.DetailUiEvent.CommentPostedSuccess -> {
-                    Toast.makeText(context, "评论发表成功", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.detail_comment_success), Toast.LENGTH_SHORT).show()
                 }
                 is DetailViewModel.DetailUiEvent.ShowMessage -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+                is DetailViewModel.DetailUiEvent.ShowMessageRes -> {
+                    Toast.makeText(context, context.getString(event.resId), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -132,7 +141,7 @@ fun DetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "画廊详情", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(text = stringResource(R.string.detail_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -172,6 +181,8 @@ fun DetailScreen(
                     }
                 }
                 is DetailViewModel.DetailUiState.Success -> {
+                    val tagLanguage = LocalTagLanguage.current
+                    val tagDisplayMode = LocalTagDisplayMode.current
                     val detail = state.detail
                     val coverUrl = if (cdnHost.isNotEmpty()) {
                         val host = if (cdnHost.startsWith("http")) cdnHost else "https://$cdnHost"
@@ -261,7 +272,7 @@ fun DetailScreen(
                                                 modifier = Modifier.size(14.dp)
                                             )
                                             Text(
-                                                text = " ${detail.numPages} 页",
+                                                text = stringResource(R.string.detail_pages_count, detail.numPages),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(start = 4.dp)
@@ -278,7 +289,7 @@ fun DetailScreen(
                                                 modifier = Modifier.size(14.dp)
                                             )
                                             Text(
-                                                text = " ${detail.numFavorites} 收藏",
+                                                text = stringResource(R.string.detail_favorites_count, detail.numFavorites),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(start = 4.dp)
@@ -289,19 +300,40 @@ fun DetailScreen(
                                         val uploadDateStr = sdf.format(Date(detail.uploadDate * 1000))
 
                                         Text(
-                                            text = "上传时间: $uploadDateStr",
+                                            text = stringResource(R.string.detail_upload_time, uploadDateStr),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+
+                                        val categoryTag = detail.tags.firstOrNull { it.type.equals("category", ignoreCase = true) }
+                                        val categoryFormatted = if (categoryTag != null) {
+                                            TagTranslationProvider.getFormattedName(categoryTag, tagLanguage, tagDisplayMode)
+                                        } else {
+                                            "Doujinshi"
+                                        }
+
+                                        androidx.compose.material3.Surface(
+                                            shape = MaterialTheme.shapes.extraSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.padding(top = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = categoryFormatted,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                            )
+                                        }
                                     }
                                 }
 
                                 // Start / Continue Reading Button + Favorite Button
                                 val startPage = readingHistory?.lastReadPage ?: 1
                                 val buttonText = if (readingHistory != null) {
-                                    "继续阅读 (第 $startPage 页)"
+                                    stringResource(R.string.detail_continue_reading, startPage)
                                 } else {
-                                    "开始阅读"
+                                    stringResource(R.string.detail_start_reading)
                                 }
 
                                 Row(
@@ -347,7 +379,7 @@ fun DetailScreen(
                                 modifier = Modifier.padding(vertical = 12.dp)
                             ) {
                                 Text(
-                                    text = "标签列表",
+                                    text = stringResource(R.string.detail_section_tags),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onBackground
@@ -366,7 +398,7 @@ fun DetailScreen(
                         // 3. Related Galleries Header
                         item(span = StaggeredGridItemSpan.FullLine) {
                             Text(
-                                text = "相关推荐",
+                                text = stringResource(R.string.detail_section_recommendations),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground,
@@ -391,7 +423,7 @@ fun DetailScreen(
                             is DetailViewModel.RelatedUiState.Error -> {
                                 item(span = StaggeredGridItemSpan.FullLine) {
                                     Text(
-                                        text = "相关推荐加载失败",
+                                        text = stringResource(R.string.detail_recommendations_failed),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(16.dp)
@@ -403,7 +435,7 @@ fun DetailScreen(
                                     items = relState.list,
                                     key = { it.id }
                                 ) { relatedItem ->
-                                    RelatedGalleryCard(
+                                    GalleryCard(
                                         item = relatedItem,
                                         cdnHost = cdnHost,
                                         onClick = {
@@ -418,7 +450,7 @@ fun DetailScreen(
                         // 5. Comments Section Title
                         item(span = StaggeredGridItemSpan.FullLine) {
                             Text(
-                                text = "用户评论",
+                                text = stringResource(R.string.detail_section_comments),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground,
@@ -455,7 +487,7 @@ fun DetailScreen(
                                 if (list.isEmpty()) {
                                     item(span = StaggeredGridItemSpan.FullLine) {
                                         Text(
-                                            text = "暂无评论，发条评论抢沙发吧~",
+                                            text = stringResource(R.string.detail_comments_empty),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             textAlign = TextAlign.Center,
@@ -543,51 +575,75 @@ fun TagGroupSection(
     onTagClick: (Tag) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val groupedTags = tags.groupBy { it.type }
+    // 过滤掉 category 标签
+    val validTags = tags.filterNot { it.type.equals("category", ignoreCase = true) }
+    val groupedTags = validTags.groupBy { it.type.lowercase() }
+
     val displayNames = mapOf(
-        "artist" to "画师 (Artist)",
-        "character" to "角色 (Character)",
-        "parody" to "原作 (Parody)",
-        "group" to "社团 (Group)",
-        "language" to "语言 (Language)",
-        "category" to "分类 (Category)",
-        "tag" to "标签 (Tag)"
+        "language" to stringResource(R.string.tag_type_language),
+        "parody" to stringResource(R.string.tag_type_parody),
+        "character" to stringResource(R.string.tag_type_character),
+        "artist" to stringResource(R.string.tag_type_artist),
+        "group" to stringResource(R.string.tag_type_group),
+        "female" to stringResource(R.string.tag_type_female),
+        "male" to stringResource(R.string.tag_type_male),
+        "tag" to stringResource(R.string.tag_type_tag)
     )
 
-    // 分类顺序
-    val targetOrder = listOf("parody", "character", "artist", "group", "language", "category", "tag")
-    val orderedTypes = groupedTags.keys.sortedWith(compareBy<String> {
-        val index = targetOrder.indexOf(it.lowercase())
-        if (index == -1) Int.MAX_VALUE else index
-    })
+    // 目标显示顺序: 语言 -> 原作 -> 角色 -> 画师 -> 社团 -> 女性 -> 男性 -> 其他
+    val targetOrder = listOf("language", "parody", "character", "artist", "group", "female", "male", "tag")
+    val orderedTypes = targetOrder.filter { groupedTags.containsKey(it) }
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxWidth()
     ) {
         orderedTypes.forEach { type ->
             val tagList = groupedTags[type] ?: emptyList()
-            // 标签组内排序：按 count 降序、名称升序
-            val sortedTagList = tagList.sortedWith(compareByDescending<Tag> { it.count }.thenBy { it.name })
-            val displayName = displayNames[type.lowercase()] ?: type.uppercase()
-            Column {
-                Text(
-                    text = displayName,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+            if (tagList.isNotEmpty()) {
+                val sortedTagList = tagList.sortedWith(compareByDescending<Tag> { it.count }.thenBy { it.name })
+                val labelName = displayNames[type] ?: type
+
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    sortedTagList.forEach { tag ->
-                        TagChip(
-                            tag = tag,
-                            onClick = { onTagClick(tag) }
-                        )
+                    // 左侧固定类型胶囊徽章 (如 原作、角色、女性、其他)，固定于首行顶部，与右侧胶囊对齐
+                    // 使用 48.dp 的 Box 补足 SuggestionChip 默认的最小触摸目标高度偏差
+                    Box(
+                        modifier = Modifier.height(48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = labelName,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 12.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // 右侧标签 Flow 布局
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        sortedTagList.forEach { tag ->
+                            TagChip(
+                                tag = tag,
+                                onClick = { onTagClick(tag) }
+                            )
+                        }
                     }
                 }
             }
@@ -683,7 +739,7 @@ fun CommentItemRow(
                 onDismissRequest = { showMenu = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("复制内容") },
+                    text = { Text(stringResource(R.string.detail_comment_copy)) },
                     onClick = {
                         clipboardManager.setText(AnnotatedString(comment.body))
                         showMenu = false
@@ -691,7 +747,7 @@ fun CommentItemRow(
                 )
                 if (currentUserId == comment.userId) {
                     DropdownMenuItem(
-                        text = { Text("删除评论", color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(R.string.detail_comment_delete), color = MaterialTheme.colorScheme.error) },
                         onClick = {
                             onDelete()
                             showMenu = false
@@ -699,7 +755,7 @@ fun CommentItemRow(
                     )
                 } else {
                     DropdownMenuItem(
-                        text = { Text("举报评论") },
+                        text = { Text(stringResource(R.string.detail_comment_report)) },
                         onClick = {
                             onReport()
                             showMenu = false
@@ -729,7 +785,7 @@ fun CommentInputArea(
             enabled = isLoggedIn,
             placeholder = {
                 Text(
-                    text = if (isLoggedIn) "发表公开评论..." else "请先登录后发表评论",
+                    text = if (isLoggedIn) stringResource(R.string.detail_comment_placeholder_logged_in) else stringResource(R.string.detail_comment_placeholder_guest),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -753,7 +809,7 @@ fun CommentInputArea(
         ) {
             Icon(
                 imageVector = Icons.Default.Send,
-                contentDescription = "发送"
+                contentDescription = stringResource(R.string.detail_comment_send)
             )
         }
     }

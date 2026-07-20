@@ -9,6 +9,8 @@ import com.example.nhviewer.domain.usecase.ResetPasswordConfirmUseCase
 import com.example.nhviewer.domain.usecase.GetPowChallengeUseCase
 import com.example.nhviewer.domain.usecase.GetCaptchaConfigUseCase
 import com.example.nhviewer.util.PowSolver
+import androidx.annotation.StringRes
+import com.example.nhviewer.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -142,7 +144,9 @@ class AuthViewModel @Inject constructor(
     sealed interface AuthUiEvent {
         data object Success : AuthUiEvent
         data class Error(val message: String) : AuthUiEvent
+        data class ErrorRes(@StringRes val resId: Int) : AuthUiEvent
         data class Message(val message: String) : AuthUiEvent
+        data class MessageRes(@StringRes val resId: Int) : AuthUiEvent
     }
 
     private sealed interface PendingAuthAction {
@@ -154,7 +158,7 @@ class AuthViewModel @Inject constructor(
 
     fun startLogin(username: String, password: String) {
         if (username.isBlank() || password.isBlank()) {
-            emitError("账号和密码不能为空")
+            emitErrorRes(R.string.auth_err_username_pwd_empty)
             return
         }
         pendingAction = PendingAuthAction.Login(username, password)
@@ -163,7 +167,7 @@ class AuthViewModel @Inject constructor(
 
     fun startRegister(username: String, email: String, password: String) {
         if (username.isBlank() || email.isBlank() || password.isBlank()) {
-            emitError("所有字段均不能为空")
+            emitErrorRes(R.string.auth_err_all_fields_required)
             return
         }
         pendingAction = PendingAuthAction.Register(username, email, password)
@@ -172,7 +176,7 @@ class AuthViewModel @Inject constructor(
 
     fun startResetPassword(usernameOrEmail: String) {
         if (usernameOrEmail.isBlank()) {
-            emitError("账号或邮箱不能为空")
+            emitErrorRes(R.string.auth_err_account_email_empty)
             return
         }
         pendingAction = PendingAuthAction.ResetPassword(usernameOrEmail)
@@ -181,7 +185,7 @@ class AuthViewModel @Inject constructor(
 
     fun startConfirmReset(token: String, newPw: String) {
         if (token.isBlank() || newPw.isBlank()) {
-            emitError("重置凭证与新密码不能为空")
+            emitErrorRes(R.string.auth_err_token_pwd_empty)
             return
         }
         pendingAction = PendingAuthAction.ConfirmReset(token, newPw)
@@ -310,6 +314,12 @@ class AuthViewModel @Inject constructor(
     private fun emitError(msg: String) {
         viewModelScope.launch {
             _uiEvent.emit(AuthUiEvent.Error(msg))
+        }
+    }
+
+    private fun emitErrorRes(@StringRes resId: Int) {
+        viewModelScope.launch {
+            _uiEvent.emit(AuthUiEvent.ErrorRes(resId))
         }
     }
 }

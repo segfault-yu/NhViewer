@@ -23,6 +23,8 @@ import com.example.nhviewer.domain.repository.UserRepository
 import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.util.PowSolver
 import com.example.nhviewer.util.NetworkErrorParser
+import androidx.annotation.StringRes
+import com.example.nhviewer.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -158,10 +160,10 @@ class DetailViewModel @Inject constructor(
         }
     }
 
-    // Toggle favorite (with Optimistic Update)
+// Toggle favorite (with Optimistic Update)
     fun toggleFavorite() {
         if (userRepository.authState.value is AuthState.LoggedOut) {
-            emitMessage("请先登录后使用收藏功能")
+            emitMessageRes(R.string.detail_login_required_favorite)
             return
         }
         val detail = currentDetail ?: return
@@ -205,7 +207,7 @@ class DetailViewModel @Inject constructor(
     // Comments posting safety barrier
     fun startPostComment(content: String) {
         if (content.isBlank()) {
-            emitMessage("评论内容不能为空")
+            emitMessageRes(R.string.detail_comment_empty_error)
             return
         }
         val detail = currentDetail ?: return
@@ -280,7 +282,7 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             reportCommentUseCase(commentId)
                 .onSuccess {
-                    _uiEvent.emit(DetailUiEvent.ShowMessage("已成功举报该评论"))
+                    _uiEvent.emit(DetailUiEvent.ShowMessageRes(R.string.detail_comment_reported_success))
                 }
                 .onFailure {
                     emitMessage("举报评论失败: ${it.localizedMessage}")
@@ -294,9 +296,16 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    private fun emitMessageRes(@StringRes resId: Int) {
+        viewModelScope.launch {
+            _uiEvent.emit(DetailUiEvent.ShowMessageRes(resId))
+        }
+    }
+
     sealed interface DetailUiEvent {
         data object CommentPostedSuccess : DetailUiEvent
         data class ShowMessage(val message: String) : DetailUiEvent
+        data class ShowMessageRes(@StringRes val resId: Int) : DetailUiEvent
     }
 
     sealed interface DetailUiState {

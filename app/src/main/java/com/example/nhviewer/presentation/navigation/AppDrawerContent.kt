@@ -58,6 +58,9 @@ import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.domain.model.ReadingHistory
 import com.example.nhviewer.presentation.feature.profile.ProfileViewModel
 
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
+
 @Composable
 fun AppDrawerContent(
     currentDestination: NavDestination?,
@@ -92,13 +95,13 @@ fun AppDrawerContent(
                         )
                         Column {
                             Text(
-                                text = "您尚未登录",
+                                text = stringResource(R.string.nav_not_logged_in),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "登录后同步云端收藏夹",
+                                text = stringResource(R.string.nav_login_sync_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -107,7 +110,7 @@ fun AppDrawerContent(
                             onClick = onNavigateToAuth,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "立即登录 / 注册")
+                            Text(text = stringResource(R.string.nav_login_or_register))
                         }
                     }
                 }
@@ -173,7 +176,7 @@ fun AppDrawerContent(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "退出登录", style = MaterialTheme.typography.labelLarge)
+                            Text(text = stringResource(R.string.nav_logout), style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
@@ -184,7 +187,7 @@ fun AppDrawerContent(
 
         // 2. Navigation Items List
         NavigationDrawerItem(
-            label = { Text("首页") },
+            label = { Text(stringResource(R.string.nav_home)) },
             selected = currentDestination?.hasRoute<Route.Home>() == true,
             onClick = { onNavigate(Route.Home) },
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
@@ -192,7 +195,7 @@ fun AppDrawerContent(
         )
 
         NavigationDrawerItem(
-            label = { Text("最近阅读") },
+            label = { Text(stringResource(R.string.nav_history)) },
             selected = currentDestination?.hasRoute<Route.History>() == true,
             onClick = { onNavigate(Route.History) },
             icon = { Icon(Icons.Default.History, contentDescription = null) },
@@ -200,7 +203,7 @@ fun AppDrawerContent(
         )
 
         NavigationDrawerItem(
-            label = { Text("标签浏览") },
+            label = { Text(stringResource(R.string.nav_tags)) },
             selected = currentDestination?.hasRoute<Route.Tags>() == true,
             onClick = { onNavigate(Route.Tags) },
             icon = { Icon(Icons.Default.LocalOffer, contentDescription = null) },
@@ -208,7 +211,7 @@ fun AppDrawerContent(
         )
 
         NavigationDrawerItem(
-            label = { Text("我的收藏") },
+            label = { Text(stringResource(R.string.nav_favorites)) },
             selected = currentDestination?.hasRoute<Route.Favorites>() == true,
             onClick = { onNavigate(Route.Favorites) },
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
@@ -218,7 +221,7 @@ fun AppDrawerContent(
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp, horizontal = 24.dp))
 
         NavigationDrawerItem(
-            label = { Text("设置") },
+            label = { Text(stringResource(R.string.nav_settings)) },
             selected = currentDestination?.hasRoute<Route.Settings>() == true,
             onClick = { onNavigate(Route.Settings) },
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },

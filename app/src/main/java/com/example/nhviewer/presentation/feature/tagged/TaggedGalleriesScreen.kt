@@ -34,6 +34,12 @@ import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
 
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
+import com.example.nhviewer.util.i18n.LocalTagDisplayMode
+import com.example.nhviewer.util.i18n.LocalTagLanguage
+import com.example.nhviewer.util.i18n.TagTranslationProvider
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaggedGalleriesScreen(
@@ -47,20 +53,24 @@ fun TaggedGalleriesScreen(
     val galleries = viewModel.galleries.collectAsLazyPagingItems()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     val cdnHost = cdnConfig?.primaryImageHost ?: ""
+    val tagLanguage = LocalTagLanguage.current
+    val tagDisplayMode = LocalTagDisplayMode.current
 
     LaunchedEffect(tagId) {
         viewModel.setTagId(tagId)
     }
 
+    val displayTagName = TagTranslationProvider.getFormattedName(tagName, tagLanguage, tagDisplayMode)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "标签: $tagName", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(text = stringResource(R.string.tagged_title, displayTagName), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -81,13 +91,13 @@ fun TaggedGalleriesScreen(
             } else if (galleries.loadState.refresh is LoadState.Error) {
                 val error = (galleries.loadState.refresh as LoadState.Error).error
                 ErrorScreen(
-                    message = error.localizedMessage ?: "加载画廊列表失败",
+                    message = error.localizedMessage ?: stringResource(R.string.common_error_load_gallery_failed),
                     onRetry = { galleries.retry() }
                 )
             } else if (galleries.itemCount == 0 && galleries.loadState.refresh is LoadState.NotLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "该标签下暂无画廊数据",
+                        text = stringResource(R.string.tagged_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

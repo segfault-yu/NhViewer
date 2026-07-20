@@ -39,6 +39,8 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,14 +84,20 @@ fun AuthScreen(
         viewModel.uiEvent.collectLatest { event ->
             when (event) {
                 is AuthViewModel.AuthUiEvent.Success -> {
-                    Toast.makeText(context, "操作成功！", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.auth_op_success), Toast.LENGTH_SHORT).show()
                     onNavigateBack()
                 }
                 is AuthViewModel.AuthUiEvent.Error -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                 }
+                is AuthViewModel.AuthUiEvent.ErrorRes -> {
+                    Toast.makeText(context, context.getString(event.resId), Toast.LENGTH_LONG).show()
+                }
                 is AuthViewModel.AuthUiEvent.Message -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+                is AuthViewModel.AuthUiEvent.MessageRes -> {
+                    Toast.makeText(context, context.getString(event.resId), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -120,12 +128,12 @@ fun AuthScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = if (selectedTab == 0) "登录" else "注册", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(text = if (selectedTab == 0) stringResource(R.string.auth_login_title) else stringResource(R.string.auth_register_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -147,7 +155,7 @@ fun AuthScreen(
                         onClick = { selectedTab = 0 },
                         text = {
                             Text(
-                                text = "登录",
+                                text = stringResource(R.string.auth_login_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -158,7 +166,7 @@ fun AuthScreen(
                         onClick = { selectedTab = 1 },
                         text = {
                             Text(
-                                text = "注册",
+                                text = stringResource(R.string.auth_register_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -237,7 +245,7 @@ fun LoginTabContent(
         OutlinedTextField(
             value = identity,
             onValueChange = { identity = it },
-            label = { Text("用户名 / 邮箱") },
+            label = { Text(stringResource(R.string.auth_username_email)) },
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -248,7 +256,7 @@ fun LoginTabContent(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("密码") },
+            label = { Text(stringResource(R.string.auth_password)) },
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -268,7 +276,7 @@ fun LoginTabContent(
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onForgotPasswordClick) {
-                Text(text = "忘记密码？", style = MaterialTheme.typography.bodyMedium)
+                Text(text = stringResource(R.string.auth_forgot_password), style = MaterialTheme.typography.bodyMedium)
             }
         }
 
@@ -278,7 +286,7 @@ fun LoginTabContent(
             onClick = { onLoginClick(identity, password) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "登录", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(text = stringResource(R.string.auth_login_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -305,7 +313,7 @@ fun RegisterTabContent(
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("用户名") },
+            label = { Text(stringResource(R.string.auth_username)) },
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -319,10 +327,10 @@ fun RegisterTabContent(
                 email = it
                 emailError = !android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches() && it.isNotBlank()
             },
-            label = { Text("邮箱地址") },
+            label = { Text(stringResource(R.string.auth_email)) },
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
             isError = emailError,
-            supportingText = { if (emailError) Text("请输入有效的邮箱地址") },
+            supportingText = { if (emailError) Text(stringResource(R.string.auth_email_invalid)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -335,10 +343,10 @@ fun RegisterTabContent(
                 password = it
                 passwordError = it.length < 6 && it.isNotBlank()
             },
-            label = { Text("密码 (至少6位)") },
+            label = { Text(stringResource(R.string.auth_password_hint)) },
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
             isError = passwordError,
-            supportingText = { if (passwordError) Text("密码长度必须大于或等于6位") },
+            supportingText = { if (passwordError) Text(stringResource(R.string.auth_password_too_short)) },
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
@@ -361,10 +369,10 @@ fun RegisterTabContent(
                 confirmPassword = it
                 confirmError = it != password && it.isNotBlank()
             },
-            label = { Text("确认密码") },
+            label = { Text(stringResource(R.string.auth_confirm_password)) },
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
             isError = confirmError,
-            supportingText = { if (confirmError) Text("两次输入的密码不一致") },
+            supportingText = { if (confirmError) Text(stringResource(R.string.auth_password_mismatch)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
@@ -381,7 +389,7 @@ fun RegisterTabContent(
             enabled = isFormValid,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "注册", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(text = stringResource(R.string.auth_register_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -399,32 +407,32 @@ fun ForgotPasswordDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (step == 0) "找回密码" else "重置密码凭证") },
+        title = { Text(if (step == 0) stringResource(R.string.auth_forgot_title) else stringResource(R.string.auth_reset_title)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (step == 0) {
                     Text(
-                        text = "系统将发送一封包含凭证 Token 的重置邮件到您的注册邮箱：",
+                        text = stringResource(R.string.auth_forgot_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("注册邮箱") },
+                        label = { Text(stringResource(R.string.auth_email)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
                     Text(
-                        text = "请输入邮件中的重置 Token 和您的新密码：",
+                        text = stringResource(R.string.auth_reset_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
                     OutlinedTextField(
                         value = token,
                         onValueChange = { token = it },
-                        label = { Text("重置 Token") },
+                        label = { Text(stringResource(R.string.auth_reset_token)) },
                         leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -433,7 +441,7 @@ fun ForgotPasswordDialog(
                     OutlinedTextField(
                         value = newPassword,
                         onValueChange = { newPassword = it },
-                        label = { Text("新密码") },
+                        label = { Text(stringResource(R.string.auth_new_password)) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true,
@@ -446,14 +454,14 @@ fun ForgotPasswordDialog(
             if (step == 0) {
                 Row {
                     TextButton(onClick = { step = 1 }) {
-                        Text("已有 Token")
+                        Text(stringResource(R.string.auth_have_token))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = { onSubmitRequest(email) },
                         enabled = email.isNotBlank()
                     ) {
-                        Text("获取 Token")
+                        Text(stringResource(R.string.auth_get_token))
                     }
                 }
             } else {
@@ -461,13 +469,13 @@ fun ForgotPasswordDialog(
                     onClick = { onSubmitConfirm(token, newPassword) },
                     enabled = token.isNotBlank() && newPassword.length >= 6
                 ) {
-                    Text("确认重置")
+                    Text(stringResource(R.string.auth_confirm_reset))
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("关闭")
+                Text(stringResource(R.string.common_close))
             }
         },
         shape = MaterialTheme.shapes.extraLarge

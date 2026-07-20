@@ -40,6 +40,8 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.nhviewer.domain.model.PageInfo
+import androidx.compose.ui.res.stringResource
+import com.example.nhviewer.R
 import me.saket.telephoto.zoomable.ZoomableState
 import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
@@ -157,13 +159,13 @@ fun ReaderPageItem(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "重试",
+                                contentDescription = stringResource(R.string.common_retry),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(36.dp)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "加载失败，点击重试",
+                                text = stringResource(R.string.common_error_load_failed),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.error
                             )
