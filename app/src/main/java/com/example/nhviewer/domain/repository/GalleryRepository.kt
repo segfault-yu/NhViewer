@@ -3,11 +3,12 @@ package com.example.nhviewer.domain.repository
 import com.example.nhviewer.domain.model.CdnConfig
 import com.example.nhviewer.domain.model.GalleryDetail
 import com.example.nhviewer.domain.model.GalleryListItem
+import com.example.nhviewer.domain.model.PaginatedResult
 import com.example.nhviewer.domain.model.ReadingHistory
 import kotlinx.coroutines.flow.Flow
 
 interface GalleryRepository {
-    suspend fun getGalleries(page: Int): Result<List<GalleryListItem>>
+    suspend fun getGalleries(page: Int): Result<PaginatedResult<GalleryListItem>>
     suspend fun getPopularGalleries(): Result<List<GalleryListItem>>
     suspend fun getRandomGalleryId(): Result<Int>
     suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean): Result<GalleryDetail>

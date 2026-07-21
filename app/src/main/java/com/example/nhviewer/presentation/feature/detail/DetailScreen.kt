@@ -577,9 +577,17 @@ fun TagGroupSection(
     onTagClick: (Tag) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // 过滤掉 category 标签
+    val tagLanguage = com.example.nhviewer.util.i18n.LocalTagLanguage.current
+
+    // 目标显示顺序: 语言 -> 原作 -> 角色 -> 画师 -> 社团 -> 女性 -> 男性 -> 其他
+    val targetOrder = listOf("language", "parody", "character", "artist", "group", "female", "male", "tag")
+
+    // 过滤掉 category 标签，并解析真正的标签类型 (female/male)
     val validTags = tags.filterNot { it.type.equals("category", ignoreCase = true) }
-    val groupedTags = validTags.groupBy { it.type.lowercase() }
+    val groupedTags = validTags.groupBy { tag -> 
+        val trueType = com.example.nhviewer.util.i18n.TagTranslationProvider.getTrueTagType(tag.name, tag.type, tagLanguage).lowercase()
+        if (targetOrder.contains(trueType)) trueType else "tag"
+    }
 
     val displayNames = mapOf(
         "language" to stringResource(R.string.tag_type_language),
@@ -592,8 +600,6 @@ fun TagGroupSection(
         "tag" to stringResource(R.string.tag_type_tag)
     )
 
-    // 目标显示顺序: 语言 -> 原作 -> 角色 -> 画师 -> 社团 -> 女性 -> 男性 -> 其他
-    val targetOrder = listOf("language", "parody", "character", "artist", "group", "female", "male", "tag")
     val orderedTypes = targetOrder.filter { groupedTags.containsKey(it) }
 
     Column(

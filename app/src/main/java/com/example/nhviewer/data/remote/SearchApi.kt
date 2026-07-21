@@ -7,8 +7,8 @@ import retrofit2.http.Query
 interface SearchApi {
     @GET("api/v2/search")
     suspend fun searchGalleries(
-        @Query("q") query: String,
+        @Query("query") query: String,
         @Query("page") page: Int,
-        @Query("sort") sort: String
+        @Query("sort") sort: String? = null
     ): GalleryListResponse
 }

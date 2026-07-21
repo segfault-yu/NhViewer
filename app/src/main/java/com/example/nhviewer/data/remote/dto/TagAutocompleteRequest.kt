@@ -5,6 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TagAutocompleteRequest(
-    @SerialName("q") val q: String,
+    @SerialName("query") val query: String,
     @SerialName("type") val type: String? = null
 )

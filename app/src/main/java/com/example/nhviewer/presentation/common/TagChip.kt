@@ -28,8 +28,11 @@ fun TagChip(
     val formattedName = TagTranslationProvider.getFormattedName(tag, tagLanguage, tagDisplayMode)
     val displayText = if (showCount) "$formattedName (${tag.count})" else formattedName
 
+    // 获取真实的标签类型（处理 female/male 细分）
+    val trueType = TagTranslationProvider.getTrueTagType(tag.name, tag.type, tagLanguage).lowercase()
+
     // 分配固定的 M3 语义化容器与字体色彩
-    val (containerColor, labelColor) = when (tag.type.lowercase()) {
+    val (containerColor, labelColor) = when (trueType) {
         "language" -> {
             MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.primary
         }

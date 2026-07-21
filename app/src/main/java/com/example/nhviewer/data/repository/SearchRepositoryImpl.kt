@@ -6,6 +6,7 @@ import com.example.nhviewer.data.local.entity.toDomain
 import com.example.nhviewer.data.remote.SearchApi
 import com.example.nhviewer.data.remote.dto.toDomain
 import com.example.nhviewer.domain.model.GalleryListItem
+import com.example.nhviewer.domain.model.PaginatedResult
 import com.example.nhviewer.domain.model.SearchHistory
 import com.example.nhviewer.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
@@ -20,8 +21,14 @@ class SearchRepositoryImpl @Inject constructor(
     private val historyDao: SearchHistoryDao
 ) : SearchRepository {
 
-    override suspend fun searchGalleries(query: String, page: Int, sort: String): Result<List<GalleryListItem>> = runCatchingCancelable {
-        api.searchGalleries(query, page, sort).result.map { it.toDomain() }
+    override suspend fun searchGalleries(query: String, page: Int, sort: String): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable {
+        val mappedSort = if (sort == "date" || sort.isBlank()) null else sort
+        val response = api.searchGalleries(query, page, mappedSort)
+        PaginatedResult(
+            items = response.result.map { it.toDomain() },
+            numPages = response.numPages,
+            total = response.total
+        )
     }
 
     override fun getSearchHistory(): Flow<List<SearchHistory>> {
@@ -31,6 +38,7 @@ class SearchRepositoryImpl @Inject constructor(
     override suspend fun insertSearchHistory(query: String) {
         if (query.isNotBlank()) {
             historyDao.insertOrUpdate(SearchHistoryEntity(query.trim(), System.currentTimeMillis()))
+            historyDao.deleteOldestBeyondLimit(50)
         }
     }
 

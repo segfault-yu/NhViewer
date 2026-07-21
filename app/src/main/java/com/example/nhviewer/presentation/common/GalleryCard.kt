@@ -43,30 +43,30 @@ import com.example.nhviewer.util.i18n.LocalTagDisplayMode
 import com.example.nhviewer.util.i18n.LocalTagLanguage
 
 private val COMMON_TAGS_MAP = mapOf(
-    29963 to "Chinese",
-    12227 to "English",
-    6346 to "Japanese",
-    17249 to "Translated",
-    20905 to "Color",
-    33173 to "Sole Female",
-    35763 to "Sole Male",
-    13720 to "Schoolgirl",
-    22942 to "Incest",
-    2937 to "Big Breasts",
-    90671 to "Original",
-    19440 to "Lolicon",
-    20525 to "Defloration",
-    8010 to "Group",
-    10314 to "Schoolboy",
-    24201 to "Stockings",
-    31386 to "Catgirl",
-    25871 to "Lingerie",
-    27473 to "Mosaic Censorship",
-    8378 to "Glasses",
-    8529 to "Glasses Girl",
-    14283 to "Anal",
-    29859 to "Blowjob",
-    7752 to "Schoolgirl Uniform"
+    29963 to Pair("Chinese", "language"),
+    12227 to Pair("English", "language"),
+    6346 to Pair("Japanese", "language"),
+    17249 to Pair("Translated", "language"),
+    90671 to Pair("Original", "parody"),
+    20905 to Pair("Color", "tag"),
+    33173 to Pair("Sole Female", "tag"),
+    35763 to Pair("Sole Male", "tag"),
+    13720 to Pair("Schoolgirl", "tag"),
+    22942 to Pair("Incest", "tag"),
+    2937 to Pair("Big Breasts", "tag"),
+    19440 to Pair("Lolicon", "tag"),
+    20525 to Pair("Defloration", "tag"),
+    8010 to Pair("Group", "tag"),
+    10314 to Pair("Schoolboy", "tag"),
+    24201 to Pair("Stockings", "tag"),
+    31386 to Pair("Catgirl", "tag"),
+    25871 to Pair("Lingerie", "tag"),
+    27473 to Pair("Mosaic Censorship", "tag"),
+    8378 to Pair("Glasses", "tag"),
+    8529 to Pair("Glasses Girl", "tag"),
+    14283 to Pair("Anal", "tag"),
+    29859 to Pair("Blowjob", "tag"),
+    7752 to Pair("Schoolgirl Uniform", "tag")
 )
 
 private val CATEGORY_TAGS_MAP = mapOf(
@@ -212,45 +212,43 @@ fun GalleryCard(
                         .fillMaxHeight()
                         .aspectRatio(0.72f)
                 ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(imageUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = item.englishTitle,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = item.englishTitle,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
 
-                if (isFavorited) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(6.dp)
-                            .size(24.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Favorite,
-                            contentDescription = "Favorited",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
-                        )
+                    if (isFavorited) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(6.dp)
+                                .size(24.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Favorited",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
-            }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(12.dp)
+                ) {
                     Text(
                         text = item.englishTitle,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -273,7 +271,7 @@ fun GalleryCard(
                     if (showTags) {
                         val categoryTagId = item.tagIds.firstOrNull { CATEGORY_TAGS_MAP.containsKey(it) }
                         val categoryRawName = categoryTagId?.let { CATEGORY_TAGS_MAP[it] } ?: "doujinshi"
-    
+
                         Spacer(modifier = Modifier.height(6.dp))
                         @OptIn(ExperimentalLayoutApi::class)
                         FlowRow(
@@ -290,12 +288,12 @@ fun GalleryCard(
                                 tagLanguage = tagLanguage,
                                 tagDisplayMode = tagDisplayMode
                             )
-    
+
                             // 最多展示 2 个常用普通标签
                             val matchedTags = item.tagIds.mapNotNull { COMMON_TAGS_MAP[it] }.take(2)
-                            matchedTags.forEach { tagName ->
+                            matchedTags.forEach { (tagName, tagType) ->
                                 TagChip(
-                                    tag = Tag(id = 0, type = "tag", name = tagName),
+                                    tag = Tag(id = 0, type = tagType, name = tagName),
                                     onClick = {},
                                     tagLanguage = tagLanguage,
                                     tagDisplayMode = tagDisplayMode
@@ -303,41 +301,40 @@ fun GalleryCard(
                             }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Description,
-                        contentDescription = "Pages",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = " ${item.numPages} P",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp, end = 16.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = "Pages",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = " ${item.numPages} P",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 4.dp, end = 16.dp)
+                        )
 
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = "Favorites",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = " ${item.numFavorites}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "Favorites",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = " ${item.numFavorites}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
                 }
             }
         }
     }
-}
 }

@@ -20,11 +20,11 @@ class TaggedGalleryPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, GalleryListItem> {
         val page = params.key ?: 1
         return try {
-            val response = repository.getGalleriesTagged(tagId, page).getOrThrow()
+            val result = repository.getGalleriesTagged(tagId, page).getOrThrow()
             LoadResult.Page(
-                data = response,
+                data = result.items,
                 prevKey = if (page == 1) null else page - 1,
-                nextKey = if (response.isEmpty()) null else page + 1
+                nextKey = if (page >= result.numPages || result.items.isEmpty()) null else page + 1
             )
         } catch (e: Exception) {
             LoadResult.Error(e)

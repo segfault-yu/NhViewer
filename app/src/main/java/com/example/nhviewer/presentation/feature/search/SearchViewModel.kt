@@ -12,6 +12,7 @@ import com.example.nhviewer.domain.model.CdnConfig
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.SearchHistory
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.data.local.SettingsManager
 import com.example.nhviewer.domain.repository.BlacklistRepository
 import com.example.nhviewer.domain.repository.FavoriteRepository
 import com.example.nhviewer.domain.repository.SearchRepository
@@ -44,7 +45,8 @@ class SearchViewModel @Inject constructor(
     private val getCdnConfigUseCase: GetCdnConfigUseCase,
     private val searchHistoryUseCase: SearchHistoryUseCase,
     private val blacklistRepository: BlacklistRepository,
-    private val favoriteRepository: FavoriteRepository
+    private val favoriteRepository: FavoriteRepository,
+    private val settingsManager: SettingsManager
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -85,12 +87,15 @@ class SearchViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     val autocompleteSuggestions: StateFlow<List<Tag>> = _searchQuery
-        .debounce(300)
-        .flatMapLatest { query ->
+        .debounce(600)
+        .combine(settingsManager.tagLanguage) { query, tagLanguage ->
+            query to tagLanguage
+        }
+        .flatMapLatest { (query, tagLanguage) ->
             if (query.isBlank()) {
                 flowOf(Result.success(emptyList<Tag>()))
             } else {
-                flow { emit(autocompleteTagsUseCase(query)) }
+                flow { emit(autocompleteTagsUseCase(query, null, tagLanguage)) }
             }
         }
         .map { result -> result.getOrElse { emptyList() } }
@@ -120,12 +125,15 @@ class SearchViewModel @Inject constructor(
         _sortOption.value = sort
         val query = _searchTrigger.value?.first
         if (!query.isNullOrBlank()) {
+            _searchQuery.value = query
             _searchTrigger.value = Pair(query, sort)
         }
     }
 
     fun search(query: String) {
         if (query.isNotBlank()) {
+            _active.value = false
+            _searchQuery.value = query
             _searchTrigger.value = Pair(query, _sortOption.value)
             viewModelScope.launch {
                 searchHistoryUseCase.addSearchHistory(query)

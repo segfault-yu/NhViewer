@@ -8,6 +8,7 @@ import com.example.nhviewer.data.remote.dto.toDomain
 import com.example.nhviewer.domain.model.CdnConfig
 import com.example.nhviewer.domain.model.GalleryDetail
 import com.example.nhviewer.domain.model.GalleryListItem
+import com.example.nhviewer.domain.model.PaginatedResult
 import com.example.nhviewer.domain.model.ReadingHistory
 import com.example.nhviewer.domain.repository.GalleryRepository
 import kotlinx.coroutines.flow.Flow
@@ -24,8 +25,13 @@ class GalleryRepositoryImpl @Inject constructor(
     private val historyDao: ReadingHistoryDao
 ) : GalleryRepository {
 
-    override suspend fun getGalleries(page: Int): Result<List<GalleryListItem>> = runCatchingCancelable {
-        api.getGalleries(page).result.map { it.toDomain() }
+    override suspend fun getGalleries(page: Int): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable {
+        val response = api.getGalleries(page)
+        PaginatedResult(
+            items = response.result.map { it.toDomain() },
+            numPages = response.numPages,
+            total = response.total
+        )
     }
 
     override suspend fun getPopularGalleries(): Result<List<GalleryListItem>> = runCatchingCancelable {

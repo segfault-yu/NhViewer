@@ -1,8 +1,8 @@
 package com.example.nhviewer.presentation.feature.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,35 +11,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Casino
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -55,47 +48,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import com.example.nhviewer.domain.model.ReadingHistory
+import com.example.nhviewer.R
+import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
-import kotlinx.coroutines.flow.collectLatest
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.ui.platform.LocalFocusManager
-import com.example.nhviewer.domain.model.AuthState
-import com.example.nhviewer.domain.model.SearchHistory
-import com.example.nhviewer.presentation.common.EmptyState
+import com.example.nhviewer.presentation.common.SearchResultGrid
+import com.example.nhviewer.presentation.common.SearchSortBar
+import com.example.nhviewer.presentation.common.SearchSuggestionPanel
 import com.example.nhviewer.presentation.feature.profile.ProfileViewModel
 import com.example.nhviewer.presentation.feature.search.SearchViewModel
-import androidx.compose.ui.res.stringResource
-import com.example.nhviewer.R
+import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -106,15 +78,15 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
     searchViewModel: SearchViewModel = hiltViewModel(),
-    profileViewModel: ProfileViewModel = hiltViewModel()
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val gridBaseWidth by settingsViewModel.gridBaseWidth.collectAsState()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     val cdnHost = cdnConfig?.primaryImageHost ?: ""
-    val thumbHost = cdnConfig?.primaryThumbHost ?: ""
 
     val latestGalleries = viewModel.latestGalleries.collectAsLazyPagingItems()
     val popularState by viewModel.popularGalleriesState.collectAsState()
-    val readingHistory by viewModel.readingHistory.collectAsState(initial = emptyList())
     val favoritedIds by viewModel.favoritedIds.collectAsState()
 
     // 搜索数据与交互状态
@@ -131,17 +103,7 @@ fun HomeScreen(
         stringResource(R.string.home_tab_popular)
     )
 
-    var showClearHistoryDialog by remember { mutableStateOf(false) }
-    var showSortMenu by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
-
-    val sortLabelMap = mapOf(
-        "date" to stringResource(R.string.sort_date),
-        "popular" to stringResource(R.string.sort_popular),
-        "popular-today" to stringResource(R.string.sort_popular_today),
-        "popular-week" to stringResource(R.string.sort_popular_week),
-        "popular-month" to stringResource(R.string.sort_popular_month)
-    )
 
     LaunchedEffect(key1 = true) {
         viewModel.navigationEvent.collectLatest { event ->
@@ -151,30 +113,6 @@ fun HomeScreen(
                 }
             }
         }
-    }
-
-    if (showClearHistoryDialog) {
-        AlertDialog(
-            onDismissRequest = { showClearHistoryDialog = false },
-            title = { Text(stringResource(R.string.home_clear_history_title)) },
-            text = { Text(stringResource(R.string.home_clear_history_confirm)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        searchViewModel.clearSearchHistory()
-                        showClearHistoryDialog = false
-                    }
-                ) {
-                    Text(stringResource(R.string.common_clear), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearHistoryDialog = false }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-            shape = MaterialTheme.shapes.extraLarge
-        )
     }
 
     Scaffold(
@@ -277,312 +215,76 @@ fun HomeScreen(
                     colors = SearchBarDefaults.colors(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        if (searchQuery.isBlank()) {
-                            if (searchHistory.isNotEmpty()) {
-                                item {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.home_search_history),
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Spacer(modifier = Modifier.weight(1f))
-                                        TextButton(onClick = { showClearHistoryDialog = true }) {
-                                            Text(stringResource(R.string.home_search_history_clear), style = MaterialTheme.typography.bodySmall)
-                                        }
-                                    }
-                                }
-
-                                items(
-                                    items = searchHistory,
-                                    key = { it.query }
-                                ) { history ->
-                                    SwipeToDeleteHistoryItem(
-                                        history = history,
-                                        onHistoryClick = { query ->
-                                            searchViewModel.search(query)
-                                            focusManager.clearFocus()
-                                        },
-                                        onDelete = { query -> searchViewModel.deleteSearchHistory(query) },
-                                        onLongPress = { showClearHistoryDialog = true }
-                                    )
-                                }
-                            }
-                        } else {
-                            if (autocompleteSuggestions.isNotEmpty()) {
-                                item {
-                                    Text(
-                                        text = stringResource(R.string.home_search_suggestions),
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                                    )
-                                }
-
-                                items(
-                                    items = autocompleteSuggestions,
-                                    key = { it.id }
-                                ) { tag ->
-                                    ListItem(
-                                        headlineContent = {
-                                            Text(text = tag.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
-                                        },
-                                        supportingContent = {
-                                            Text(text = stringResource(R.string.home_search_tag_sub, tag.type, tag.count), style = MaterialTheme.typography.bodySmall)
-                                        },
-                                        leadingContent = {
-                                            Icon(
-                                                imageVector = Icons.Default.Tag,
-                                                contentDescription = "Tag"
-                                            )
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                searchViewModel.search(tag.name)
-                                                focusManager.clearFocus()
-                                            }
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    SearchSuggestionPanel(
+                        searchQuery = searchQuery,
+                        searchHistory = searchHistory,
+                        autocompleteSuggestions = autocompleteSuggestions,
+                        onSearch = { searchViewModel.search(it) },
+                        onDeleteHistory = { searchViewModel.deleteSearchHistory(it) },
+                        onClearAllHistory = { searchViewModel.clearSearchHistory() }
+                    )
                 }
             }
 
             // 搜索结果页与普通主页内容区域动态切换
             if (!active && searchQuery.isNotEmpty()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                ) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    Box {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clickable { showSortMenu = true }
-                                .padding(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Sort,
-                                contentDescription = "Sort",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = sortLabelMap[sortOption] ?: stringResource(R.string.sort_title),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                SearchSortBar(
+                    sortOption = sortOption,
+                    onSortOptionChanged = { searchViewModel.onSortOptionChanged(it) }
+                )
 
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false }
-                        ) {
-                            sortLabelMap.forEach { (key, label) ->
-                                DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = {
-                                        searchViewModel.onSortOptionChanged(key)
-                                        showSortMenu = false
-                                    }
+                SearchResultGrid(
+                    searchResults = searchResults,
+                    cdnHost = cdnHost,
+                    favoritedIds = favoritedIds,
+                    onNavigateToDetail = onNavigateToDetail,
+                    minSize = 340,
+                    bottomPadding = 12.dp + innerPadding.calculateBottomPadding()
+                )
+            } else if (!active) {
+                PrimaryTabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
-                        }
+                        )
                     }
                 }
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    if (searchResults.loadState.refresh is LoadState.Loading) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            LoadingIndicator()
-                        }
-                    } else if (searchResults.loadState.refresh is LoadState.Error) {
-                        val error = (searchResults.loadState.refresh as LoadState.Error).error
-                        ErrorScreen(
-                            message = error.localizedMessage ?: stringResource(R.string.home_search_error),
-                            onRetry = { searchResults.retry() }
-                        )
-                    } else if (searchResults.itemCount == 0 && searchResults.loadState.refresh is LoadState.NotLoading) {
-                        EmptyState(message = stringResource(R.string.home_search_empty))
-                    } else {
-                        LazyVerticalStaggeredGrid(
-                            columns = StaggeredGridCells.Adaptive(minSize = 340.dp),
-                            contentPadding = PaddingValues(
-                                start = 12.dp,
-                                top = 12.dp,
-                                end = 12.dp,
-                                bottom = 12.dp + innerPadding.calculateBottomPadding()
-                            ),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(
-                                count = searchResults.itemCount,
-                                key = { index -> searchResults[index]?.id ?: index }
-                            ) { index ->
-                                val item = searchResults[index]
-                                if (item != null) {
-                                    GalleryCard(
-                                        item = item,
-                                        cdnHost = cdnHost,
-                                        onClick = { onNavigateToDetail(item.id) },
-                                        isFavorited = item.id in favoritedIds,
-                                        modifier = Modifier.padding(6.dp)
-                                    )
-                                }
+                    when (selectedTabIndex) {
+                        0 -> {
+                            val pullRefreshState = rememberPullToRefreshState()
+                            var isRefreshing by remember { mutableStateOf(false) }
+                            LaunchedEffect(latestGalleries.loadState.refresh) {
+                                isRefreshing = latestGalleries.loadState.refresh is LoadState.Loading
                             }
 
-                            if (searchResults.loadState.append is LoadState.Loading) {
-                                item(span = StaggeredGridItemSpan.FullLine) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        LoadingIndicator()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else if (!active) {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTabIndex,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        text = {
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    )
-                }
-            }
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                when (selectedTabIndex) {
-                    0 -> {
-                        val pullRefreshState = rememberPullToRefreshState()
-                        var isRefreshing by remember { mutableStateOf(false) }
-                        LaunchedEffect(latestGalleries.loadState.refresh) {
-                            isRefreshing = latestGalleries.loadState.refresh is LoadState.Loading
-                        }
-
-                        PullToRefreshBox(
-                            state = pullRefreshState,
-                            isRefreshing = isRefreshing,
-                            onRefresh = { latestGalleries.refresh() },
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            if (latestGalleries.loadState.refresh is LoadState.Error) {
-                                val error = (latestGalleries.loadState.refresh as LoadState.Error).error
-                                ErrorScreen(
-                                    message = error.localizedMessage ?: stringResource(R.string.common_error_network),
-                                    onRetry = { latestGalleries.retry() }
-                                )
-                            } else {
-                                LazyVerticalStaggeredGrid(
-                                    columns = StaggeredGridCells.Adaptive(minSize = 340.dp),
-                                    contentPadding = PaddingValues(
-                                        start = 12.dp,
-                                        top = 12.dp,
-                                        end = 12.dp,
-                                        bottom = 12.dp + innerPadding.calculateBottomPadding()
-                                    ),
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-
-                                    items(
-                                        count = latestGalleries.itemCount,
-                                        key = { index -> latestGalleries[index]?.id ?: index }
-                                    ) { index ->
-                                        val item = latestGalleries[index]
-                                        if (item != null) {
-                                            GalleryCard(
-                                                item = item,
-                                                cdnHost = cdnHost,
-                                                onClick = { onNavigateToDetail(item.id) },
-                                                isFavorited = item.id in favoritedIds,
-                                                modifier = Modifier.padding(6.dp)
-                                            )
-                                        }
-                                    }
-
-                                    if (latestGalleries.loadState.append is LoadState.Loading) {
-                                        item(span = StaggeredGridItemSpan.FullLine) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(16.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                LoadingIndicator()
-                                            }
-                                        }
-                                    } else if (latestGalleries.loadState.append is LoadState.Error) {
-                                        item(span = StaggeredGridItemSpan.FullLine) {
-                                            val error = (latestGalleries.loadState.append as LoadState.Error).error
-                                            ErrorScreen(
-                                                message = error.localizedMessage ?: stringResource(R.string.common_error_load_more_failed),
-                                                onRetry = { latestGalleries.retry() },
-                                                modifier = Modifier.padding(16.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    1 -> {
-                        val pullRefreshState = rememberPullToRefreshState()
-                        val isRefreshing = popularState is HomeViewModel.PopularState.Loading
-
-                        PullToRefreshBox(
-                            state = pullRefreshState,
-                            isRefreshing = isRefreshing,
-                            onRefresh = { viewModel.loadPopularGalleries() },
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            when (val state = popularState) {
-                                is HomeViewModel.PopularState.Loading -> {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        LoadingIndicator()
-                                    }
-                                }
-                                is HomeViewModel.PopularState.Error -> {
+                            PullToRefreshBox(
+                                state = pullRefreshState,
+                                isRefreshing = isRefreshing,
+                                onRefresh = { latestGalleries.refresh() },
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                if (latestGalleries.loadState.refresh is LoadState.Error) {
+                                    val error = (latestGalleries.loadState.refresh as LoadState.Error).error
                                     ErrorScreen(
-                                        message = state.message,
-                                        onRetry = { viewModel.loadPopularGalleries() }
+                                        message = error.localizedMessage ?: stringResource(R.string.common_error_network),
+                                        onRetry = { latestGalleries.retry() }
                                     )
-                                }
-                                is HomeViewModel.PopularState.Success -> {
-                                    LazyVerticalGrid(
-                                        columns = GridCells.Adaptive(minSize = 340.dp),
+                                } else {
+                                    LazyVerticalStaggeredGrid(
+                                        columns = StaggeredGridCells.Adaptive(minSize = 340.dp),
                                         contentPadding = PaddingValues(
                                             start = 12.dp,
                                             top = 12.dp,
@@ -592,16 +294,94 @@ fun HomeScreen(
                                         modifier = Modifier.fillMaxSize()
                                     ) {
                                         items(
-                                            items = state.items,
-                                            key = { it.id }
-                                        ) { item ->
-                                            GalleryCard(
-                                                item = item,
-                                                cdnHost = cdnHost,
-                                                onClick = { onNavigateToDetail(item.id) },
-                                                isFavorited = item.id in favoritedIds,
-                                                modifier = Modifier.padding(6.dp)
-                                            )
+                                            count = latestGalleries.itemCount,
+                                            key = { index -> latestGalleries[index]?.id ?: index }
+                                        ) { index ->
+                                            val item = latestGalleries[index]
+                                            if (item != null) {
+                                                GalleryCard(
+                                                    item = item,
+                                                    cdnHost = cdnHost,
+                                                    onClick = { onNavigateToDetail(item.id) },
+                                                    isFavorited = item.id in favoritedIds,
+                                                    modifier = Modifier.padding(6.dp)
+                                                )
+                                            }
+                                        }
+
+                                        if (latestGalleries.loadState.append is LoadState.Loading) {
+                                            item(span = StaggeredGridItemSpan.FullLine) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(16.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    LoadingIndicator()
+                                                }
+                                            }
+                                        } else if (latestGalleries.loadState.append is LoadState.Error) {
+                                            item(span = StaggeredGridItemSpan.FullLine) {
+                                                val error = (latestGalleries.loadState.append as LoadState.Error).error
+                                                ErrorScreen(
+                                                    message = error.localizedMessage ?: stringResource(R.string.common_error_load_more_failed),
+                                                    onRetry = { latestGalleries.retry() },
+                                                    modifier = Modifier.padding(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        1 -> {
+                            val pullRefreshState = rememberPullToRefreshState()
+                            val isRefreshing = popularState is HomeViewModel.PopularState.Loading
+
+                            PullToRefreshBox(
+                                state = pullRefreshState,
+                                isRefreshing = isRefreshing,
+                                onRefresh = { viewModel.loadPopularGalleries() },
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                when (val state = popularState) {
+                                    is HomeViewModel.PopularState.Loading -> {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            LoadingIndicator()
+                                        }
+                                    }
+                                    is HomeViewModel.PopularState.Error -> {
+                                        ErrorScreen(
+                                            message = state.message,
+                                            onRetry = { viewModel.loadPopularGalleries() }
+                                        )
+                                    }
+                                    is HomeViewModel.PopularState.Success -> {
+                                        LazyVerticalGrid(
+                                            columns = GridCells.Adaptive(minSize = 340.dp),
+                                            contentPadding = PaddingValues(
+                                                start = 12.dp,
+                                                top = 12.dp,
+                                                end = 12.dp,
+                                                bottom = 12.dp + innerPadding.calculateBottomPadding()
+                                            ),
+                                            modifier = Modifier.fillMaxSize()
+                                        ) {
+                                            items(
+                                                items = state.items,
+                                                key = { it.id }
+                                            ) { item ->
+                                                GalleryCard(
+                                                    item = item,
+                                                    cdnHost = cdnHost,
+                                                    onClick = { onNavigateToDetail(item.id) },
+                                                    isFavorited = item.id in favoritedIds,
+                                                    modifier = Modifier.padding(6.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -613,82 +393,3 @@ fun HomeScreen(
         }
     }
 }
-}
-
-
-
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
-@Composable
-fun SwipeToDeleteHistoryItem(
-    history: SearchHistory,
-    onHistoryClick: (String) -> Unit,
-    onDelete: (String) -> Unit,
-    onLongPress: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete(history.query)
-                true
-            } else {
-                false
-            }
-        }
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(horizontal = 24.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-        },
-        enableDismissFromStartToEnd = false,
-        modifier = modifier.fillMaxWidth()
-    ) {
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = history.query,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            },
-            leadingContent = {
-                Icon(
-                    imageVector = Icons.Default.History,
-                    contentDescription = "History"
-                )
-            },
-            trailingContent = {
-                IconButton(onClick = { onDelete(history.query) }) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = "Remove single",
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .combinedClickable(
-                    onClick = { onHistoryClick(history.query) },
-                    onLongClick = onLongPress
-                )
-        )
-    }
-}
-

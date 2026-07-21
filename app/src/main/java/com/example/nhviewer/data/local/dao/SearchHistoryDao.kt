@@ -18,6 +18,9 @@ interface SearchHistoryDao {
     @Query("DELETE FROM search_history WHERE `query` = :query")
     suspend fun deleteHistory(query: String)
 
+    @Query("DELETE FROM search_history WHERE `query` NOT IN (SELECT `query` FROM search_history ORDER BY timestamp DESC LIMIT :limit)")
+    suspend fun deleteOldestBeyondLimit(limit: Int)
+
     @Query("DELETE FROM search_history")
     suspend fun clearAll()
 }
