@@ -95,15 +95,10 @@ class BlacklistViewModel @Inject constructor(
                 .debounce(300)
                 .filter { it.isNotBlank() }
                 .collect { query ->
-                    autocompleteTagsUseCase(query)
-                        .onSuccess {
-                            // Filter out tags already in the blacklist
-                            val blacklistIds = _blacklist.value.map { it.id }.toSet()
-                            _suggestions.value = it.filter { tag -> tag.id !in blacklistIds }
-                        }
-                        .onFailure {
-                            _suggestions.value = emptyList()
-                        }
+                    autocompleteTagsUseCase(query).collect { tagList ->
+                        val blacklistIds = _blacklist.value.map { it.id }.toSet()
+                        _suggestions.value = tagList.filter { tag -> tag.id !in blacklistIds }
+                    }
                 }
         }
     }

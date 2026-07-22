@@ -93,12 +93,11 @@ class SearchViewModel @Inject constructor(
         }
         .flatMapLatest { (query, tagLanguage) ->
             if (query.isBlank()) {
-                flowOf(Result.success(emptyList<Tag>()))
+                flowOf(emptyList<Tag>())
             } else {
-                flow { emit(autocompleteTagsUseCase(query, null, tagLanguage)) }
+                autocompleteTagsUseCase(query, null, tagLanguage)
             }
         }
-        .map { result -> result.getOrElse { emptyList() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {

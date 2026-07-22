@@ -34,4 +34,9 @@ interface TagApi {
         @Query("tag_id") tagId: Int,
         @Query("page") page: Int
     ): GalleryListResponse
+
+    @GET("api/v2/tags/ids")
+    suspend fun getTagsByIds(
+        @Query("id") ids: List<Int>
+    ): List<TagResponseDto>
 }

@@ -1,5 +1,8 @@
 package com.example.nhviewer.presentation.feature.search
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.R
+import com.example.nhviewer.presentation.common.SearchQueryBuilder
 import com.example.nhviewer.presentation.common.SearchResultGrid
 import com.example.nhviewer.presentation.common.SearchSortBar
 import com.example.nhviewer.presentation.common.SearchSuggestionPanel
@@ -92,6 +96,16 @@ fun SearchScreen(
                 colors = SearchBarDefaults.colors(),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+                    SearchQueryBuilder(
+                        rawQuery = searchQuery,
+                        onQueryChanged = { viewModel.onSearchQueryChanged(it) },
+                        onTriggerSearch = {
+                            viewModel.search(searchQuery)
+                            focusManager.clearFocus()
+                        }
+                    )
+                }
                 SearchSuggestionPanel(
                     searchQuery = searchQuery,
                     searchHistory = searchHistory,
@@ -104,6 +118,18 @@ fun SearchScreen(
         }
 
         if (!active) {
+            if (searchQuery.isNotEmpty()) {
+                AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+                    SearchQueryBuilder(
+                        rawQuery = searchQuery,
+                        onQueryChanged = {
+                            viewModel.onSearchQueryChanged(it)
+                            viewModel.search(it)
+                        },
+                        onTriggerSearch = { focusManager.clearFocus() }
+                    )
+                }
+            }
             SearchSortBar(
                 sortOption = sortOption,
                 onSortOptionChanged = { viewModel.onSortOptionChanged(it) }
@@ -114,7 +140,7 @@ fun SearchScreen(
                 cdnHost = cdnHost,
                 favoritedIds = favoritedIds,
                 onNavigateToDetail = onNavigateToDetail,
-                minSize = 340
+                minSize = gridBaseWidth
             )
         }
     }

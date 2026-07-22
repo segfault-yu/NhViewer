@@ -246,12 +246,7 @@ fun SearchSuggestionPanel(
                             Text(text = formattedName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
                         },
                         supportingContent = {
-                            val subText = if (tag.count > 0) {
-                                stringResource(R.string.home_search_tag_sub, localizedType, tag.count)
-                            } else {
-                                stringResource(R.string.home_search_tag_sub_no_count, localizedType)
-                            }
-                            Text(text = subText, style = MaterialTheme.typography.bodySmall)
+                            Text(text = stringResource(R.string.home_search_tag_sub_no_count, localizedType), style = MaterialTheme.typography.bodySmall)
                         },
                         leadingContent = {
                             Icon(

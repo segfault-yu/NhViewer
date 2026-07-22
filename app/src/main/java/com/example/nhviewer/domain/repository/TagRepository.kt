@@ -9,4 +9,5 @@ interface TagRepository {
     suspend fun getTags(tagType: String, page: Int, sort: String): Result<PaginatedResult<Tag>>
     suspend fun getTagDetail(tagType: String, slug: String): Result<Tag>
     suspend fun getGalleriesTagged(tagId: Int, page: Int): Result<PaginatedResult<GalleryListItem>>
+    suspend fun getTagsByIds(ids: List<Int>): Result<List<Tag>>
 }

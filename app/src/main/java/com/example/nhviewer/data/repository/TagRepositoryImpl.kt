@@ -41,4 +41,8 @@ class TagRepositoryImpl @Inject constructor(
             total = response.total
         )
     }
+
+    override suspend fun getTagsByIds(ids: List<Int>): Result<List<Tag>> = runCatchingCancelable {
+        api.getTagsByIds(ids).map { it.toDomain() }
+    }
 }

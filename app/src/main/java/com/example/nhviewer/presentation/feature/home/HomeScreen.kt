@@ -1,5 +1,8 @@
 package com.example.nhviewer.presentation.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -61,6 +64,7 @@ import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
+import com.example.nhviewer.presentation.common.SearchQueryBuilder
 import com.example.nhviewer.presentation.common.SearchResultGrid
 import com.example.nhviewer.presentation.common.SearchSortBar
 import com.example.nhviewer.presentation.common.SearchSuggestionPanel
@@ -172,7 +176,7 @@ fun HomeScreen(
                                     )
                                 }
                             }
-                            
+
                             val profileState by profileViewModel.authState.collectAsState()
                             Box(
                                 modifier = Modifier
@@ -215,6 +219,16 @@ fun HomeScreen(
                     colors = SearchBarDefaults.colors(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+                        SearchQueryBuilder(
+                            rawQuery = searchQuery,
+                            onQueryChanged = { searchViewModel.onSearchQueryChanged(it) },
+                            onTriggerSearch = {
+                                searchViewModel.search(searchQuery)
+                                focusManager.clearFocus()
+                            }
+                        )
+                    }
                     SearchSuggestionPanel(
                         searchQuery = searchQuery,
                         searchHistory = searchHistory,
@@ -228,6 +242,18 @@ fun HomeScreen(
 
             // 搜索结果页与普通主页内容区域动态切换
             if (!active && searchQuery.isNotEmpty()) {
+                AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+                    SearchQueryBuilder(
+                        rawQuery = searchQuery,
+                        onQueryChanged = {
+                            searchViewModel.onSearchQueryChanged(it)
+                            searchViewModel.search(it)
+                        },
+                        onTriggerSearch = {
+                            focusManager.clearFocus()
+                        }
+                    )
+                }
                 SearchSortBar(
                     sortOption = sortOption,
                     onSortOptionChanged = { searchViewModel.onSortOptionChanged(it) }
