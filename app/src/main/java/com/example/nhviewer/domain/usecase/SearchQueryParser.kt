@@ -22,15 +22,13 @@ class SearchQueryParser @Inject constructor() {
         var uploadedCondition: String? = null
 
         val tagRegex = """^(-)?([a-zA-Z]+):(.+)$""".toRegex()
-        val conditionRegex = """^(pages|favorites|uploaded):([><=]+)?(.+)$""".toRegex()
+        val conditionRegex = """^(pages|favorites|uploaded):([><=a-zA-Z0-9]+)$""".toRegex()
 
         for (token in tokens) {
             val condMatch = conditionRegex.matchEntire(token)
             if (condMatch != null) {
                 val type = condMatch.groupValues[1]
-                val op = condMatch.groupValues[2]
-                val value = condMatch.groupValues[3]
-                val conditionStr = "$op$value"
+                val conditionStr = condMatch.groupValues[2]
 
                 when (type) {
                     "pages" -> pagesCondition = conditionStr

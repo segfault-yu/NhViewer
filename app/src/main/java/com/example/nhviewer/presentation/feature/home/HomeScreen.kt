@@ -1,6 +1,8 @@
 package com.example.nhviewer.presentation.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -217,14 +220,20 @@ fun HomeScreen(
                         }
                     },
                     colors = SearchBarDefaults.colors(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateContentSize(animationSpec = tween(durationMillis = 300))
                 ) {
-                    AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(animationSpec = tween(300)),
+                        exit = fadeOut(animationSpec = tween(300))
+                    ) {
                         SearchQueryBuilder(
                             rawQuery = searchQuery,
                             onQueryChanged = { searchViewModel.onSearchQueryChanged(it) },
-                            onTriggerSearch = {
-                                searchViewModel.search(searchQuery)
+                            onTriggerSearch = { query ->
+                                searchViewModel.search(query)
                                 focusManager.clearFocus()
                             }
                         )
@@ -242,14 +251,19 @@ fun HomeScreen(
 
             // 搜索结果页与普通主页内容区域动态切换
             if (!active && searchQuery.isNotEmpty()) {
-                AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(animationSpec = tween(300)),
+                    exit = fadeOut(animationSpec = tween(300))
+                ) {
                     SearchQueryBuilder(
                         rawQuery = searchQuery,
                         onQueryChanged = {
                             searchViewModel.onSearchQueryChanged(it)
-                            searchViewModel.search(it)
+                            // 文本改变时不触发搜索，SearchQueryBuilder 内部的选择操作会通过 onTriggerSearch 触发
                         },
-                        onTriggerSearch = {
+                        onTriggerSearch = { query ->
+                            searchViewModel.search(query)
                             focusManager.clearFocus()
                         }
                     )

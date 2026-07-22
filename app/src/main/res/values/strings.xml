@@ -158,6 +158,22 @@
     <string name="blacklist_empty_title">黑名单为空</string>
     <string name="blacklist_empty_subtitle">搜索并添加标签至黑名单后，首页及搜索列表中含有该标签的画廊卡片将会被自动隐藏。</string>
 
+    <!-- Advanced Search Filters -->
+    <string name="search_advanced_filters">高级筛选</string>
+    <string name="search_advanced_type">类型</string>
+    <string name="search_advanced_tag_name">标签名</string>
+    <string name="search_advanced_exclude_tag">排除标签 (例: yaoi)</string>
+    <string name="search_advanced_min_pages">最小页数</string>
+    <string name="search_advanced_min_favorites">最小收藏数</string>
+    <string name="search_advanced_uploaded_within">上传时间:</string>
+    <string name="search_advanced_today">今天</string>
+    <string name="search_advanced_this_week">本周</string>
+    <string name="search_advanced_this_month">本月</string>
+    <string name="search_advanced_any">不限</string>
+    <string name="search_advanced_apply">应用</string>
+    <string name="search_advanced_language">语言</string>
+    <string name="search_advanced_category">分类</string>
+
     <!-- Profile Screen -->
     <string name="profile_not_logged_in">您尚未登录</string>
     <string name="profile_guest_subtitle">登录后即可使用云端收藏夹、设备活跃会话管理等更多精彩功能。</string>
