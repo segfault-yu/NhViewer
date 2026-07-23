@@ -1,5 +1,9 @@
 package com.example.nhviewer.presentation.common
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,7 +29,13 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Tag
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,6 +55,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -58,6 +69,8 @@ import com.example.nhviewer.R
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.SearchHistory
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.util.NetworkErrorParser
+import com.example.nhviewer.util.RelativeTimeFormatter
 import com.example.nhviewer.util.i18n.LocalTagDisplayMode
 import com.example.nhviewer.util.i18n.LocalTagLanguage
 import com.example.nhviewer.util.i18n.TagTranslationProvider
@@ -88,7 +101,11 @@ fun SwipeToDeleteHistoryItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = CircleShape
+                    )
                     .padding(horizontal = 24.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
@@ -100,7 +117,9 @@ fun SwipeToDeleteHistoryItem(
             }
         },
         enableDismissFromStartToEnd = false,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         ListItem(
             headlineContent = {
@@ -108,13 +127,22 @@ fun SwipeToDeleteHistoryItem(
                     text = history.query,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+            },
+            supportingContent = {
+                Text(
+                    text = RelativeTimeFormatter.format(history.timestamp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             leadingContent = {
                 Icon(
                     imageVector = Icons.Default.History,
-                    contentDescription = "History"
+                    contentDescription = "History",
+                    tint = MaterialTheme.colorScheme.primary
                 )
             },
             trailingContent = {
@@ -122,12 +150,22 @@ fun SwipeToDeleteHistoryItem(
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = "Remove single",
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
+            colors = ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+            ),
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = CircleShape
+                )
+                .clip(CircleShape)
                 .combinedClickable(
                     onClick = { onHistoryClick(history.query) },
                     onLongClick = onLongPress
@@ -230,7 +268,8 @@ fun SearchSuggestionPanel(
                     key = { it.name }
                 ) { tag ->
                     val formattedName = TagTranslationProvider.getFormattedName(tag, tagLanguage, "bilingual")
-                    val localizedType = when (tag.type.lowercase()) {
+                    val trueType = TagTranslationProvider.getTrueTagType(tag.name, tag.type, tagLanguage).lowercase()
+                    val localizedType = when (trueType) {
                         "artist" -> "作者"
                         "character" -> "角色"
                         "parody" -> "原作"
@@ -241,21 +280,54 @@ fun SearchSuggestionPanel(
                         "male" -> "男性"
                         else -> tag.type
                     }
+
+                    val (leadingIcon, iconTint) = when (trueType) {
+                        "artist", "character" -> Icons.Default.Person to MaterialTheme.colorScheme.primary
+                        "group" -> Icons.Default.Group to MaterialTheme.colorScheme.secondary
+                        "category" -> Icons.Default.Category to MaterialTheme.colorScheme.tertiary
+                        else -> Icons.AutoMirrored.Filled.Label to MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+
                     ListItem(
                         headlineContent = {
-                            Text(text = formattedName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                text = formattedName,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         },
                         supportingContent = {
-                            Text(text = stringResource(R.string.home_search_tag_sub_no_count, localizedType), style = MaterialTheme.typography.bodySmall)
+                            val subText = if (tag.count > 0) {
+                                "$localizedType • ${tag.count} 作品"
+                            } else {
+                                localizedType
+                            }
+                            Text(
+                                text = subText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         },
                         leadingContent = {
                             Icon(
-                                imageVector = Icons.Default.Tag,
-                                contentDescription = "Tag"
+                                imageVector = leadingIcon,
+                                contentDescription = localizedType,
+                                tint = iconTint
                             )
                         },
+                        colors = ListItemDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = CircleShape
+                            )
+                            .clip(CircleShape)
                             .clickable {
                                 onSearch(tag.name)
                                 focusManager.clearFocus()
@@ -271,7 +343,8 @@ fun SearchSuggestionPanel(
 fun SearchSortBar(
     sortOption: String,
     onSortOptionChanged: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    totalCount: Int? = null
 ) {
     var showSortMenu by remember { mutableStateOf(false) }
 
@@ -289,6 +362,13 @@ fun SearchSortBar(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
+        if (totalCount != null) {
+            Text(
+                text = "共 $totalCount 个结果",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Spacer(modifier = Modifier.weight(1f))
         Box {
             Row(
@@ -340,75 +420,114 @@ fun SearchResultGrid(
     minSize: Int = 340,
     bottomPadding: Dp = 12.dp
 ) {
+    val currentState = remember(searchResults.loadState.refresh, searchResults.itemCount) {
+        when {
+            searchResults.loadState.refresh is LoadState.Loading -> 0
+            searchResults.loadState.refresh is LoadState.Error -> 1
+            searchResults.itemCount == 0 && searchResults.loadState.refresh is LoadState.NotLoading -> 2
+            else -> 3
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
-        if (searchResults.loadState.refresh is LoadState.Loading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                LoadingIndicator()
-            }
-        } else if (searchResults.loadState.refresh is LoadState.Error) {
-            val error = (searchResults.loadState.refresh as LoadState.Error).error
-            ErrorScreen(
-                message = error.localizedMessage ?: stringResource(R.string.home_search_error),
-                onRetry = { searchResults.retry() }
-            )
-        } else if (searchResults.itemCount == 0 && searchResults.loadState.refresh is LoadState.NotLoading) {
-            EmptyState(message = stringResource(R.string.home_search_empty))
-        } else {
-            LazyVerticalStaggeredGrid(
-                columns = StaggeredGridCells.Adaptive(minSize = minSize.dp),
-                contentPadding = PaddingValues(
-                    start = 12.dp,
-                    top = 12.dp,
-                    end = 12.dp,
-                    bottom = bottomPadding
-                ),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(
-                    count = searchResults.itemCount,
-                    key = { index -> searchResults[index]?.id ?: index }
-                ) { index ->
-                    val item = searchResults[index]
-                    if (item != null) {
-                        GalleryCard(
-                            item = item,
-                            cdnHost = cdnHost,
-                            onClick = { onNavigateToDetail(item.id) },
-                            isFavorited = item.id in favoritedIds,
-                            modifier = Modifier.padding(6.dp)
-                        )
+        AnimatedContent(
+            targetState = currentState,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "SearchResultGridState"
+        ) { targetState ->
+            when (targetState) {
+                0 -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        LoadingIndicator()
                     }
                 }
-
-                if (searchResults.loadState.append is LoadState.Loading) {
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                1 -> {
+                    val refreshState = searchResults.loadState.refresh
+                    val error = (refreshState as? LoadState.Error)?.error
+                    if (error != null) {
+                        ErrorScreen(
+                            message = NetworkErrorParser.parse(error),
+                            onRetry = { searchResults.retry() }
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             LoadingIndicator()
                         }
                     }
-                } else if (searchResults.loadState.append is LoadState.Error) {
-                    val error = (searchResults.loadState.append as LoadState.Error).error
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = error.localizedMessage ?: stringResource(R.string.home_search_error),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            TextButton(onClick = { searchResults.retry() }) {
-                                Text(stringResource(R.string.common_retry))
+                }
+                2 -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        EmptyState(message = stringResource(R.string.home_search_empty))
+                        Spacer(modifier = Modifier.padding(4.dp))
+                        Text(
+                            text = "请尝试更少的关键词或移除筛选条件",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                else -> {
+                    LazyVerticalStaggeredGrid(
+                        columns = StaggeredGridCells.Adaptive(minSize = minSize.dp),
+                        contentPadding = PaddingValues(
+                            start = 12.dp,
+                            top = 12.dp,
+                            end = 12.dp,
+                            bottom = bottomPadding
+                        ),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(
+                            count = searchResults.itemCount,
+                            key = { index -> searchResults[index]?.id ?: index }
+                        ) { index ->
+                            val item = searchResults[index]
+                            if (item != null) {
+                                GalleryCard(
+                                    item = item,
+                                    cdnHost = cdnHost,
+                                    onClick = { onNavigateToDetail(item.id) },
+                                    isFavorited = item.id in favoritedIds,
+                                    modifier = Modifier.padding(6.dp)
+                                )
+                            }
+                        }
+
+                        if (searchResults.loadState.append is LoadState.Loading) {
+                            item(span = StaggeredGridItemSpan.FullLine) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    LoadingIndicator()
+                                }
+                            }
+                        } else if (searchResults.loadState.append is LoadState.Error) {
+                            val error = (searchResults.loadState.append as LoadState.Error).error
+                            item(span = StaggeredGridItemSpan.FullLine) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = NetworkErrorParser.parse(error),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    TextButton(onClick = { searchResults.retry() }) {
+                                        Text(stringResource(R.string.common_retry))
+                                    }
+                                }
                             }
                         }
                     }

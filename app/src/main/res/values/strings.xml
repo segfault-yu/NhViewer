@@ -91,7 +91,7 @@
     <string name="tag_type_female">女性</string>
     <string name="tag_type_male">男性</string>
     <string name="tag_type_tag">其他</string>
-    
+
     <string name="tag_type_artist_full">画师 (Artist)</string>
     <string name="tag_type_character_full">角色 (Character)</string>
     <string name="tag_type_parody_full">原作 (Parody)</string>
@@ -234,8 +234,11 @@
     <string name="settings_apikeys_title">API 密钥管理</string>
     <string name="settings_apikeys_desc">申请和吊销您的 API Token</string>
     <string name="settings_cat_download">下载与存储</string>
+    <string name="settings_max_cache_title">图片缓存上限</string>
+    <string name="settings_max_cache_desc">设置图片磁盘缓存容量限制 (MB)</string>
+    <string name="settings_max_cache_value">%d MB</string>
     <string name="settings_clear_cache_title">缓存清理</string>
-    <string name="settings_clear_cache_desc">清理本地 Coil 图片缓存</string>
+    <string name="settings_clear_cache_desc">清理本地 Coil 图片及 API 缓存</string>
     <string name="settings_cache_cleared">缓存清理成功</string>
     <string name="settings_cat_reader">阅读器偏好</string>
     <string name="settings_current_fmt">当前: %s</string>
@@ -253,6 +256,7 @@
     <string name="settings_app_language_title">软件界面语言</string>
     <string name="settings_app_language_system">跟随系统</string>
     <string name="settings_app_language_zh">简体中文</string>
+
     <string name="settings_app_language_en">English</string>
     <string name="settings_tag_language_title">标签显示模式</string>
     <string name="settings_tag_mode_only_translation">仅翻译</string>

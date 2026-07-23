@@ -8,7 +8,8 @@ import com.example.nhviewer.domain.repository.SearchRepository
 class SearchPagingSource(
     private val repository: SearchRepository,
     private val query: String,
-    private val sort: String
+    private val sort: String,
+    private val onTotalRetrieved: ((Int?) -> Unit)? = null
 ) : PagingSource<Int, GalleryListItem>() {
 
     override fun getRefreshKey(state: PagingState<Int, GalleryListItem>): Int? {
@@ -22,6 +23,9 @@ class SearchPagingSource(
         val page = params.key ?: 1
         return try {
             val result = repository.searchGalleries(query, page, sort).getOrThrow()
+            if (page == 1) {
+                onTotalRetrieved?.invoke(result.total)
+            }
             LoadResult.Page(
                 data = result.items,
                 prevKey = if (page == 1) null else page - 1,

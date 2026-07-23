@@ -7,7 +7,7 @@ import javax.inject.Inject
 class GetPopularGalleriesUseCase @Inject constructor(
     private val repository: GalleryRepository
 ) {
-    suspend operator fun invoke(): Result<List<GalleryListItem>> {
-        return repository.getPopularGalleries()
+    suspend operator fun invoke(forceRefresh: Boolean = false): Result<List<GalleryListItem>> {
+        return repository.getPopularGalleries(forceRefresh)
     }
 }

@@ -1,8 +1,10 @@
 package com.example.nhviewer.presentation.common
 
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -53,6 +55,13 @@ fun SearchQueryBuilder(
                     selected = currentLang != null,
                     onClick = { languageMenuExpanded = true },
                     label = { Text(if (currentLang != null) "${stringResource(R.string.search_advanced_language)}: $currentLang" else stringResource(R.string.search_advanced_language)) },
+                    shape = CircleShape,
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
                     leadingIcon = {
                         Icon(imageVector = Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize))
                     },
@@ -72,21 +81,19 @@ fun SearchQueryBuilder(
                                 val newTags = parsedQuery.includedTags.filter { !it.startsWith("language:") } + tag
                                 val newQuery = parsedQuery.copy(includedTags = newTags)
                                 val queryStr = newQuery.toRawString()
-                                onQueryChanged(queryStr)
                                 onTriggerSearch(queryStr)
                                 languageMenuExpanded = false
                             }
                         )
                     }
                     if (currentLang != null) {
-                        Divider()
+                        HorizontalDivider()
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.common_clear)) },
                             onClick = {
                                 val newTags = parsedQuery.includedTags.filter { !it.startsWith("language:") }
                                 val newQuery = parsedQuery.copy(includedTags = newTags)
                                 val queryStr = newQuery.toRawString()
-                                onQueryChanged(queryStr)
                                 onTriggerSearch(queryStr)
                                 languageMenuExpanded = false
                             }
@@ -108,6 +115,13 @@ fun SearchQueryBuilder(
                     selected = currentUploaded != null,
                     onClick = { uploadedMenuExpanded = true },
                     label = { Text(label) },
+                    shape = CircleShape,
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
                     leadingIcon = {
                         Icon(imageVector = Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize))
                     },
@@ -130,14 +144,13 @@ fun SearchQueryBuilder(
                             onClick = {
                                 val newQuery = parsedQuery.copy(uploadedCondition = value)
                                 val queryStr = newQuery.toRawString()
-                                onQueryChanged(queryStr)
                                 onTriggerSearch(queryStr)
                                 uploadedMenuExpanded = false
                             }
                         )
                     }
                     if (currentUploaded != null) {
-                        Divider()
+                        HorizontalDivider()
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.common_clear)) },
                             onClick = {
@@ -166,6 +179,12 @@ fun SearchQueryBuilder(
                     }
                 },
                 label = { Text(parsedQuery.pagesCondition?.let { "Pages: $it" } ?: stringResource(R.string.search_advanced_min_pages)) },
+                shape = CircleShape,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
                 leadingIcon = {
                     Icon(imageVector = Icons.Default.MenuBook, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize))
                 }
@@ -185,6 +204,12 @@ fun SearchQueryBuilder(
                     }
                 },
                 label = { Text(parsedQuery.favoritesCondition?.let { "Favs: $it" } ?: stringResource(R.string.search_advanced_min_favorites)) },
+                shape = CircleShape,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
                 leadingIcon = {
                     Icon(imageVector = Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize))
                 }
@@ -319,6 +344,7 @@ private fun FilterChipToggle(
             }
             onToggle(newQuery)
         },
-        label = { Text(label) }
+        label = { Text(label) },
+        shape = CircleShape
     )
 }

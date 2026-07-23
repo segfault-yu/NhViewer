@@ -57,7 +57,7 @@ class HomeViewModel @Inject constructor(
         }
 
     private val _popularGalleriesState = MutableStateFlow<PopularState>(PopularState.Loading)
-    
+
     val popularGalleriesState: StateFlow<PopularState> = _popularGalleriesState
         .combine(blacklistRepository.blacklistedTagIds) { state, blacklistedIds ->
             when (state) {
@@ -88,10 +88,10 @@ class HomeViewModel @Inject constructor(
         loadCdnConfig()
     }
 
-    fun loadPopularGalleries() {
+    fun loadPopularGalleries(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _popularGalleriesState.value = PopularState.Loading
-            getPopularGalleriesUseCase()
+            getPopularGalleriesUseCase(forceRefresh)
                 .onSuccess { list ->
                     _popularGalleriesState.value = PopularState.Success(list)
                 }

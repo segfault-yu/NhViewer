@@ -1,19 +1,26 @@
 package com.example.nhviewer.di
 
+import android.content.Context
+import com.example.nhviewer.BuildConfig
 import com.example.nhviewer.data.remote.GalleryApi
+import com.example.nhviewer.data.remote.interceptor.CacheStrategyInterceptor
 import com.example.nhviewer.data.remote.interceptor.RateLimitInterceptor
 import com.example.nhviewer.data.remote.interceptor.UserAgentInterceptor
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import okhttp3.Cache
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import javax.inject.Singleton
+import java.io.File
 import javax.inject.Named
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -30,14 +37,31 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideHttpCache(@ApplicationContext context: Context): Cache {
+        val cacheDir = File(context.cacheDir, "http_cache")
+        return Cache(cacheDir, 50L * 1024L * 1024L) // 50MB API Cache
+    }
+
+    @Provides
+    @Singleton
     @Named("BaseClient")
-    fun provideBaseOkHttpClient(): OkHttpClient {
+    fun provideBaseOkHttpClient(cache: Cache): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
+        }
         return OkHttpClient.Builder()
+            .cache(cache)
             .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .addInterceptor(UserAgentInterceptor())
+            .addInterceptor(CacheStrategyInterceptor())
             .addInterceptor(RateLimitInterceptor())
+            .addInterceptor(loggingInterceptor)
             .build()
     }
 

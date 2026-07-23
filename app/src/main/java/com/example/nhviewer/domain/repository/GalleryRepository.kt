@@ -8,10 +8,10 @@ import com.example.nhviewer.domain.model.ReadingHistory
 import kotlinx.coroutines.flow.Flow
 
 interface GalleryRepository {
-    suspend fun getGalleries(page: Int): Result<PaginatedResult<GalleryListItem>>
-    suspend fun getPopularGalleries(): Result<List<GalleryListItem>>
+    suspend fun getGalleries(page: Int, forceRefresh: Boolean = false): Result<PaginatedResult<GalleryListItem>>
+    suspend fun getPopularGalleries(forceRefresh: Boolean = false): Result<List<GalleryListItem>>
     suspend fun getRandomGalleryId(): Result<Int>
-    suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean): Result<GalleryDetail>
+    suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean, forceRefresh: Boolean = false): Result<GalleryDetail>
     suspend fun getRelatedGalleries(galleryId: Int): Result<List<GalleryListItem>>
     suspend fun getCdnConfig(): Result<CdnConfig>
 
@@ -20,4 +20,3 @@ interface GalleryRepository {
     suspend fun updateReadingPage(galleryId: Int, lastReadPage: Int, timestamp: Long)
     suspend fun getReadingHistoryItem(galleryId: Int): ReadingHistory?
 }
-

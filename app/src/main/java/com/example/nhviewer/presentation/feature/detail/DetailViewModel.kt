@@ -99,30 +99,34 @@ class DetailViewModel @Inject constructor(
         }
     }
 
-    fun loadGalleryDetail(galleryId: Int) {
+    fun loadGalleryDetail(galleryId: Int, forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            _detailState.value = DetailUiState.Loading
-            _relatedState.value = RelatedUiState.Loading
-            _commentsState.value = CommentsUiState.Loading
-
-            // Fetch local reading history
+            // 始终刷新本地阅读历史与收藏状态
             val history = readingHistoryUseCase.getReadingHistoryItem(galleryId)
             _readingHistory.value = history
 
-            // Check favorite status
             checkIsFavoriteUseCase(galleryId).onSuccess {
                 _isFavorite.value = it
             }
+
+            // 若非强刷新且数据已成功加载，拦截重复 API 网络请求
+            if (!forceRefresh && currentDetail?.id == galleryId && _detailState.value is DetailUiState.Success) {
+                return@launch
+            }
+
+            _detailState.value = DetailUiState.Loading
+            _relatedState.value = RelatedUiState.Loading
+            _commentsState.value = CommentsUiState.Loading
 
             // Fetch comments
             fetchComments(galleryId)
 
             // Dual stage loading: fetch detail with include=related
-            getGalleryDetailUseCase(galleryId, includeRelated = true)
+            getGalleryDetailUseCase(galleryId, includeRelated = true, forceRefresh = forceRefresh)
                 .onSuccess { detail ->
                     currentDetail = detail
                     _detailState.value = DetailUiState.Success(detail)
-                    
+
                     if (!detail.related.isNullOrEmpty()) {
                         _relatedState.value = RelatedUiState.Success(detail.related)
                     } else {

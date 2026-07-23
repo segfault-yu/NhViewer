@@ -116,6 +116,9 @@ fun NhViewerNavGraph(
                 },
                 onTagClick = { tagId, tagName ->
                     navController.navigate(Route.TaggedGalleries(tagId, tagName))
+                },
+                onNavigateToDetail = { galleryId ->
+                    navController.navigate(Route.GalleryDetail(galleryId))
                 }
             )
         }

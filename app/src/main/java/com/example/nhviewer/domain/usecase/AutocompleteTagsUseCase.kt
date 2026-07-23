@@ -19,10 +19,13 @@ class AutocompleteTagsUseCase @Inject constructor(
         }
         emit(localResults)
 
-        // 2. Fetch remote if ascii
-        val isAsciiOnly = query.all { it.code < 128 }
-        if (isAsciiOnly && query.isNotBlank()) {
-            val remoteTags = repository.autocompleteTags(query, type).getOrDefault(emptyList())
+        // 2. Fetch remote if last active token is plain ASCII prefix without filter markers
+        val activeToken = query.trimEnd().substringAfterLast(' ')
+        val hasFilterSymbol = activeToken.any { it in ":><-" }
+        val isAsciiOnly = activeToken.all { it.code < 128 }
+
+        if (!hasFilterSymbol && isAsciiOnly && activeToken.isNotBlank()) {
+            val remoteTags = repository.autocompleteTags(activeToken, type).getOrDefault(emptyList())
 
             if (remoteTags.isNotEmpty()) {
                 val remoteTagsMap = remoteTags.associateBy { it.name }

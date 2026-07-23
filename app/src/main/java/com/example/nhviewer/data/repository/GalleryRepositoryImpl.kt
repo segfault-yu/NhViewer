@@ -25,8 +25,9 @@ class GalleryRepositoryImpl @Inject constructor(
     private val historyDao: ReadingHistoryDao
 ) : GalleryRepository {
 
-    override suspend fun getGalleries(page: Int): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable {
-        val response = api.getGalleries(page)
+    override suspend fun getGalleries(page: Int, forceRefresh: Boolean): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable {
+        val forceHeader = if (forceRefresh) "true" else null
+        val response = api.getGalleries(page, forceHeader)
         PaginatedResult(
             items = response.result.map { it.toDomain() },
             numPages = response.numPages,
@@ -34,17 +35,29 @@ class GalleryRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun getPopularGalleries(): Result<List<GalleryListItem>> = runCatchingCancelable {
-        api.getPopularGalleries().map { it.toDomain() }
+    override suspend fun getPopularGalleries(forceRefresh: Boolean): Result<List<GalleryListItem>> = runCatchingCancelable {
+        val forceHeader = if (forceRefresh) "true" else null
+        api.getPopularGalleries(forceHeader).map { it.toDomain() }
     }
 
     override suspend fun getRandomGalleryId(): Result<Int> = runCatchingCancelable {
         api.getRandomGallery()["id"] ?: throw NoSuchElementException("No random gallery ID returned")
     }
 
-    override suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean): Result<GalleryDetail> = runCatchingCancelable {
+    private val detailCache = android.util.LruCache<Int, GalleryDetail>(20)
+
+    override suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean, forceRefresh: Boolean): Result<GalleryDetail> = runCatchingCancelable {
+        if (!forceRefresh) {
+            val cached = detailCache.get(galleryId)
+            if (cached != null && (!includeRelated || !cached.related.isNullOrEmpty())) {
+                return@runCatchingCancelable cached
+            }
+        }
         val includeStr = if (includeRelated) "related" else null
-        api.getGalleryDetail(galleryId, includeStr).toDomain()
+        val forceHeader = if (forceRefresh) "true" else null
+        api.getGalleryDetail(galleryId, includeStr, forceHeader).toDomain().also {
+            detailCache.put(galleryId, it)
+        }
     }
 
     override suspend fun getRelatedGalleries(galleryId: Int): Result<List<GalleryListItem>> = runCatchingCancelable {

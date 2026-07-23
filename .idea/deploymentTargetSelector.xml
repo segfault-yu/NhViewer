@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-07-22T07:23:37.778204800Z">
+        <DropdownSelection timestamp="2026-07-23T05:58:59.304768900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\guita\.android\avd\Pixel_10_Pro_XL.avd" />
+              <DeviceId pluginId="Default" identifier="serial=127.0.0.1:16416;connection=be8c1ebf" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,7 +15,7 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\guita\.android\avd\Pixel_9_Pro_XL.avd" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\guita\.android\avd\Pixel_10_Pro_XL.avd" />
               </handle>
             </Target>
           </targets>

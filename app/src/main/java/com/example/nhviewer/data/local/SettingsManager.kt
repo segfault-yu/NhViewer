@@ -37,7 +37,20 @@ class SettingsManager @Inject constructor(
         val APP_LANGUAGE = stringPreferencesKey("app_language")
         val TAG_LANGUAGE = stringPreferencesKey("tag_language")
         val TAG_DISPLAY_MODE = stringPreferencesKey("tag_display_mode")
+        val MAX_IMAGE_CACHE_MB = intPreferencesKey("max_image_cache_mb")
     }
+
+    val maxImageCacheMb: Flow<Int> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.MAX_IMAGE_CACHE_MB] ?: 250
+        }
 
     val appLanguage: Flow<String> = dataStore.data
         .catch { exception ->
@@ -242,6 +255,12 @@ class SettingsManager @Inject constructor(
         .map { preferences ->
             preferences[PreferencesKeys.SHOW_PERSISTENT_PAGE_NUMBER] ?: true
         }
+
+    suspend fun setMaxImageCacheMb(mb: Int) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MAX_IMAGE_CACHE_MB] = mb
+        }
+    }
 
     suspend fun setThemeMode(mode: String) {
         dataStore.edit { preferences ->

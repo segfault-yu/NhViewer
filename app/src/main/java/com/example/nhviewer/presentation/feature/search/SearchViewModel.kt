@@ -58,6 +58,9 @@ class SearchViewModel @Inject constructor(
     private val _sortOption = MutableStateFlow("date")
     val sortOption: StateFlow<String> = _sortOption.asStateFlow()
 
+    private val _totalResults = MutableStateFlow<Int?>(null)
+    val totalResults: StateFlow<Int?> = _totalResults.asStateFlow()
+
     private val _cdnConfig = MutableStateFlow<CdnConfig?>(null)
     val cdnConfig: StateFlow<CdnConfig?> = _cdnConfig.asStateFlow()
 
@@ -66,13 +69,19 @@ class SearchViewModel @Inject constructor(
     private val _searchTrigger = MutableStateFlow<Pair<String, String>?>(null)
 
     val searchResults: Flow<PagingData<GalleryListItem>> = _searchTrigger
+        .debounce(400)
         .flatMapLatest { trigger ->
             if (trigger == null || trigger.first.isBlank()) {
+                _totalResults.value = null
                 flowOf(PagingData.empty())
             } else {
                 Pager(
-                    config = PagingConfig(pageSize = 25, prefetchDistance = 5),
-                    pagingSourceFactory = { SearchPagingSource(searchRepository, trigger.first, trigger.second) }
+                    config = PagingConfig(pageSize = 25, prefetchDistance = 1),
+                    pagingSourceFactory = {
+                        SearchPagingSource(searchRepository, trigger.first, trigger.second) { total ->
+                            _totalResults.value = total
+                        }
+                    }
                 ).flow.cachedIn(viewModelScope)
             }
         }
@@ -87,7 +96,7 @@ class SearchViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     val autocompleteSuggestions: StateFlow<List<Tag>> = _searchQuery
-        .debounce(600)
+        .debounce(800)
         .combine(settingsManager.tagLanguage) { query, tagLanguage ->
             query to tagLanguage
         }
@@ -124,7 +133,9 @@ class SearchViewModel @Inject constructor(
         _sortOption.value = sort
         val query = _searchTrigger.value?.first
         if (!query.isNullOrBlank()) {
-            _searchQuery.value = query
+            if (_searchQuery.value != query) {
+                _searchQuery.value = query
+            }
             _searchTrigger.value = Pair(query, sort)
         }
     }
@@ -132,6 +143,7 @@ class SearchViewModel @Inject constructor(
     fun search(query: String) {
         if (query.isNotBlank()) {
             _active.value = false
+            _totalResults.value = null
             _searchQuery.value = query
             _searchTrigger.value = Pair(query, _sortOption.value)
             viewModelScope.launch {

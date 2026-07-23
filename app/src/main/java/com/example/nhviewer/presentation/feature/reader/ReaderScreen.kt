@@ -34,14 +34,15 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import android.view.WindowManager
 import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -438,6 +439,12 @@ fun ReaderContent(
                 onPageChanged(firstVisibleIndexWithOffset + 1)
             }
 
+            LaunchedEffect(listState.isScrollInProgress) {
+                if (listState.isScrollInProgress) {
+                    showOverlays = false
+                }
+            }
+
             val zoomableState = rememberZoomableState()
             BoxWithConstraints(
                 modifier = Modifier.fillMaxSize()
@@ -507,6 +514,12 @@ fun ReaderContent(
             
             LaunchedEffect(pagerState.currentPage) {
                 onPageChanged(pagerState.currentPage + 1)
+            }
+
+            LaunchedEffect(pagerState.isScrollInProgress) {
+                if (pagerState.isScrollInProgress) {
+                    showOverlays = false
+                }
             }
 
             HorizontalPager(
@@ -669,33 +682,50 @@ fun ReaderTopBar(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f))
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
-            .padding(horizontal = 8.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        IconButton(onClick = onBackClick) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.95f),
+            shape = CircleShape,
+            shadowElevation = 8.dp,
+            tonalElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
+            ) {
+                FilledTonalIconButton(
+                    onClick = onBackClick,
+                    shape = CircleShape
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back"
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = title,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+            }
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
     }
 }
 
@@ -711,61 +741,76 @@ fun ReaderBottomBar(
     onPageSeek: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f))
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        ThumbnailStrip(
-            pages = pages,
-            currentPage = currentPage,
-            thumbHosts = thumbHosts,
-            onPageClick = onPageSeek,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.95f),
+            shape = RoundedCornerShape(28.dp),
+            shadowElevation = 8.dp,
+            tonalElevation = 6.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(
-                text = "$currentPage / $totalPages",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(onClick = onToggleOrientationLock) {
-                Icon(
-                    imageVector = if (isOrientationLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                    contentDescription = if (isOrientationLocked) "Unlock Orientation" else "Lock Orientation",
-                    tint = MaterialTheme.colorScheme.onSurface
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            ) {
+                ThumbnailStrip(
+                    pages = pages,
+                    currentPage = currentPage,
+                    thumbHosts = thumbHosts,
+                    onPageClick = onPageSeek,
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
 
-            IconButton(onClick = onSettingsClick) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = CircleShape
+                    ) {
+                        Text(
+                            text = "$currentPage / $totalPages",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    FilledTonalIconButton(
+                        onClick = onToggleOrientationLock,
+                        shape = CircleShape
+                    ) {
+                        Icon(
+                            imageVector = if (isOrientationLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                            contentDescription = if (isOrientationLocked) "Unlock Orientation" else "Lock Orientation"
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    FilledTonalIconButton(
+                        onClick = onSettingsClick,
+                        shape = CircleShape
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Slider(
-            value = currentPage.toFloat(),
-            onValueChange = { onPageSeek(it.toInt()) },
-            valueRange = 1f..totalPages.toFloat(),
-            steps = if (totalPages > 2) totalPages - 2 else 0,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }

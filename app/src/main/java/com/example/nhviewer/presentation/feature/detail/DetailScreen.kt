@@ -105,6 +105,7 @@ fun DetailScreen(
     onBackClick: () -> Unit,
     onStartReading: (Int, Int) -> Unit,
     onTagClick: (Int, String) -> Unit,
+    onNavigateToDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
@@ -439,7 +440,7 @@ fun DetailScreen(
                                         item = relatedItem,
                                         cdnHost = cdnHost,
                                         onClick = {
-                                            viewModel.loadGalleryDetail(relatedItem.id)
+                                            onNavigateToDetail(relatedItem.id)
                                         },
                                         modifier = Modifier.padding(6.dp),
                                         showTags = false,

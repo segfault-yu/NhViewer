@@ -74,6 +74,7 @@ import com.example.nhviewer.presentation.common.SearchSuggestionPanel
 import com.example.nhviewer.presentation.feature.profile.ProfileViewModel
 import com.example.nhviewer.presentation.feature.search.SearchViewModel
 import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
+import com.example.nhviewer.util.NetworkErrorParser
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -103,6 +104,7 @@ fun HomeScreen(
     val searchHistory by searchViewModel.searchHistory.collectAsState(initial = emptyList())
     val autocompleteSuggestions by searchViewModel.autocompleteSuggestions.collectAsState()
     val searchResults = searchViewModel.searchResults.collectAsLazyPagingItems()
+    val totalResults by searchViewModel.totalResults.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
@@ -268,10 +270,17 @@ fun HomeScreen(
                         }
                     )
                 }
-                SearchSortBar(
-                    sortOption = sortOption,
-                    onSortOptionChanged = { searchViewModel.onSortOptionChanged(it) }
-                )
+                AnimatedVisibility(
+                    visible = searchResults.itemCount > 0,
+                    enter = fadeIn(animationSpec = tween(300)),
+                    exit = fadeOut(animationSpec = tween(300))
+                ) {
+                    SearchSortBar(
+                        sortOption = sortOption,
+                        onSortOptionChanged = { searchViewModel.onSortOptionChanged(it) },
+                        totalCount = totalResults
+                    )
+                }
 
                 SearchResultGrid(
                     searchResults = searchResults,
@@ -319,7 +328,7 @@ fun HomeScreen(
                                 if (latestGalleries.loadState.refresh is LoadState.Error) {
                                     val error = (latestGalleries.loadState.refresh as LoadState.Error).error
                                     ErrorScreen(
-                                        message = error.localizedMessage ?: stringResource(R.string.common_error_network),
+                                        message = NetworkErrorParser.parse(error),
                                         onRetry = { latestGalleries.retry() }
                                     )
                                 } else {
@@ -364,7 +373,7 @@ fun HomeScreen(
                                             item(span = StaggeredGridItemSpan.FullLine) {
                                                 val error = (latestGalleries.loadState.append as LoadState.Error).error
                                                 ErrorScreen(
-                                                    message = error.localizedMessage ?: stringResource(R.string.common_error_load_more_failed),
+                                                    message = NetworkErrorParser.parse(error),
                                                     onRetry = { latestGalleries.retry() },
                                                     modifier = Modifier.padding(16.dp)
                                                 )
@@ -381,7 +390,7 @@ fun HomeScreen(
                             PullToRefreshBox(
                                 state = pullRefreshState,
                                 isRefreshing = isRefreshing,
-                                onRefresh = { viewModel.loadPopularGalleries() },
+                                onRefresh = { viewModel.loadPopularGalleries(forceRefresh = true) },
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 when (val state = popularState) {

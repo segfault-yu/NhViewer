@@ -15,6 +15,13 @@ class SettingsViewModel @Inject constructor(
     private val settingsManager: SettingsManager
 ) : ViewModel() {
 
+    val maxImageCacheMb: StateFlow<Int> = settingsManager.maxImageCacheMb
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 250
+        )
+
     val themeMode: StateFlow<String> = settingsManager.themeMode
         .stateIn(
             scope = viewModelScope,
@@ -133,6 +140,12 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = "only_translation"
         )
+
+    fun setMaxImageCacheMb(mb: Int) {
+        viewModelScope.launch {
+            settingsManager.setMaxImageCacheMb(mb)
+        }
+    }
 
     fun setThemeMode(mode: String) {
         viewModelScope.launch {

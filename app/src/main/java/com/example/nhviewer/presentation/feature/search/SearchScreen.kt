@@ -2,6 +2,8 @@ package com.example.nhviewer.presentation.feature.search
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,9 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -60,6 +58,7 @@ fun SearchScreen(
     val autocompleteSuggestions by viewModel.autocompleteSuggestions.collectAsState()
     val searchResults = viewModel.searchResults.collectAsLazyPagingItems()
     val favoritedIds by viewModel.favoritedIds.collectAsState()
+    val totalResults by viewModel.totalResults.collectAsState()
 
     val focusManager = LocalFocusManager.current
 
@@ -71,7 +70,7 @@ fun SearchScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 8.dp)
+                .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 6.dp)
         ) {
             SearchBar(
                 query = searchQuery,
@@ -82,11 +81,17 @@ fun SearchScreen(
                 },
                 active = active,
                 onActiveChange = { viewModel.onActiveChanged(it) },
-                placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.home_search_placeholder),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 },
                 trailingIcon = {
@@ -94,20 +99,28 @@ fun SearchScreen(
                         IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear"
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 },
-                colors = SearchBarDefaults.colors(),
+                colors = SearchBarDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .animateContentSize(animationSpec = tween(durationMillis = 300))
+                    .animateContentSize(
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
+                    )
             ) {
                 AnimatedVisibility(
                     visible = true,
-                    enter = fadeIn(animationSpec = tween(300)),
-                    exit = fadeOut(animationSpec = tween(300))
+                    enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
+                    exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                 ) {
                     SearchQueryBuilder(
                         rawQuery = searchQuery,
@@ -133,15 +146,12 @@ fun SearchScreen(
             if (searchQuery.isNotEmpty()) {
                 AnimatedVisibility(
                     visible = true,
-                    enter = fadeIn(animationSpec = tween(300)),
-                    exit = fadeOut(animationSpec = tween(300))
+                    enter = fadeIn(animationSpec = tween(250)),
+                    exit = fadeOut(animationSpec = tween(250))
                 ) {
                     SearchQueryBuilder(
                         rawQuery = searchQuery,
-                        onQueryChanged = {
-                            viewModel.onSearchQueryChanged(it)
-                            // 文本改变时不触发搜索，SearchQueryBuilder 内部的选择操作会通过 onTriggerSearch 触发
-                        },
+                        onQueryChanged = { viewModel.onSearchQueryChanged(it) },
                         onTriggerSearch = { query ->
                             viewModel.search(query)
                             focusManager.clearFocus()
@@ -149,10 +159,17 @@ fun SearchScreen(
                     )
                 }
             }
-            SearchSortBar(
-                sortOption = sortOption,
-                onSortOptionChanged = { viewModel.onSortOptionChanged(it) }
-            )
+            AnimatedVisibility(
+                visible = searchResults.itemCount > 0,
+                enter = fadeIn(animationSpec = tween(250)),
+                exit = fadeOut(animationSpec = tween(250))
+            ) {
+                SearchSortBar(
+                    sortOption = sortOption,
+                    onSortOptionChanged = { viewModel.onSortOptionChanged(it) },
+                    totalCount = totalResults
+                )
+            }
 
             SearchResultGrid(
                 searchResults = searchResults,

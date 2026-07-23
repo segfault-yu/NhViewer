@@ -49,7 +49,8 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun loadSessions() {
+    fun loadSessions(forceRefresh: Boolean = false) {
+        if (!forceRefresh && _sessions.value.isNotEmpty()) return
         viewModelScope.launch {
             _isLoading.value = true
             getSessionsUseCase().onSuccess {

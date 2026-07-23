@@ -94,10 +94,13 @@ fun CaptchaDialog(
                     factory = { context ->
                         WebView(context).apply {
                             setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                            setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
-                            settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
-                            
+                            settings.databaseEnabled = true
+
+                            android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+
                             webViewClient = object : WebViewClient() {
                                 override fun shouldOverrideUrlLoading(
                                     view: WebView,

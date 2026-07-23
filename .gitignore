@@ -43,3 +43,8 @@ BUGFIX.md
 md3_refactor_plan.md
 15.md
 16.md
+.claude
+# hunkwise
+.vscode/hunkwise/
+cache_refactor_plan.md
+skills-lock.json
