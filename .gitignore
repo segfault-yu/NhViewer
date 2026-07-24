@@ -44,9 +44,12 @@ md3_refactor_plan.md
 15.md
 16.md
 .claude
-.agents
-# hunkwise
-.vscode/hunkwise/
+# IDE Configs
+.idea/
+.vscode/
+
+# Agent files
+.agents/
 cache_refactor_plan.md
 skills-lock.json
 TRANSLATING.md
