@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,22 +27,25 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.res.stringResource
-import com.example.nhviewer.R
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -62,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.nhviewer.R
 import com.example.nhviewer.presentation.common.CaptchaDialog
 import kotlinx.coroutines.flow.collectLatest
 
@@ -136,7 +142,10 @@ fun AuthScreen(
                             contentDescription = stringResource(R.string.common_back)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         },
         modifier = modifier.fillMaxSize()
@@ -148,47 +157,66 @@ fun AuthScreen(
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
                     .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                TabRow(selectedTabIndex = selectedTab) {
-                    Tab(
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SegmentedButton(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        text = {
-                            Text(
-                                text = stringResource(R.string.auth_login_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    )
-                    Tab(
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.auth_login_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    SegmentedButton(
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 },
-                        text = {
-                            Text(
-                                text = stringResource(R.string.auth_register_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    )
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.auth_register_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                if (selectedTab == 0) {
-                    LoginTabContent(
-                        onLoginClick = { identity, password ->
-                            viewModel.startLogin(identity, password)
-                        },
-                        onForgotPasswordClick = { showForgotPasswordDialog = true }
-                    )
-                } else {
-                    RegisterTabContent(
-                        onRegisterClick = { username, email, password ->
-                            viewModel.startRegister(username, email, password)
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
+                    ) {
+                        if (selectedTab == 0) {
+                            LoginTabContent(
+                                onLoginClick = { identity, password ->
+                                    viewModel.startLogin(identity, password)
+                                },
+                                onForgotPasswordClick = { showForgotPasswordDialog = true }
+                            )
+                        } else {
+                            RegisterTabContent(
+                                onRegisterClick = { username, email, password ->
+                                    viewModel.startRegister(username, email, password)
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
 
@@ -238,9 +266,7 @@ fun LoginTabContent(
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
             value = identity,
@@ -248,6 +274,10 @@ fun LoginTabContent(
             label = { Text(stringResource(R.string.auth_username_email)) },
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
             singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -269,6 +299,10 @@ fun LoginTabContent(
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -284,7 +318,11 @@ fun LoginTabContent(
 
         Button(
             onClick = { onLoginClick(identity, password) },
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(20.dp),
+            contentPadding = ButtonDefaults.ContentPadding,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
         ) {
             Text(text = stringResource(R.string.auth_login_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
@@ -306,9 +344,7 @@ fun RegisterTabContent(
     var confirmError by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
             value = username,
@@ -316,6 +352,10 @@ fun RegisterTabContent(
             label = { Text(stringResource(R.string.auth_username)) },
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
             singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -332,6 +372,10 @@ fun RegisterTabContent(
             isError = emailError,
             supportingText = { if (emailError) Text(stringResource(R.string.auth_email_invalid)) },
             singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -358,6 +402,10 @@ fun RegisterTabContent(
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -376,6 +424,10 @@ fun RegisterTabContent(
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -387,7 +439,11 @@ fun RegisterTabContent(
         Button(
             onClick = { onRegisterClick(username, email, password) },
             enabled = isFormValid,
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(20.dp),
+            contentPadding = ButtonDefaults.ContentPadding,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
         ) {
             Text(text = stringResource(R.string.auth_register_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
@@ -421,6 +477,7 @@ fun ForgotPasswordDialog(
                         onValueChange = { email = it },
                         label = { Text(stringResource(R.string.auth_email)) },
                         singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
@@ -435,6 +492,7 @@ fun ForgotPasswordDialog(
                         label = { Text(stringResource(R.string.auth_reset_token)) },
                         leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
                         singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -445,6 +503,7 @@ fun ForgotPasswordDialog(
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -459,7 +518,8 @@ fun ForgotPasswordDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = { onSubmitRequest(email) },
-                        enabled = email.isNotBlank()
+                        enabled = email.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(stringResource(R.string.auth_get_token))
                     }
@@ -467,7 +527,8 @@ fun ForgotPasswordDialog(
             } else {
                 Button(
                     onClick = { onSubmitConfirm(token, newPassword) },
-                    enabled = token.isNotBlank() && newPassword.length >= 6
+                    enabled = token.isNotBlank() && newPassword.length >= 6,
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(stringResource(R.string.auth_confirm_reset))
                 }
@@ -478,6 +539,7 @@ fun ForgotPasswordDialog(
                 Text(stringResource(R.string.common_close))
             }
         },
-        shape = MaterialTheme.shapes.extraLarge
+        shape = RoundedCornerShape(28.dp)
     )
 }
+

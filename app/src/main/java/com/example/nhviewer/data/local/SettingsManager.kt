@@ -38,7 +38,20 @@ class SettingsManager @Inject constructor(
         val TAG_LANGUAGE = stringPreferencesKey("tag_language")
         val TAG_DISPLAY_MODE = stringPreferencesKey("tag_display_mode")
         val MAX_IMAGE_CACHE_MB = intPreferencesKey("max_image_cache_mb")
+        val LOG_LEVEL = stringPreferencesKey("log_level")
     }
+
+    val logLevel: Flow<String> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.LOG_LEVEL] ?: "info"
+        }
 
     val maxImageCacheMb: Flow<Int> = dataStore.data
         .catch { exception ->
@@ -361,6 +374,12 @@ class SettingsManager @Inject constructor(
     suspend fun setTagDisplayMode(mode: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.TAG_DISPLAY_MODE] = mode
+        }
+    }
+
+    suspend fun setLogLevel(level: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LOG_LEVEL] = level
         }
     }
 }

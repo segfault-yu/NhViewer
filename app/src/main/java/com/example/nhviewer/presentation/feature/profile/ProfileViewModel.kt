@@ -8,6 +8,7 @@ import com.example.nhviewer.domain.repository.UserRepository
 import com.example.nhviewer.domain.usecase.GetSessionsUseCase
 import com.example.nhviewer.domain.usecase.LogoutUseCase
 import com.example.nhviewer.domain.usecase.RevokeSessionUseCase
+import com.example.nhviewer.util.NetworkErrorParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -57,7 +58,7 @@ class ProfileViewModel @Inject constructor(
                 _sessions.value = it
                 _errorMessage.value = null
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "获取会话列表失败"
+                _errorMessage.value = NetworkErrorParser.parse(it)
             }
             _isLoading.value = false
         }
@@ -69,7 +70,7 @@ class ProfileViewModel @Inject constructor(
             revokeSessionUseCase(sessionId).onSuccess {
                 loadSessions()
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "吊销会话失败"
+                _errorMessage.value = NetworkErrorParser.parse(it)
             }
             _isLoading.value = false
         }
@@ -79,7 +80,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             logoutUseCase().onFailure {
-                _errorMessage.value = it.localizedMessage ?: "登出失败"
+                _errorMessage.value = NetworkErrorParser.parse(it)
             }
             _isLoading.value = false
         }
@@ -91,7 +92,7 @@ class ProfileViewModel @Inject constructor(
             userRepository.logoutAll().onSuccess {
                 _sessions.value = emptyList()
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "强制全部登出失败"
+                _errorMessage.value = NetworkErrorParser.parse(it)
             }
             _isLoading.value = false
         }

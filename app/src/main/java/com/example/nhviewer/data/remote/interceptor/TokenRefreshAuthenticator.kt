@@ -25,7 +25,7 @@ class TokenRefreshAuthenticator @Inject constructor(
         val refreshToken = tokenManager.getRefreshToken() ?: return null
 
         val requestToken = response.request.header("Authorization")
-        val currentToken = "Bearer ${tokenManager.getAccessToken()}"
+        val currentToken = tokenManager.getAuthHeaderValue() ?: ""
 
         if (requestToken != currentToken) {
             return response.request.newBuilder()
@@ -39,7 +39,7 @@ class TokenRefreshAuthenticator @Inject constructor(
                 if (newAccessToken.isNullOrBlank()) {
                     return@runBlocking null
                 }
-                val currentTokenNow = "Bearer $newAccessToken"
+                val currentTokenNow = tokenManager.formatAuthHeader(newAccessToken)
 
                 if (requestToken != currentTokenNow) {
                     return@runBlocking response.request.newBuilder()
@@ -53,16 +53,19 @@ class TokenRefreshAuthenticator @Inject constructor(
                         accessToken = refreshResponse.accessToken,
                         refreshToken = refreshResponse.refreshToken
                     )
+                    com.example.nhviewer.util.log.AppLogger.i("AUTH", "Token refreshed successfully")
                     response.request.newBuilder()
-                        .header("Authorization", "Bearer ${refreshResponse.accessToken}")
+                        .header("Authorization", tokenManager.formatAuthHeader(refreshResponse.accessToken))
                         .build()
                 } catch (e: retrofit2.HttpException) {
+                    com.example.nhviewer.util.log.AppLogger.w("AUTH", "Token refresh failed with code ${e.code()}", e)
                     if (e.code() in 400..403) {
                         tokenManager.clearTokens()
                         tokenManager.emitSessionExpired()
                     }
                     null
                 } catch (e: Exception) {
+                    com.example.nhviewer.util.log.AppLogger.e("AUTH", "Unexpected error refreshing token", e)
                     null
                 }
             }

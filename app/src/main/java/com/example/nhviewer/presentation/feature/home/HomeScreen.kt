@@ -25,7 +25,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
@@ -163,10 +163,12 @@ fun HomeScreen(
                     onActiveChange = { searchViewModel.onActiveChanged(it) },
                     placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                     leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search"
-                        )
+                        IconButton(onClick = { onOpenDrawer() }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Menu"
+                            )
+                        }
                     },
                     trailingIcon = {
                         Row(
@@ -181,43 +183,16 @@ fun HomeScreen(
                                     )
                                 }
                             }
-
-                            val profileState by profileViewModel.authState.collectAsState()
-                            Box(
-                                modifier = Modifier
-                                    .padding(start = 4.dp, end = 8.dp)
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                                    .clickable { onOpenDrawer() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                when (val state = profileState) {
-                                    is AuthState.LoggedIn -> {
-                                        if (!state.user.avatarUrl.isNullOrBlank()) {
-                                            AsyncImage(
-                                                model = state.user.avatarUrl,
-                                                contentDescription = "Avatar",
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        } else {
-                                            Text(
-                                                text = state.user.username.take(1).uppercase(),
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                    else -> {
-                                        Icon(
-                                            imageVector = Icons.Default.AccountCircle,
-                                            contentDescription = "Profile",
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    }
+                            IconButton(onClick = {
+                                if (searchQuery.isNotBlank()) {
+                                    searchViewModel.search(searchQuery)
+                                    focusManager.clearFocus()
                                 }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search"
+                                )
                             }
                         }
                     },

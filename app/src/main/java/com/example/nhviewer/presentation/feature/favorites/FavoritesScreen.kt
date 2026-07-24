@@ -48,6 +48,7 @@ import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
+import com.example.nhviewer.util.NetworkErrorParser
 import com.example.nhviewer.domain.model.AuthState
 import androidx.compose.ui.res.stringResource
 import com.example.nhviewer.R
@@ -161,7 +162,7 @@ fun FavoritesScreen(
                 if (favorites.loadState.refresh is LoadState.Error) {
                     val error = (favorites.loadState.refresh as LoadState.Error).error
                     ErrorScreen(
-                        message = error.localizedMessage ?: stringResource(R.string.favorites_load_error),
+                        message = NetworkErrorParser.parse(error),
                         onRetry = { favorites.retry() }
                     )
                 } else if (favorites.itemCount == 0 && favorites.loadState.refresh is LoadState.NotLoading) {

@@ -60,18 +60,10 @@
     <string name="detail_section_tags">Tags</string>
     <string name="detail_section_recommendations">Recommended</string>
     <string name="detail_recommendations_failed">Failed to load recommendations</string>
-    <string name="detail_section_comments">Comments</string>
-    <string name="detail_comments_empty">No comments yet. Be the first to leave one!</string>
-    <string name="detail_comment_copy">Copy Content</string>
-    <string name="detail_comment_delete">Delete Comment</string>
-    <string name="detail_comment_report">Report Comment</string>
-    <string name="detail_comment_placeholder_logged_in">Leave a comment...</string>
-    <string name="detail_comment_placeholder_guest">Log in to leave a comment</string>
-    <string name="detail_comment_send">Send</string>
-    <string name="detail_comment_success">Comment posted successfully</string>
     <string name="detail_login_required_favorite">Please log in to use favorites</string>
-    <string name="detail_comment_empty_error">Comment content cannot be empty</string>
-    <string name="detail_comment_reported_success">Comment reported successfully</string>
+    <string name="detail_section_pages_preview">Page Preview</string>
+    <string name="detail_preview_expand">Show All (%d pages)</string>
+    <string name="detail_preview_collapse">Collapse</string>
 
     <!-- Tags Screen -->
     <string name="tags_title">Browse Tags</string>
@@ -154,6 +146,8 @@
 
     <!-- Blacklist Screen -->
     <string name="blacklist_title">Blacklist Settings</string>
+    <string name="blacklist_add">Add to Blacklist</string>
+    <string name="blacklist_added_toast">Added "%1$s" to blacklist</string>
     <string name="blacklist_search_placeholder">Search and add tags to block</string>
     <string name="blacklist_empty_title">Blacklist is empty</string>
     <string name="blacklist_empty_subtitle">Galleries containing blocked tags will be automatically hidden from home and search lists.</string>
@@ -218,6 +212,19 @@
     <string name="settings_apikeys_title">API Key Management</string>
     <string name="settings_apikeys_desc">Generate and revoke your API Tokens</string>
     <string name="settings_cat_download">Download &amp; Storage</string>
+    <string name="settings_cat_logs">Logs &amp; Debugging</string>
+    <string name="settings_log_level_title">Log Level</string>
+    <string name="settings_log_level_info">Default (INFO, WARN, ERROR)</string>
+    <string name="settings_log_level_warn">Warnings &amp; Errors only (WARN, ERROR)</string>
+    <string name="settings_log_level_error">Errors only (ERROR)</string>
+    <string name="settings_log_level_debug">Debug mode (DEBUG &amp; above)</string>
+    <string name="settings_log_level_none">Disabled</string>
+    <string name="settings_export_logs_title">Export Logs</string>
+    <string name="settings_export_logs_desc">Export or share local runtime log files</string>
+    <string name="settings_clear_logs_title">Clear Logs</string>
+    <string name="settings_clear_logs_desc">Delete all local runtime log files</string>
+    <string name="settings_logs_cleared">Logs cleared successfully</string>
+    <string name="settings_no_logs">No log files available</string>
     <string name="settings_clear_cache_title">Clear Cache</string>
     <string name="settings_clear_cache_desc">Clear local Coil image cache</string>
     <string name="settings_cache_cleared">Cache cleared successfully</string>

@@ -182,32 +182,6 @@ fun LoggedInContent(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(20.dp)
                 ) {
-                    if (!user.avatarUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = user.avatarUrl,
-                            contentDescription = "Avatar",
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                        )
-                    } else {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(72.dp)
-                                .background(MaterialTheme.colorScheme.primary, CircleShape)
-                        ) {
-                            Text(
-                                text = user.username.take(1).uppercase(),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = MaterialTheme.typography.headlineLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(20.dp))
-
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(

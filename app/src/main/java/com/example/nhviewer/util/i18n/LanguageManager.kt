@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.LocaleList
 import androidx.compose.runtime.compositionLocalOf
+import com.example.nhviewer.domain.model.Tag
 import java.util.Locale
 
 /**
@@ -17,6 +18,16 @@ val LocalTagDisplayMode = compositionLocalOf { "only_translation" }
  * 软件语言 CompositionLocal 容器
  */
 val LocalTagLanguage = compositionLocalOf { "zh" }
+
+/**
+ * 已加入黑名单的标签 ID 集合 CompositionLocal 容器
+ */
+val LocalBlacklistedTagIds = compositionLocalOf<Set<Int>> { emptySet() }
+
+/**
+ * 添加标签至黑名单回调 CompositionLocal 容器
+ */
+val LocalAddToBlacklist = compositionLocalOf<(Tag) -> Unit> { {} }
 
 /**
  * 软件界面语言与 Context Locale 管理器

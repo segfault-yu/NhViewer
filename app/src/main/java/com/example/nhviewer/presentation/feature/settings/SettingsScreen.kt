@@ -14,13 +14,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ChromeReaderMode
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Translate
+import com.example.nhviewer.util.log.AppLogger
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -70,6 +74,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var cacheSize by remember { mutableStateOf(context.getString(R.string.settings_calculating)) }
+    var logsSize by remember { mutableStateOf(context.getString(R.string.settings_calculating)) }
 
     fun formatCacheSize(bytes: Long): String {
         if (bytes <= 0) return "0.0 B"
@@ -82,8 +87,11 @@ fun SettingsScreen(
         coroutineScope.launch(Dispatchers.IO) {
             val sizeBytes = context.imageLoader.diskCache?.size ?: 0L
             val formatted = formatCacheSize(sizeBytes)
+            val logBytes = AppLogger.getTotalLogSize(context)
+            val logFormatted = formatCacheSize(logBytes)
             withContext(Dispatchers.Main) {
                 cacheSize = formatted
+                logsSize = logFormatted
             }
         }
     }
@@ -102,12 +110,14 @@ fun SettingsScreen(
     val appLanguage by viewModel.appLanguage.collectAsState()
     val tagLanguage by viewModel.tagLanguage.collectAsState()
     val tagDisplayMode by viewModel.tagDisplayMode.collectAsState()
+    val logLevel by viewModel.logLevel.collectAsState()
 
     var showDownloadFormatDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showDirectionDialog by remember { mutableStateOf(false) }
     var showAppLanguageDialog by remember { mutableStateOf(false) }
     var showTagLanguageDialog by remember { mutableStateOf(false) }
+    var showLogLevelDialog by remember { mutableStateOf(false) }
 
     val themeModeText = when (themeMode) {
         "light" -> stringResource(R.string.settings_theme_light)
@@ -131,6 +141,14 @@ fun SettingsScreen(
         "only_original" -> stringResource(R.string.settings_tag_mode_only_original)
         "bilingual" -> stringResource(R.string.settings_tag_mode_bilingual)
         else -> stringResource(R.string.settings_tag_mode_only_translation)
+    }
+
+    val logLevelText = when (logLevel) {
+        "debug" -> stringResource(R.string.settings_log_level_debug)
+        "warn" -> stringResource(R.string.settings_log_level_warn)
+        "error" -> stringResource(R.string.settings_log_level_error)
+        "none" -> stringResource(R.string.settings_log_level_none)
+        else -> stringResource(R.string.settings_log_level_info)
     }
 
     // Theme Mode Dialog
@@ -350,6 +368,54 @@ fun SettingsScreen(
         )
     }
 
+    // Log Level Dialog
+    if (showLogLevelDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogLevelDialog = false },
+            title = { Text(stringResource(R.string.settings_log_level_title), fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val options = listOf(
+                        "info" to stringResource(R.string.settings_log_level_info),
+                        "debug" to stringResource(R.string.settings_log_level_debug),
+                        "warn" to stringResource(R.string.settings_log_level_warn),
+                        "error" to stringResource(R.string.settings_log_level_error),
+                        "none" to stringResource(R.string.settings_log_level_none)
+                    )
+                    options.forEach { (value, label) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setLogLevel(value)
+                                    AppLogger.setLogLevel(value)
+                                    showLogLevelDialog = false
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = logLevel == value,
+                                onClick = {
+                                    viewModel.setLogLevel(value)
+                                    AppLogger.setLogLevel(value)
+                                    showLogLevelDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLogLevelDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -472,6 +538,94 @@ fun SettingsScreen(
                             Toast.makeText(context, context.getString(R.string.settings_cache_cleared), Toast.LENGTH_SHORT).show()
                         }
                     }
+                }
+            )
+
+            SettingsCategoryHeader(title = stringResource(R.string.settings_cat_logs))
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.settings_log_level_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = logLevelText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.BugReport, contentDescription = null) },
+                modifier = Modifier.clickable { showLogLevelDialog = true }
+            )
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.settings_export_logs_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.settings_export_logs_desc),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.Share, contentDescription = null) },
+                trailingContent = {
+                    Text(
+                        text = logsSize,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                modifier = Modifier.clickable {
+                    val logFiles = AppLogger.getLogFiles(context)
+                    if (logFiles.isEmpty()) {
+                        Toast.makeText(context, context.getString(R.string.settings_no_logs), Toast.LENGTH_SHORT).show()
+                    } else {
+                        val uris = ArrayList<android.net.Uri>()
+                        logFiles.forEach { file ->
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                file
+                            )
+                            uris.add(uri)
+                        }
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND_MULTIPLE).apply {
+                            type = "text/plain"
+                            putParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, uris)
+                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(android.content.Intent.createChooser(intent, context.getString(R.string.settings_export_logs_title)))
+                    }
+                }
+            )
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.settings_clear_logs_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.settings_clear_logs_desc),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.Delete, contentDescription = null) },
+                modifier = Modifier.clickable {
+                    AppLogger.clearAllLogs(context)
+                    logsSize = "0.0 B"
+                    Toast.makeText(context, context.getString(R.string.settings_logs_cleared), Toast.LENGTH_SHORT).show()
                 }
             )
 

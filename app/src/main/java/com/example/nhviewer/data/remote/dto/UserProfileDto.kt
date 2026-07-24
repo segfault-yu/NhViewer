@@ -18,7 +18,6 @@ fun UserProfileDto.toDomain() = User(
     id = id,
     username = username,
     email = email,
-    avatarUrl = avatarUrl,
     registeredAt = registeredAt,
     role = role
 )

@@ -52,6 +52,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.LoadingIndicator
+import com.example.nhviewer.util.NetworkErrorParser
 
 import androidx.compose.ui.res.stringResource
 import com.example.nhviewer.R
@@ -190,7 +191,7 @@ fun TagsScreen(
                 } else if (tags.loadState.refresh is LoadState.Error) {
                     val error = (tags.loadState.refresh as LoadState.Error).error
                     ErrorScreen(
-                        message = error.localizedMessage ?: stringResource(R.string.tags_load_error),
+                        message = NetworkErrorParser.parse(error),
                         onRetry = { tags.retry() }
                     )
                 } else if (tags.itemCount == 0 && tags.loadState.refresh is LoadState.NotLoading) {

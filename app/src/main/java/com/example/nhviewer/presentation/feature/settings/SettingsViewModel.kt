@@ -141,6 +141,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = "only_translation"
         )
 
+    val logLevel: StateFlow<String> = settingsManager.logLevel
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "info"
+        )
+
     fun setMaxImageCacheMb(mb: Int) {
         viewModelScope.launch {
             settingsManager.setMaxImageCacheMb(mb)
@@ -246,6 +253,12 @@ class SettingsViewModel @Inject constructor(
     fun setTagDisplayMode(mode: String) {
         viewModelScope.launch {
             settingsManager.setTagDisplayMode(mode)
+        }
+    }
+
+    fun setLogLevel(level: String) {
+        viewModelScope.launch {
+            settingsManager.setLogLevel(level)
         }
     }
 }

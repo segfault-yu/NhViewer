@@ -30,7 +30,6 @@ fun UserInfoDto.toDomain() = User(
     id = id,
     username = username,
     email = "",
-    avatarUrl = avatarUrl,
     registeredAt = 0L,
     role = when {
         isSuperuser -> "superuser"

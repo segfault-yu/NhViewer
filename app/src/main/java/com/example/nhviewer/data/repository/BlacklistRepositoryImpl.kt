@@ -44,14 +44,23 @@ class BlacklistRepositoryImpl @Inject constructor(
     override suspend fun getBlacklist(): Result<List<Tag>> = runCatchingCancelable {
         try {
             val response = api.getBlacklist()
-            val list = response.map { it.toDomain() }
-            
-            dao.clearAll()
-            list.forEach { tag ->
-                dao.insertTag(BlacklistTagEntity(tag.id, tag.name, tag.type))
+            val remoteList = response.tags.map { it.toDomain() }
+
+            if (remoteList.isNotEmpty()) {
+                dao.clearAll()
+                remoteList.forEach { tag ->
+                    dao.insertTag(BlacklistTagEntity(tag.id, tag.name, tag.type))
+                }
+                remoteList
+            } else {
+                val localList = dao.getBlacklist().map { it.toDomain() }
+                if (localList.isNotEmpty()) {
+                    localList
+                } else {
+                    emptyList()
+                }
             }
-            list
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             dao.getBlacklist().map { it.toDomain() }
         }
     }

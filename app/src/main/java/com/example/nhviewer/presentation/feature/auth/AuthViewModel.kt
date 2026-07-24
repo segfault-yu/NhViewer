@@ -8,6 +8,7 @@ import com.example.nhviewer.domain.usecase.ResetPasswordUseCase
 import com.example.nhviewer.domain.usecase.ResetPasswordConfirmUseCase
 import com.example.nhviewer.domain.usecase.GetPowChallengeUseCase
 import com.example.nhviewer.domain.usecase.GetCaptchaConfigUseCase
+import com.example.nhviewer.util.NetworkErrorParser
 import com.example.nhviewer.util.PowSolver
 import androidx.annotation.StringRes
 import com.example.nhviewer.R
@@ -223,7 +224,7 @@ class AuthViewModel @Inject constructor(
             } catch (e: Exception) {
                 _isLoading.value = false
                 _powStatus.value = "Idle"
-                emitError("准备安全校验失败: ${e.localizedMessage}")
+                emitError("准备安全校验失败: ${NetworkErrorParser.parse(e)}")
                 resetPrefetch(action)
             }
         }
@@ -286,7 +287,7 @@ class AuthViewModel @Inject constructor(
             result.onSuccess {
                 _uiEvent.emit(AuthUiEvent.Success)
             }.onFailure {
-                emitError(it.localizedMessage ?: "提交验证失败")
+                emitError(NetworkErrorParser.parse(it))
             }
         }
     }

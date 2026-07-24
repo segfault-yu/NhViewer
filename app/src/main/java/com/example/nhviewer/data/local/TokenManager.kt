@@ -72,6 +72,21 @@ class TokenManager @Inject constructor(
         return sharedPreferences.getString("access_token", null)
     }
 
+    fun getAuthHeaderValue(): String? {
+        val token = getAccessToken() ?: return null
+        return formatAuthHeader(token)
+    }
+
+    fun formatAuthHeader(token: String): String {
+        val trimmed = token.trim()
+        return when {
+            trimmed.startsWith("Bearer ", ignoreCase = true) -> "User " + trimmed.substring(7).trim()
+            trimmed.startsWith("User ", ignoreCase = true) || trimmed.startsWith("Key ", ignoreCase = true) -> trimmed
+            trimmed.startsWith("key_", ignoreCase = true) -> "Key $trimmed"
+            else -> "User $trimmed"
+        }
+    }
+
     fun getRefreshToken(): String? {
         return sharedPreferences.getString("refresh_token", null)
     }

@@ -60,18 +60,10 @@
     <string name="detail_section_tags">标签列表</string>
     <string name="detail_section_recommendations">相关推荐</string>
     <string name="detail_recommendations_failed">相关推荐加载失败</string>
-    <string name="detail_section_comments">用户评论</string>
-    <string name="detail_comments_empty">暂无评论，发条评论抢沙发吧~</string>
-    <string name="detail_comment_copy">复制内容</string>
-    <string name="detail_comment_delete">删除评论</string>
-    <string name="detail_comment_report">举报评论</string>
-    <string name="detail_comment_placeholder_logged_in">发表公开评论...</string>
-    <string name="detail_comment_placeholder_guest">请先登录后发表评论</string>
-    <string name="detail_comment_send">发送</string>
-    <string name="detail_comment_success">评论发表成功</string>
     <string name="detail_login_required_favorite">请先登录后使用收藏功能</string>
-    <string name="detail_comment_empty_error">评论内容不能为空</string>
-    <string name="detail_comment_reported_success">已成功举报该评论</string>
+    <string name="detail_section_pages_preview">页面预览</string>
+    <string name="detail_preview_expand">展开全部 (%d 页)</string>
+    <string name="detail_preview_collapse">收起预览</string>
 
     <!-- Tags Screen -->
     <string name="tags_title">标签浏览</string>
@@ -154,6 +146,8 @@
 
     <!-- Blacklist Screen -->
     <string name="blacklist_title">黑名单设置</string>
+    <string name="blacklist_add">加入黑名单</string>
+    <string name="blacklist_added_toast">已将「%1$s」加入黑名单</string>
     <string name="blacklist_search_placeholder">搜索并添加要屏蔽的标签</string>
     <string name="blacklist_empty_title">黑名单为空</string>
     <string name="blacklist_empty_subtitle">搜索并添加标签至黑名单后，首页及搜索列表中含有该标签的画廊卡片将会被自动隐藏。</string>
@@ -234,6 +228,19 @@
     <string name="settings_apikeys_title">API 密钥管理</string>
     <string name="settings_apikeys_desc">申请和吊销您的 API Token</string>
     <string name="settings_cat_download">下载与存储</string>
+    <string name="settings_cat_logs">日志与调试</string>
+    <string name="settings_log_level_title">日志记录级别</string>
+    <string name="settings_log_level_info">默认 (INFO, WARN, ERROR)</string>
+    <string name="settings_log_level_warn">仅警告与错误 (WARN, ERROR)</string>
+    <string name="settings_log_level_error">仅致命错误 (ERROR)</string>
+    <string name="settings_log_level_debug">调试模式 (DEBUG 及以上)</string>
+    <string name="settings_log_level_none">关闭日志记录</string>
+    <string name="settings_export_logs_title">导出日志</string>
+    <string name="settings_export_logs_desc">导出或分享本地运行日志文件</string>
+    <string name="settings_clear_logs_title">清理日志</string>
+    <string name="settings_clear_logs_desc">清空所有本地运行日志文件</string>
+    <string name="settings_logs_cleared">日志清理成功</string>
+    <string name="settings_no_logs">暂无可用日志文件</string>
     <string name="settings_max_cache_title">图片缓存上限</string>
     <string name="settings_max_cache_desc">设置图片磁盘缓存容量限制 (MB)</string>
     <string name="settings_max_cache_value">%d MB</string>

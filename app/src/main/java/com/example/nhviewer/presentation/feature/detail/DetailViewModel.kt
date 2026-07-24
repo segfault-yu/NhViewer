@@ -1,30 +1,22 @@
 package com.example.nhviewer.presentation.feature.detail
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.nhviewer.R
+import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.domain.model.CdnConfig
 import com.example.nhviewer.domain.model.GalleryDetail
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.ReadingHistory
-import com.example.nhviewer.domain.model.Comment
+import com.example.nhviewer.domain.repository.UserRepository
+import com.example.nhviewer.domain.usecase.CheckIsFavoriteUseCase
 import com.example.nhviewer.domain.usecase.GetCdnConfigUseCase
 import com.example.nhviewer.domain.usecase.GetGalleryDetailUseCase
 import com.example.nhviewer.domain.usecase.GetRelatedGalleriesUseCase
 import com.example.nhviewer.domain.usecase.ReadingHistoryUseCase
-import com.example.nhviewer.domain.usecase.CheckIsFavoriteUseCase
 import com.example.nhviewer.domain.usecase.ToggleFavoriteUseCase
-import com.example.nhviewer.domain.usecase.GetCommentsUseCase
-import com.example.nhviewer.domain.usecase.PostCommentUseCase
-import com.example.nhviewer.domain.usecase.DeleteCommentUseCase
-import com.example.nhviewer.domain.usecase.ReportCommentUseCase
-import com.example.nhviewer.domain.usecase.GetPowChallengeUseCase
-import com.example.nhviewer.domain.usecase.GetCaptchaConfigUseCase
-import com.example.nhviewer.domain.repository.UserRepository
-import com.example.nhviewer.domain.model.AuthState
-import com.example.nhviewer.util.PowSolver
 import com.example.nhviewer.util.NetworkErrorParser
-import androidx.annotation.StringRes
-import com.example.nhviewer.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,12 +35,6 @@ class DetailViewModel @Inject constructor(
     private val readingHistoryUseCase: ReadingHistoryUseCase,
     private val checkIsFavoriteUseCase: CheckIsFavoriteUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val getCommentsUseCase: GetCommentsUseCase,
-    private val postCommentUseCase: PostCommentUseCase,
-    private val deleteCommentUseCase: DeleteCommentUseCase,
-    private val reportCommentUseCase: ReportCommentUseCase,
-    private val getPowChallengeUseCase: GetPowChallengeUseCase,
-    private val getCaptchaConfigUseCase: GetCaptchaConfigUseCase,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
@@ -64,19 +50,9 @@ class DetailViewModel @Inject constructor(
     private val _readingHistory = MutableStateFlow<ReadingHistory?>(null)
     val readingHistory: StateFlow<ReadingHistory?> = _readingHistory.asStateFlow()
 
-    // Favorites state
+    // 收藏状态
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
-
-    // Comments states
-    private val _commentsState = MutableStateFlow<CommentsUiState>(CommentsUiState.Loading)
-    val commentsState: StateFlow<CommentsUiState> = _commentsState.asStateFlow()
-
-    private val _powStatus = MutableStateFlow("Idle")
-    val powStatus: StateFlow<String> = _powStatus.asStateFlow()
-
-    private val _captchaSiteKey = MutableStateFlow<String?>(null)
-    val captchaSiteKey: StateFlow<String?> = _captchaSiteKey.asStateFlow()
 
     private val _uiEvent = MutableSharedFlow<DetailUiEvent>()
     val uiEvent: SharedFlow<DetailUiEvent> = _uiEvent.asSharedFlow()
@@ -84,8 +60,6 @@ class DetailViewModel @Inject constructor(
     val authState: StateFlow<AuthState> = userRepository.authState
 
     private var currentDetail: GalleryDetail? = null
-    private var pendingCommentText = ""
-    private var pendingCommentSolution = ""
 
     init {
         loadCdnConfig()
@@ -116,12 +90,8 @@ class DetailViewModel @Inject constructor(
 
             _detailState.value = DetailUiState.Loading
             _relatedState.value = RelatedUiState.Loading
-            _commentsState.value = CommentsUiState.Loading
 
-            // Fetch comments
-            fetchComments(galleryId)
-
-            // Dual stage loading: fetch detail with include=related
+            // 阶段加载：获取画廊详情（包含相关推荐）
             getGalleryDetailUseCase(galleryId, includeRelated = true, forceRefresh = forceRefresh)
                 .onSuccess { detail ->
                     currentDetail = detail
@@ -152,19 +122,7 @@ class DetailViewModel @Inject constructor(
         }
     }
 
-    private fun fetchComments(galleryId: Int) {
-        viewModelScope.launch {
-            getCommentsUseCase(galleryId)
-                .onSuccess {
-                    _commentsState.value = CommentsUiState.Success(it)
-                }
-                .onFailure {
-                    _commentsState.value = CommentsUiState.Error(NetworkErrorParser.parse(it))
-                }
-        }
-    }
-
-// Toggle favorite (with Optimistic Update)
+    // 切换收藏状态 (带乐观更新)
     fun toggleFavorite() {
         if (userRepository.authState.value is AuthState.LoggedOut) {
             emitMessageRes(R.string.detail_login_required_favorite)
@@ -173,11 +131,11 @@ class DetailViewModel @Inject constructor(
         val detail = currentDetail ?: return
         val previousState = _isFavorite.value
         val newState = !previousState
-        
-        // Optimistic update
+
+        // 乐观更新 UI 状态
         _isFavorite.value = newState
-        
-        // Optimistically modify local detail count in state
+
+        // 乐观修改本地详情收藏数
         val updatedDetail = detail.copy(
             numFavorites = if (newState) detail.numFavorites + 1 else maxOf(0, detail.numFavorites - 1)
         )
@@ -199,98 +157,12 @@ class DetailViewModel @Inject constructor(
                 blacklisted = false
             )
             toggleFavoriteUseCase(listItem, newState).onFailure { error ->
-                // Rollback
+                // 请求失败回滚状态
                 _isFavorite.value = previousState
                 currentDetail = detail
                 _detailState.value = DetailUiState.Success(detail)
                 _uiEvent.emit(DetailUiEvent.ShowMessage(NetworkErrorParser.parse(error)))
             }
-        }
-    }
-
-    // Comments posting safety barrier
-    fun startPostComment(content: String) {
-        if (content.isBlank()) {
-            emitMessageRes(R.string.detail_comment_empty_error)
-            return
-        }
-        val detail = currentDetail ?: return
-        pendingCommentText = content
-        
-        viewModelScope.launch {
-            _powStatus.value = "获取 PoW 挑战配置..."
-            getPowChallengeUseCase(action = "comment").onSuccess { powDto ->
-                _powStatus.value = "解算 PoW 工作量中..."
-                val nonce = PowSolver.solve(powDto.challenge, powDto.difficulty)
-                pendingCommentSolution = nonce
-                
-                _powStatus.value = "获取人机验证机制..."
-                getCaptchaConfigUseCase().onSuccess { captchaDto ->
-                    _powStatus.value = "等待进行人机验证..."
-                    _captchaSiteKey.value = captchaDto.siteKey
-                }.onFailure {
-                    resetPostStates()
-                    emitMessage("获取验证配置失败: ${it.localizedMessage}")
-                }
-            }.onFailure {
-                resetPostStates()
-                emitMessage("获取 PoW 挑战失败: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    fun onCaptchaSuccess(captchaToken: String) {
-        _captchaSiteKey.value = null
-        _powStatus.value = "提交评论中..."
-        val detail = currentDetail ?: return
-        
-        viewModelScope.launch {
-            postCommentUseCase(detail.id, pendingCommentText, pendingCommentSolution, captchaToken)
-                .onSuccess {
-                    resetPostStates()
-                    _uiEvent.emit(DetailUiEvent.CommentPostedSuccess)
-                    fetchComments(detail.id)
-                }
-                .onFailure {
-                    resetPostStates()
-                    emitMessage(NetworkErrorParser.parse(it))
-                }
-        }
-    }
-
-    fun cancelCaptcha() {
-        resetPostStates()
-    }
-
-    private fun resetPostStates() {
-        _captchaSiteKey.value = null
-        _powStatus.value = "Idle"
-        pendingCommentText = ""
-        pendingCommentSolution = ""
-    }
-
-    fun deleteComment(commentId: Int) {
-        val detail = currentDetail ?: return
-        viewModelScope.launch {
-            deleteCommentUseCase(commentId)
-                .onSuccess {
-                    fetchComments(detail.id)
-                }
-                .onFailure {
-                    emitMessage("删除评论失败: ${it.localizedMessage}")
-                }
-        }
-    }
-
-    fun reportComment(commentId: Int) {
-        viewModelScope.launch {
-            reportCommentUseCase(commentId)
-                .onSuccess {
-                    _uiEvent.emit(DetailUiEvent.ShowMessageRes(R.string.detail_comment_reported_success))
-                }
-                .onFailure {
-                    emitMessage("举报评论失败: ${it.localizedMessage}")
-                }
         }
     }
 
@@ -307,7 +179,6 @@ class DetailViewModel @Inject constructor(
     }
 
     sealed interface DetailUiEvent {
-        data object CommentPostedSuccess : DetailUiEvent
         data class ShowMessage(val message: String) : DetailUiEvent
         data class ShowMessageRes(@StringRes val resId: Int) : DetailUiEvent
     }
@@ -322,11 +193,5 @@ class DetailViewModel @Inject constructor(
         object Loading : RelatedUiState
         data class Success(val list: List<GalleryListItem>) : RelatedUiState
         data class Error(val message: String) : RelatedUiState
-    }
-
-    sealed interface CommentsUiState {
-        object Loading : CommentsUiState
-        data class Success(val list: List<Comment>) : CommentsUiState
-        data class Error(val message: String) : CommentsUiState
     }
 }

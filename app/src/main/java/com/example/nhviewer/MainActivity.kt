@@ -44,7 +44,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import com.example.nhviewer.domain.model.AuthEvent
 import com.example.nhviewer.domain.repository.UserRepository
 
+import com.example.nhviewer.domain.repository.BlacklistRepository
+import com.example.nhviewer.domain.model.Tag
 import com.example.nhviewer.util.i18n.LanguageManager
+import com.example.nhviewer.util.i18n.LocalAddToBlacklist
+import com.example.nhviewer.util.i18n.LocalBlacklistedTagIds
 import com.example.nhviewer.util.i18n.LocalTagLanguage
 import androidx.compose.runtime.CompositionLocalProvider
 import com.example.nhviewer.util.i18n.LocalTagDisplayMode
@@ -60,6 +64,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var userRepository: UserRepository
 
+    @Inject
+    lateinit var blacklistRepository: BlacklistRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         TagTranslationProvider.init(this)
@@ -70,10 +77,20 @@ class MainActivity : ComponentActivity() {
             val appLanguage by settingsManager.appLanguage.collectAsState(initial = "system")
             val tagLanguage by settingsManager.tagLanguage.collectAsState(initial = "zh")
             val tagDisplayMode by settingsManager.tagDisplayMode.collectAsState(initial = "only_translation")
+            val blacklistedTagIds by blacklistRepository.blacklistedTagIds.collectAsState()
 
+            val scope = rememberCoroutineScope()
             val context = LocalContext.current
             val localeContext = remember(appLanguage, context) {
                 LanguageManager.createLocaleContext(context, appLanguage)
+            }
+
+            val onAddToBlacklist: (Tag) -> Unit = remember {
+                { tag ->
+                    scope.launch {
+                        blacklistRepository.addToBlacklist(tag)
+                    }
+                }
             }
 
             val isDarkTheme = when (themeMode) {
@@ -85,7 +102,9 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalContext provides localeContext,
                 LocalTagLanguage provides tagLanguage,
-                LocalTagDisplayMode provides tagDisplayMode
+                LocalTagDisplayMode provides tagDisplayMode,
+                LocalBlacklistedTagIds provides blacklistedTagIds,
+                LocalAddToBlacklist provides onAddToBlacklist
             ) {
                 NhViewerTheme(
                     darkTheme = isDarkTheme,

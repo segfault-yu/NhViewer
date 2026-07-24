@@ -33,6 +33,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
+import com.example.nhviewer.util.NetworkErrorParser
 
 import androidx.compose.ui.res.stringResource
 import com.example.nhviewer.R
@@ -91,7 +92,7 @@ fun TaggedGalleriesScreen(
             } else if (galleries.loadState.refresh is LoadState.Error) {
                 val error = (galleries.loadState.refresh as LoadState.Error).error
                 ErrorScreen(
-                    message = error.localizedMessage ?: stringResource(R.string.common_error_load_gallery_failed),
+                    message = NetworkErrorParser.parse(error),
                     onRetry = { galleries.retry() }
                 )
             } else if (galleries.itemCount == 0 && galleries.loadState.refresh is LoadState.NotLoading) {

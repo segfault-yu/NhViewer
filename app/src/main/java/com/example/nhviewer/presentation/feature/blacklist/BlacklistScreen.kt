@@ -50,6 +50,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.nhviewer.util.i18n.LocalTagDisplayMode
+import com.example.nhviewer.util.i18n.LocalTagLanguage
+import com.example.nhviewer.util.i18n.TagTranslationProvider
 import com.example.nhviewer.presentation.common.EmptyState
 import androidx.compose.ui.res.stringResource
 import com.example.nhviewer.R
@@ -62,6 +65,8 @@ fun BlacklistScreen(
     modifier: Modifier = Modifier,
     viewModel: BlacklistViewModel = hiltViewModel()
 ) {
+    val tagLanguage = LocalTagLanguage.current
+    val tagDisplayMode = LocalTagDisplayMode.current
     val blacklist by viewModel.blacklist.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val suggestions by viewModel.suggestions.collectAsState()
@@ -139,14 +144,16 @@ fun BlacklistScreen(
                         onDismissRequest = { isDropdownExpanded = false }
                     ) {
                         suggestions.forEach { tag ->
+                            val formattedName = TagTranslationProvider.getFormattedName(tag, tagLanguage, tagDisplayMode)
+                            val trueType = TagTranslationProvider.getTrueTagType(tag.name, tag.type, tagLanguage).uppercase()
                             DropdownMenuItem(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = tag.name, style = MaterialTheme.typography.bodyLarge)
+                                        Text(text = formattedName, style = MaterialTheme.typography.bodyLarge)
                                         Spacer(modifier = Modifier.width(8.dp))
                                         SuggestionChip(
                                             onClick = {},
-                                            label = { Text(text = tag.type.uppercase(), style = MaterialTheme.typography.labelSmall) }
+                                            label = { Text(text = trueType, style = MaterialTheme.typography.labelSmall) }
                                         )
                                     }
                                 },
@@ -185,6 +192,8 @@ fun BlacklistScreen(
                         items = blacklist,
                         key = { it.id }
                     ) { tag ->
+                        val formattedName = TagTranslationProvider.getFormattedName(tag, tagLanguage, tagDisplayMode)
+                        val trueType = TagTranslationProvider.getTrueTagType(tag.name, tag.type, tagLanguage).uppercase()
                         Card(
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow
@@ -195,11 +204,11 @@ fun BlacklistScreen(
                             ListItem(
                                 headlineContent = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = tag.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                        Text(text = formattedName, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                                         Spacer(modifier = Modifier.width(8.dp))
                                         SuggestionChip(
                                             onClick = {},
-                                            label = { Text(text = tag.type.uppercase(), style = MaterialTheme.typography.labelSmall) }
+                                            label = { Text(text = trueType, style = MaterialTheme.typography.labelSmall) }
                                         )
                                     }
                                 },
