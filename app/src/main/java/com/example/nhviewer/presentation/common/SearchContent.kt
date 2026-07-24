@@ -422,6 +422,7 @@ fun SearchResultGrid(
 ) {
     val currentState = remember(searchResults.loadState.refresh, searchResults.itemCount) {
         when {
+            searchResults.itemCount > 0 -> 3
             searchResults.loadState.refresh is LoadState.Loading -> 0
             searchResults.loadState.refresh is LoadState.Error -> 1
             searchResults.itemCount == 0 && searchResults.loadState.refresh is LoadState.NotLoading -> 2

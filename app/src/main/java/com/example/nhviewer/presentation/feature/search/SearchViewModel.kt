@@ -69,7 +69,6 @@ class SearchViewModel @Inject constructor(
     private val _searchTrigger = MutableStateFlow<Pair<String, String>?>(null)
 
     val searchResults: Flow<PagingData<GalleryListItem>> = _searchTrigger
-        .debounce(400)
         .flatMapLatest { trigger ->
             if (trigger == null || trigger.first.isBlank()) {
                 _totalResults.value = null
@@ -82,7 +81,7 @@ class SearchViewModel @Inject constructor(
                             _totalResults.value = total
                         }
                     }
-                ).flow.cachedIn(viewModelScope)
+                ).flow
             }
         }
         .combine(blacklistRepository.blacklistedTagIds) { pagingData, blacklistedIds ->
@@ -90,6 +89,7 @@ class SearchViewModel @Inject constructor(
                 !item.tagIds.any { it in blacklistedIds }
             }
         }
+        .cachedIn(viewModelScope)
 
     val favoritedIds: StateFlow<Set<Int>> = favoriteRepository.favoritesFlow
         .map { list -> list.map { it.id }.toSet() }

@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.nhviewer.BuildConfig
 import com.example.nhviewer.data.remote.GalleryApi
 import com.example.nhviewer.data.remote.interceptor.CacheStrategyInterceptor
+import com.example.nhviewer.data.remote.interceptor.ForceRefreshInterceptor
 import com.example.nhviewer.data.remote.interceptor.RateLimitInterceptor
 import com.example.nhviewer.data.remote.interceptor.UserAgentInterceptor
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -59,8 +60,9 @@ object NetworkModule {
             .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .addInterceptor(UserAgentInterceptor())
-            .addInterceptor(CacheStrategyInterceptor())
+            .addInterceptor(ForceRefreshInterceptor())
             .addInterceptor(RateLimitInterceptor())
+            .addNetworkInterceptor(CacheStrategyInterceptor())
             .addInterceptor(loggingInterceptor)
             .build()
     }
