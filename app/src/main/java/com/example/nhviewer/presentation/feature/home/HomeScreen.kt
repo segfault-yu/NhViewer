@@ -89,7 +89,7 @@ fun HomeScreen(
 ) {
     val gridBaseWidth by settingsViewModel.gridBaseWidth.collectAsState()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
-    val cdnHost = cdnConfig?.primaryImageHost ?: ""
+    val cdnHost = cdnConfig?.primaryThumbHost ?: ""
 
     val latestGalleries = viewModel.latestGalleries.collectAsLazyPagingItems()
     val popularState by viewModel.popularGalleriesState.collectAsState()

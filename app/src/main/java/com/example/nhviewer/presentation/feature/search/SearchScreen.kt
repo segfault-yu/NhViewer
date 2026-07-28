@@ -48,7 +48,7 @@ fun SearchScreen(
     val active by viewModel.active.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
-    val cdnHost = cdnConfig?.primaryImageHost ?: ""
+    val cdnHost = cdnConfig?.primaryThumbHost ?: ""
 
     val searchHistory by viewModel.searchHistory.collectAsState(initial = emptyList())
     val autocompleteSuggestions by viewModel.autocompleteSuggestions.collectAsState()

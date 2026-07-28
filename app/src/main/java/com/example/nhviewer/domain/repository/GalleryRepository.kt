@@ -16,6 +16,9 @@ interface GalleryRepository {
     suspend fun getRelatedGalleries(galleryId: Int): Result<List<GalleryListItem>>
     suspend fun getCdnConfig(): Result<CdnConfig>
 
+    /** 同步读取已缓存的 CDN 配置，未加载过时返回默认值，供 UI 首帧就能拼出与列表一致的图片地址 */
+    fun getCachedCdnConfig(): CdnConfig
+
     /** 读取列表快照，供详情页预填首屏；无快照时返回 null */
     fun getCachedPreview(galleryId: Int): GalleryListItem?
 

@@ -108,8 +108,7 @@ fun DetailScreen(
     val isFavorite by viewModel.isFavorite.collectAsState()
     val previewItem by viewModel.previewItem.collectAsState()
 
-    val cdnHost = cdnConfig?.primaryImageHost ?: ""
-    // 页面预览缩略图仍走 thumb host，与封面走的 image host 是两类资源
+    // 封面、页面预览、推荐卡片都是缩略图资源，统一走 thumb host；image host 只供阅读器加载原图
     val thumbHost = normalizeCdnHost(cdnConfig?.primaryThumbHost, FALLBACK_THUMB_HOST)
 
     LaunchedEffect(galleryId) {
@@ -204,7 +203,7 @@ fun DetailScreen(
                         GalleryDetailHeader(
                             galleryId = item.id,
                             // 与列表卡片同一张图，Coil 内存缓存直接命中，预填首屏无需等待网络
-                            coverUrl = buildGalleryImageUrl(cdnHost, item.thumbnail),
+                            coverUrl = buildGalleryImageUrl(thumbHost, item.thumbnail),
                             coverPlaceholderUrl = null,
                             coverRatio = aspectRatioOf(item.thumbnailWidth, item.thumbnailHeight),
                             title = item.englishTitle,
@@ -248,7 +247,7 @@ fun DetailScreen(
                     val tagLanguage = LocalTagLanguage.current
                     val tagDisplayMode = LocalTagDisplayMode.current
                     val detail = state.detail
-                    val coverUrl = buildGalleryImageUrl(cdnHost, detail.coverPath)
+                    val coverUrl = buildGalleryImageUrl(thumbHost, detail.coverPath)
 
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Fixed(2),
@@ -273,7 +272,7 @@ fun DetailScreen(
                                 galleryId = detail.id,
                                 coverUrl = coverUrl,
                                 // 大图落地前沿用列表缩略图，避免从预填切到详情时闪一下灰块
-                                coverPlaceholderUrl = previewItem?.let { buildGalleryImageUrl(cdnHost, it.thumbnail) },
+                                coverPlaceholderUrl = previewItem?.let { buildGalleryImageUrl(thumbHost, it.thumbnail) },
                                 coverRatio = aspectRatioOf(detail.coverWidth, detail.coverHeight),
                                 title = detail.prettyTitle ?: detail.englishTitle,
                                 japaneseTitle = detail.japaneseTitle,
@@ -367,7 +366,7 @@ fun DetailScreen(
                                 ) { relatedItem ->
                                     GalleryCard(
                                         item = relatedItem,
-                                        cdnHost = cdnHost,
+                                        cdnHost = thumbHost,
                                         onClick = {
                                             onNavigateToDetail(relatedItem.id)
                                         },

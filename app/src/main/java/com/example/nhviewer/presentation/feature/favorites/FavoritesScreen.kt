@@ -67,7 +67,7 @@ fun FavoritesScreen(
     val authState by viewModel.authState.collectAsState()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     // 与首页/搜索/标签页保持同一 host，封面在各页面共用同一份 Coil 缓存
-    val cdnHost = cdnConfig?.primaryImageHost ?: ""
+    val cdnHost = cdnConfig?.primaryThumbHost ?: ""
     val favorites = viewModel.favoritesPagingData.collectAsLazyPagingItems()
 
     val pullRefreshState = rememberPullToRefreshState()

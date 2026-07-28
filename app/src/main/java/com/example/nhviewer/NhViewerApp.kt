@@ -5,6 +5,8 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import com.example.nhviewer.data.local.SettingsManager
+import com.example.nhviewer.data.remote.interceptor.CdnMirrorFallbackInterceptor
+import com.example.nhviewer.domain.repository.GalleryRepository
 import com.example.nhviewer.util.log.AppLogger
 import com.example.nhviewer.util.log.CrashHandler
 import dagger.hilt.android.HiltAndroidApp
@@ -20,6 +22,9 @@ class NhViewerApplication : Application(), ImageLoaderFactory {
 
     @Inject
     lateinit var settingsManager: SettingsManager
+
+    @Inject
+    lateinit var galleryRepository: GalleryRepository
 
     override fun onCreate() {
         super.onCreate()
@@ -37,9 +42,19 @@ class NhViewerApplication : Application(), ImageLoaderFactory {
         val maxMb = runBlocking { settingsManager.maxImageCacheMb.first() }
         return ImageLoader.Builder(this)
             .okHttpClient {
-                okhttp3.OkHttpClient.Builder()
+                val builder = okhttp3.OkHttpClient.Builder()
+                    // 镜像切换需在最外层：失败后携带新 host 重新进入后续拦截器，确保重试请求也带上 UA
+                    .addInterceptor(CdnMirrorFallbackInterceptor(galleryRepository))
                     .addInterceptor(com.example.nhviewer.data.remote.interceptor.UserAgentInterceptor())
-                    .build()
+                if (BuildConfig.DEBUG) {
+                    // 图片加载走独立的 OkHttpClient，未接入 API 日志拦截器，Debug 下单独补一份便于定位加载失败原因
+                    builder.addInterceptor(
+                        okhttp3.logging.HttpLoggingInterceptor().apply {
+                            level = okhttp3.logging.HttpLoggingInterceptor.Level.BASIC
+                        }
+                    )
+                }
+                builder.build()
             }
             .diskCache {
                 DiskCache.Builder()

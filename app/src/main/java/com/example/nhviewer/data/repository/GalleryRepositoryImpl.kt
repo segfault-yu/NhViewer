@@ -93,6 +93,8 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getCachedCdnConfig(): CdnConfig = cachedCdnConfig ?: CdnConfig.DEFAULT
+
     override fun getReadingHistory(): Flow<List<ReadingHistory>> {
         return historyDao.getAllHistory().map { list -> list.map { it.toDomain() } }
     }

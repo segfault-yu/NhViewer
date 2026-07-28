@@ -32,7 +32,7 @@ class ReaderViewModel @Inject constructor(
     private val _detailState = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)
     val detailState: StateFlow<ReaderUiState> = _detailState.asStateFlow()
 
-    private val _cdnConfig = MutableStateFlow<CdnConfig?>(null)
+    private val _cdnConfig = MutableStateFlow<CdnConfig?>(getCdnConfigUseCase.cached())
     val cdnConfig: StateFlow<CdnConfig?> = _cdnConfig.asStateFlow()
 
     private val _currentPage = MutableStateFlow(1)

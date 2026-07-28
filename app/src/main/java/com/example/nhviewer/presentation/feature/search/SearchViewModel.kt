@@ -61,7 +61,7 @@ class SearchViewModel @Inject constructor(
     private val _totalResults = MutableStateFlow<Int?>(null)
     val totalResults: StateFlow<Int?> = _totalResults.asStateFlow()
 
-    private val _cdnConfig = MutableStateFlow<CdnConfig?>(null)
+    private val _cdnConfig = MutableStateFlow<CdnConfig?>(getCdnConfigUseCase.cached())
     val cdnConfig: StateFlow<CdnConfig?> = _cdnConfig.asStateFlow()
 
     val searchHistory: Flow<List<SearchHistory>> = searchHistoryUseCase.getSearchHistory()

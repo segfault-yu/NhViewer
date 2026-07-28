@@ -53,7 +53,7 @@ fun TaggedGalleriesScreen(
 ) {
     val galleries = viewModel.galleries.collectAsLazyPagingItems()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
-    val cdnHost = cdnConfig?.primaryImageHost ?: ""
+    val cdnHost = cdnConfig?.primaryThumbHost ?: ""
     val tagLanguage = LocalTagLanguage.current
     val tagDisplayMode = LocalTagDisplayMode.current
 

@@ -1,8 +1,10 @@
 package com.example.nhviewer.presentation.feature.detail
 
 import androidx.annotation.StringRes
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.example.nhviewer.R
 import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.domain.model.CdnConfig
@@ -18,6 +20,7 @@ import com.example.nhviewer.domain.usecase.GetGalleryDetailUseCase
 import com.example.nhviewer.domain.usecase.GetRelatedGalleriesUseCase
 import com.example.nhviewer.domain.usecase.ReadingHistoryUseCase
 import com.example.nhviewer.domain.usecase.ToggleFavoriteUseCase
+import com.example.nhviewer.presentation.navigation.Route
 import com.example.nhviewer.util.NetworkErrorParser
 import com.example.nhviewer.util.log.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,7 +44,8 @@ class DetailViewModel @Inject constructor(
     private val readingHistoryUseCase: ReadingHistoryUseCase,
     private val checkIsFavoriteUseCase: CheckIsFavoriteUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _detailState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
@@ -50,7 +54,7 @@ class DetailViewModel @Inject constructor(
     private val _relatedState = MutableStateFlow<RelatedUiState>(RelatedUiState.Loading)
     val relatedState: StateFlow<RelatedUiState> = _relatedState.asStateFlow()
 
-    private val _cdnConfig = MutableStateFlow<CdnConfig?>(null)
+    private val _cdnConfig = MutableStateFlow<CdnConfig?>(getCdnConfigUseCase.cached())
     val cdnConfig: StateFlow<CdnConfig?> = _cdnConfig.asStateFlow()
 
     private val _readingHistory = MutableStateFlow<ReadingHistory?>(null)
@@ -74,6 +78,21 @@ class DetailViewModel @Inject constructor(
 
     init {
         loadCdnConfig()
+        prefillFromSnapshot()
+    }
+
+    /**
+     * 首帧即用列表快照撑起页面。
+     * LaunchedEffect 要等首次组合提交后才跑，只靠它填充会先闪一帧空白骨架。
+     */
+    private fun prefillFromSnapshot() {
+        val galleryId = runCatching {
+            savedStateHandle.toRoute<Route.GalleryDetail>().galleryId
+        }.getOrNull() ?: return
+
+        val preview = getCachedGalleryPreviewUseCase(galleryId) ?: return
+        _previewItem.value = preview
+        _detailState.value = DetailUiState.Preview(preview)
     }
 
     private fun loadCdnConfig() {

@@ -1,8 +1,10 @@
 package com.example.nhviewer.presentation.common
 
-/** CDN 配置缺失时的兜底域名 */
-const val FALLBACK_THUMB_HOST = "https://t.nhentai.net"
-const val FALLBACK_IMAGE_HOST = "https://i.nhentai.net"
+import com.example.nhviewer.domain.model.CdnConfig
+
+/** CDN 配置缺失时的兜底域名，与 CdnConfig.DEFAULT 保持同一份数据，避免两处兜底域名不同步 */
+val FALLBACK_THUMB_HOST = CdnConfig.DEFAULT.primaryThumbHost
+val FALLBACK_IMAGE_HOST = CdnConfig.DEFAULT.primaryImageHost
 
 /** 宽高缺失时的封面比例 */
 const val DEFAULT_COVER_RATIO = 0.7f

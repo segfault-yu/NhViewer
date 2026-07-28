@@ -43,7 +43,7 @@ class FavoritesViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<FavoritesUiEvent>()
     val uiEvent: SharedFlow<FavoritesUiEvent> = _uiEvent.asSharedFlow()
 
-    private val _cdnConfig = MutableStateFlow<CdnConfig?>(null)
+    private val _cdnConfig = MutableStateFlow<CdnConfig?>(getCdnConfigUseCase.cached())
     val cdnConfig: StateFlow<CdnConfig?> = _cdnConfig.asStateFlow()
 
     val authState: StateFlow<AuthState> = userRepository.authState

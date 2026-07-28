@@ -76,7 +76,7 @@ class HomeViewModel @Inject constructor(
         .map { list -> list.map { it.id }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
-    private val _cdnConfig = MutableStateFlow<CdnConfig?>(null)
+    private val _cdnConfig = MutableStateFlow<CdnConfig?>(getCdnConfigUseCase.cached())
     val cdnConfig: StateFlow<CdnConfig?> = _cdnConfig.asStateFlow()
 
     val readingHistory: Flow<List<ReadingHistory>> = readingHistoryUseCase.getReadingHistory()

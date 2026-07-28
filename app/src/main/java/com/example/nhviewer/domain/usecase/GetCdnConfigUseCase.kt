@@ -10,4 +10,7 @@ class GetCdnConfigUseCase @Inject constructor(
     suspend operator fun invoke(): Result<CdnConfig> {
         return repository.getCdnConfig()
     }
+
+    /** 同步取已缓存配置，用作 UI 状态初值 */
+    fun cached(): CdnConfig = repository.getCachedCdnConfig()
 }

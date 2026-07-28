@@ -31,7 +31,7 @@ class TaggedGalleriesViewModel @Inject constructor(
 
     private val _tagId = MutableStateFlow<Int?>(null)
 
-    private val _cdnConfig = MutableStateFlow<CdnConfig?>(null)
+    private val _cdnConfig = MutableStateFlow<CdnConfig?>(getCdnConfigUseCase.cached())
     val cdnConfig: StateFlow<CdnConfig?> = _cdnConfig.asStateFlow()
 
     val galleries: Flow<PagingData<GalleryListItem>> = _tagId.flatMapLatest { tagId ->

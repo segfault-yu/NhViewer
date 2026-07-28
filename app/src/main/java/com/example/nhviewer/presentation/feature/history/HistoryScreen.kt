@@ -56,7 +56,7 @@ fun HistoryScreen(
     val readingHistory by viewModel.readingHistory.collectAsState(initial = emptyList())
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     // 与列表页保持同一 host，封面共用同一份 Coil 缓存
-    val cdnHost = cdnConfig?.primaryImageHost ?: ""
+    val cdnHost = cdnConfig?.primaryThumbHost ?: ""
 
     Scaffold(
         topBar = {
