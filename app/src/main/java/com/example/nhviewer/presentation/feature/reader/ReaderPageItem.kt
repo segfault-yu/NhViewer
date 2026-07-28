@@ -1,7 +1,6 @@
 package com.example.nhviewer.presentation.feature.reader
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,6 +41,7 @@ import coil.request.ImageRequest
 import com.example.nhviewer.domain.model.PageInfo
 import androidx.compose.ui.res.stringResource
 import com.example.nhviewer.R
+import com.example.nhviewer.ui.theme.NhMotion
 import me.saket.telephoto.zoomable.ZoomableState
 import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
@@ -88,7 +88,7 @@ fun ReaderPageItem(
     // 渐变过渡动画
     val placeholderAlpha by animateFloatAsState(
         targetValue = if (hasLoaded) 0f else 1f,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = NhMotion.Effects.default(),
         label = "placeholderFade"
     )
 

@@ -1,5 +1,6 @@
 package com.example.nhviewer.data.repository
 
+import com.example.nhviewer.data.local.GalleryMemoryCache
 import com.example.nhviewer.data.local.dao.SearchHistoryDao
 import com.example.nhviewer.data.local.entity.SearchHistoryEntity
 import com.example.nhviewer.data.local.entity.toDomain
@@ -18,14 +19,17 @@ import javax.inject.Singleton
 @Singleton
 class SearchRepositoryImpl @Inject constructor(
     private val api: SearchApi,
-    private val historyDao: SearchHistoryDao
+    private val historyDao: SearchHistoryDao,
+    private val memoryCache: GalleryMemoryCache
 ) : SearchRepository {
 
-    override suspend fun searchGalleries(query: String, page: Int, sort: String): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable {
+    override suspend fun searchGalleries(query: String, page: Int, sort: String): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable("Search") {
         val mappedSort = if (sort == "date" || sort.isBlank()) null else sort
         val response = api.searchGalleries(query, page, mappedSort)
+        val items = response.result.map { it.toDomain() }
+        memoryCache.putPreviews(items)
         PaginatedResult(
-            items = response.result.map { it.toDomain() },
+            items = items,
             numPages = response.numPages,
             total = response.total
         )

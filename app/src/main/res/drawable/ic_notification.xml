@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 通知栏小图标：纯 alpha 单色，系统自行 tint；主体占 24dp 画布中央 20dp -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <group
+        android:scaleX="0.377"
+        android:scaleY="0.377"
+        android:translateX="-8.36"
+        android:translateY="-8.36">
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M31,50L46,50"
+            android:strokeWidth="7"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M62,50L77,50"
+            android:strokeWidth="7"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M31,50L31,72"
+            android:strokeWidth="7"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M46,50L46,72"
+            android:strokeWidth="7"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M77,50L77,72"
+            android:strokeWidth="7"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M62,36L62,72"
+            android:strokeWidth="7"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

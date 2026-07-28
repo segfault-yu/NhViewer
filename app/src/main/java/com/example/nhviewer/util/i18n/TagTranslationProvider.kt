@@ -2,8 +2,8 @@ package com.example.nhviewer.util.i18n
 
 import android.content.Context
 import android.util.JsonReader
-import android.util.Log
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.util.log.AppLogger
 import java.io.InputStreamReader
 import java.util.concurrent.ConcurrentHashMap
 
@@ -54,7 +54,7 @@ object TagTranslationProvider {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("TagTranslation", "Failed to load dictionary: $fileName", e)
+                AppLogger.e("TagTranslation", "标签词典加载失败: $fileName", e)
             }
             map
         }

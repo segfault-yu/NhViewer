@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Security
@@ -68,6 +69,7 @@ fun SettingsScreen(
     onNavigateToSessions: () -> Unit,
     onNavigateToApiKeys: () -> Unit,
     onNavigateToBlacklist: () -> Unit,
+    onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -389,7 +391,6 @@ fun SettingsScreen(
                                 .fillMaxWidth()
                                 .clickable {
                                     viewModel.setLogLevel(value)
-                                    AppLogger.setLogLevel(value)
                                     showLogLevelDialog = false
                                 }
                                 .padding(vertical = 8.dp)
@@ -398,7 +399,6 @@ fun SettingsScreen(
                                 selected = logLevel == value,
                                 onClick = {
                                     viewModel.setLogLevel(value)
-                                    AppLogger.setLogLevel(value)
                                     showLogLevelDialog = false
                                 }
                             )
@@ -584,25 +584,61 @@ fun SettingsScreen(
                     )
                 },
                 modifier = Modifier.clickable {
-                    val logFiles = AppLogger.getLogFiles(context)
-                    if (logFiles.isEmpty()) {
-                        Toast.makeText(context, context.getString(R.string.settings_no_logs), Toast.LENGTH_SHORT).show()
-                    } else {
-                        val uris = ArrayList<android.net.Uri>()
-                        logFiles.forEach { file ->
-                            val uri = androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                file
+                    // 扫描目录与构造 FileProvider uri 都是磁盘操作，不能放在主线程
+                    coroutineScope.launch(Dispatchers.IO) {
+                        val logFiles = AppLogger.getLogFiles(context)
+                        val uris = try {
+                            ArrayList(
+                                logFiles.map { file ->
+                                    androidx.core.content.FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.fileprovider",
+                                        file
+                                    )
+                                }
                             )
-                            uris.add(uri)
+                        } catch (e: Exception) {
+                            AppLogger.e("Settings", "构建日志分享链接失败", e)
+                            null
                         }
-                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND_MULTIPLE).apply {
-                            type = "text/plain"
-                            putParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, uris)
-                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        withContext(Dispatchers.Main) {
+                            when {
+                                uris == null -> Toast.makeText(
+                                    context,
+                                    context.getString(R.string.settings_export_logs_failed),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                uris.isEmpty() -> Toast.makeText(
+                                    context,
+                                    context.getString(R.string.settings_no_logs),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                else -> {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND_MULTIPLE).apply {
+                                        type = "text/plain"
+                                        putParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, uris)
+                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    val chooser = android.content.Intent.createChooser(
+                                        intent,
+                                        context.getString(R.string.settings_export_logs_title)
+                                    )
+                                    // 无可处理分享的应用时 startActivity 会抛异常
+                                    try {
+                                        context.startActivity(chooser)
+                                    } catch (e: Exception) {
+                                        AppLogger.e("Settings", "拉起日志分享失败", e)
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.settings_export_logs_failed),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            }
                         }
-                        context.startActivity(android.content.Intent.createChooser(intent, context.getString(R.string.settings_export_logs_title)))
                     }
                 }
             )
@@ -823,6 +859,27 @@ fun SettingsScreen(
                 },
                 leadingContent = { Icon(Icons.Default.Translate, contentDescription = null) },
                 modifier = Modifier.clickable { showTagLanguageDialog = true }
+            )
+
+            SettingsCategoryHeader(title = stringResource(R.string.settings_cat_about))
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.settings_about_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.settings_about_desc),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
+                trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
+                modifier = Modifier.clickable { onNavigateToAbout() }
             )
         }
     }

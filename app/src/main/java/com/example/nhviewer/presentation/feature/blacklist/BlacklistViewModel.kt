@@ -8,6 +8,7 @@ import com.example.nhviewer.domain.usecase.AddToBlacklistUseCase
 import com.example.nhviewer.domain.usecase.AutocompleteTagsUseCase
 import com.example.nhviewer.domain.usecase.GetBlacklistUseCase
 import com.example.nhviewer.domain.usecase.RemoveFromBlacklistUseCase
+import com.example.nhviewer.util.log.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +54,7 @@ class BlacklistViewModel @Inject constructor(
                 _blacklist.value = it
                 _errorMessage.value = null
             }.onFailure {
+                AppLogger.w("Blacklist", "黑名单列表加载失败")
                 _errorMessage.value = it.localizedMessage ?: "拉取黑名单失败"
             }
             _isLoading.value = false
@@ -67,6 +69,7 @@ class BlacklistViewModel @Inject constructor(
                 _suggestions.value = emptyList()
                 loadBlacklist()
             }.onFailure {
+                AppLogger.w("Blacklist", "标签 ${tag.id} 加入黑名单失败")
                 _errorMessage.value = it.localizedMessage ?: "加入黑名单失败"
             }
             _isLoading.value = false
@@ -79,6 +82,7 @@ class BlacklistViewModel @Inject constructor(
             removeFromBlacklistUseCase(tagId).onSuccess {
                 loadBlacklist()
             }.onFailure {
+                AppLogger.w("Blacklist", "标签 $tagId 移出黑名单失败")
                 _errorMessage.value = it.localizedMessage ?: "移除黑名单失败"
             }
             _isLoading.value = false

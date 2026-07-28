@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +50,7 @@ import com.example.nhviewer.presentation.feature.profile.ProfileViewModel
 
 @Composable
 fun AppDrawerContent(
+    drawerState: DrawerState,
     currentDestination: NavDestination?,
     onNavigate: (Route) -> Unit,
     onNavigateToAuth: () -> Unit,
@@ -58,6 +60,7 @@ fun AppDrawerContent(
     val authState by viewModel.authState.collectAsState()
 
     ModalDrawerSheet(
+        drawerState = drawerState,
         modifier = modifier.width(300.dp)
     ) {
         // User Profile Header

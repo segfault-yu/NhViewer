@@ -17,6 +17,7 @@ import com.example.nhviewer.domain.usecase.GetRandomFavoriteUseCase
 import com.example.nhviewer.domain.usecase.SyncFavoritesUseCase
 import com.example.nhviewer.domain.repository.UserRepository
 import com.example.nhviewer.domain.model.AuthState
+import com.example.nhviewer.util.log.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -84,6 +85,7 @@ class FavoritesViewModel @Inject constructor(
                     _uiEvent.emit(FavoritesUiEvent.NavigateToDetail(it.id))
                 }
                 .onFailure {
+                    AppLogger.w("Favorites", "随机收藏获取失败")
                     _uiEvent.emit(FavoritesUiEvent.ShowError(it.localizedMessage ?: "未能获取随机收藏"))
                 }
         }

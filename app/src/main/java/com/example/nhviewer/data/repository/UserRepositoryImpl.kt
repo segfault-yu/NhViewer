@@ -49,7 +49,7 @@ class UserRepositoryImpl @Inject constructor(
         powChallenge: String,
         powNonce: String,
         captchaResponse: String
-    ): Result<User> = runCatchingCancelable {
+    ): Result<User> = runCatchingCancelable("User") {
         val request = LoginRequest(username, password, powChallenge, powNonce, captchaResponse)
         val tokenResponse = api.login(request)
         tokenManager.saveTokens(
@@ -68,7 +68,7 @@ class UserRepositoryImpl @Inject constructor(
         powChallenge: String,
         powNonce: String,
         captchaResponse: String
-    ): Result<User> = runCatchingCancelable {
+    ): Result<User> = runCatchingCancelable("User") {
         val request = RegisterRequest(username, email, password, powChallenge, powNonce, captchaResponse)
         val tokenResponse = api.register(request)
         tokenManager.saveTokens(
@@ -80,7 +80,7 @@ class UserRepositoryImpl @Inject constructor(
         profile
     }
 
-    override suspend fun logout(): Result<Unit> = runCatchingCancelable {
+    override suspend fun logout(): Result<Unit> = runCatchingCancelable("User") {
         try {
             val response = api.logout()
             if (!response.isSuccessful) {
@@ -92,7 +92,7 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun logoutAll(): Result<Unit> = runCatchingCancelable {
+    override suspend fun logoutAll(): Result<Unit> = runCatchingCancelable("User") {
         try {
             val response = api.logoutAll()
             if (!response.isSuccessful) {
@@ -104,24 +104,24 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun loadCurrentUser(): Result<User> = runCatchingCancelable {
+    override suspend fun loadCurrentUser(): Result<User> = runCatchingCancelable("User") {
         val profile = api.getUserProfile().toDomain()
         _authState.value = AuthState.LoggedIn(profile)
         profile
     }
 
-    override suspend fun getSessions(): Result<List<UserSession>> = runCatchingCancelable {
+    override suspend fun getSessions(): Result<List<UserSession>> = runCatchingCancelable("User") {
         api.getSessions().map { it.toDomain() }
     }
 
-    override suspend fun revokeSession(sessionId: String): Result<Unit> = runCatchingCancelable {
+    override suspend fun revokeSession(sessionId: String): Result<Unit> = runCatchingCancelable("User") {
         val response = api.revokeSession(sessionId)
         if (!response.isSuccessful) {
             throw Exception("Revoke session failed: ${response.code()}")
         }
     }
 
-    override suspend fun getApiKeys(): Result<List<ApiKey>> = runCatchingCancelable {
+    override suspend fun getApiKeys(): Result<List<ApiKey>> = runCatchingCancelable("User") {
         api.getApiKeys().map { it.toDomain() }
     }
 
@@ -130,11 +130,11 @@ class UserRepositoryImpl @Inject constructor(
         powChallenge: String,
         powNonce: String,
         captchaResponse: String
-    ): Result<ApiKey> = runCatchingCancelable {
+    ): Result<ApiKey> = runCatchingCancelable("User") {
         api.createApiKey(CreateApiKeyRequest(name, powChallenge, powNonce, captchaResponse)).toDomain()
     }
 
-    override suspend fun revokeApiKey(keyId: String): Result<Unit> = runCatchingCancelable {
+    override suspend fun revokeApiKey(keyId: String): Result<Unit> = runCatchingCancelable("User") {
         val response = api.revokeApiKey(keyId)
         if (!response.isSuccessful) {
             throw Exception("Revoke API key failed: ${response.code()}")
@@ -146,7 +146,7 @@ class UserRepositoryImpl @Inject constructor(
         powChallenge: String,
         powNonce: String,
         captchaResponse: String
-    ): Result<Unit> = runCatchingCancelable {
+    ): Result<Unit> = runCatchingCancelable("User") {
         val response = api.requestResetPassword(PasswordResetRequest(usernameOrEmail, powChallenge, powNonce, captchaResponse))
         if (!response.isSuccessful) {
             throw Exception("Password reset request failed: ${response.code()}")
@@ -159,7 +159,7 @@ class UserRepositoryImpl @Inject constructor(
         powChallenge: String,
         powNonce: String,
         captchaResponse: String
-    ): Result<Unit> = runCatchingCancelable {
+    ): Result<Unit> = runCatchingCancelable("User") {
         val response = api.confirmResetPassword(
             PasswordResetConfirmRequest(token, newPassword, powChallenge, powNonce, captchaResponse)
         )
@@ -168,11 +168,11 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getPowChallenge(action: String): Result<PowResponseDto> = runCatchingCancelable {
+    override suspend fun getPowChallenge(action: String): Result<PowResponseDto> = runCatchingCancelable("User") {
         api.getPowChallenge(action)
     }
 
-    override suspend fun getCaptchaConfig(): Result<CaptchaResponseDto> = runCatchingCancelable {
+    override suspend fun getCaptchaConfig(): Result<CaptchaResponseDto> = runCatchingCancelable("User") {
         api.getCaptchaConfig()
     }
 }

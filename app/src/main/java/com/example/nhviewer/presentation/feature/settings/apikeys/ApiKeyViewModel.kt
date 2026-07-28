@@ -8,6 +8,7 @@ import com.example.nhviewer.domain.usecase.CreateApiKeyUseCase
 import com.example.nhviewer.domain.usecase.GetApiKeysUseCase
 import com.example.nhviewer.domain.usecase.RevokeApiKeyUseCase
 import com.example.nhviewer.util.PowSolver
+import com.example.nhviewer.util.log.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +61,7 @@ class ApiKeyViewModel @Inject constructor(
                 _apiKeys.value = it
                 _errorMessageRes.value = null
             }.onFailure {
+                AppLogger.w("ApiKey", "API 密钥列表加载失败")
                 _errorMessageRes.value = R.string.sessions_error_fetch
             }
             _isLoading.value = false
@@ -88,11 +90,13 @@ class ApiKeyViewModel @Inject constructor(
                     _powStatus.value = "Waiting Captcha..."
                     _captchaSiteKey.value = captchaDto.siteKey
                 }.onFailure {
+                    AppLogger.w("ApiKey", "创建密钥前的验证码配置获取失败")
                     _powStatus.value = "Idle"
                     _errorMessageRes.value = R.string.common_unknown_error
                     _isLoading.value = false
                 }
             }.onFailure {
+                AppLogger.w("ApiKey", "创建密钥前的 PoW 挑战获取失败")
                 _powStatus.value = "Idle"
                 _errorMessageRes.value = R.string.common_unknown_error
                 _isLoading.value = false
@@ -104,11 +108,14 @@ class ApiKeyViewModel @Inject constructor(
         _captchaSiteKey.value = null
         _powStatus.value = "Generating..."
         viewModelScope.launch {
+            // 密钥明文不入日志
             createApiKeyUseCase(pendingKeyName, powChallenge, powNonce, captchaResponse).onSuccess { apiKey ->
+                AppLogger.i("ApiKey", "API 密钥创建成功")
                 _newlyCreatedApiKey.value = apiKey
                 loadApiKeys()
                 clearCreationState()
             }.onFailure {
+                AppLogger.w("ApiKey", "API 密钥创建失败")
                 _errorMessageRes.value = R.string.common_unknown_error
             }
             _powStatus.value = "Idle"
@@ -127,8 +134,10 @@ class ApiKeyViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             revokeApiKeyUseCase(keyId).onSuccess {
+                AppLogger.i("ApiKey", "API 密钥已吊销")
                 loadApiKeys()
             }.onFailure {
+                AppLogger.w("ApiKey", "API 密钥吊销失败")
                 _errorMessageRes.value = R.string.sessions_error_revoke
             }
             _isLoading.value = false

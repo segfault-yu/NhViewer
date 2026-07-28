@@ -4,6 +4,8 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.nhviewer.domain.model.Tag
 import com.example.nhviewer.domain.repository.TagRepository
+import com.example.nhviewer.util.log.AppLogger
+import kotlinx.coroutines.CancellationException
 
 class TagPagingSource(
     private val repository: TagRepository,
@@ -28,6 +30,9 @@ class TagPagingSource(
                 nextKey = if (page >= result.numPages || result.items.isEmpty()) null else page + 1
             )
         } catch (e: Exception) {
+            if (e !is CancellationException) {
+                AppLogger.w("TagPaging", "标签列表第 $page 页加载失败 (type=$tagType, sort=$sort)", e)
+            }
             LoadResult.Error(e)
         }
     }

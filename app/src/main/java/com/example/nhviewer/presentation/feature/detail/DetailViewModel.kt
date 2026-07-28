@@ -11,13 +11,17 @@ import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.ReadingHistory
 import com.example.nhviewer.domain.repository.UserRepository
 import com.example.nhviewer.domain.usecase.CheckIsFavoriteUseCase
+import com.example.nhviewer.domain.usecase.GetCachedGalleryDetailUseCase
+import com.example.nhviewer.domain.usecase.GetCachedGalleryPreviewUseCase
 import com.example.nhviewer.domain.usecase.GetCdnConfigUseCase
 import com.example.nhviewer.domain.usecase.GetGalleryDetailUseCase
 import com.example.nhviewer.domain.usecase.GetRelatedGalleriesUseCase
 import com.example.nhviewer.domain.usecase.ReadingHistoryUseCase
 import com.example.nhviewer.domain.usecase.ToggleFavoriteUseCase
 import com.example.nhviewer.util.NetworkErrorParser
+import com.example.nhviewer.util.log.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -30,6 +34,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     private val getGalleryDetailUseCase: GetGalleryDetailUseCase,
+    private val getCachedGalleryDetailUseCase: GetCachedGalleryDetailUseCase,
+    private val getCachedGalleryPreviewUseCase: GetCachedGalleryPreviewUseCase,
     private val getRelatedGalleriesUseCase: GetRelatedGalleriesUseCase,
     private val getCdnConfigUseCase: GetCdnConfigUseCase,
     private val readingHistoryUseCase: ReadingHistoryUseCase,
@@ -50,6 +56,10 @@ class DetailViewModel @Inject constructor(
     private val _readingHistory = MutableStateFlow<ReadingHistory?>(null)
     val readingHistory: StateFlow<ReadingHistory?> = _readingHistory.asStateFlow()
 
+    // 列表快照，供首屏预填与详情封面的占位图复用
+    private val _previewItem = MutableStateFlow<GalleryListItem?>(null)
+    val previewItem: StateFlow<GalleryListItem?> = _previewItem.asStateFlow()
+
     // 收藏状态
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
@@ -60,6 +70,7 @@ class DetailViewModel @Inject constructor(
     val authState: StateFlow<AuthState> = userRepository.authState
 
     private var currentDetail: GalleryDetail? = null
+    private var detailJob: Job? = null
 
     init {
         loadCdnConfig()
@@ -74,39 +85,79 @@ class DetailViewModel @Inject constructor(
     }
 
     fun loadGalleryDetail(galleryId: Int, forceRefresh: Boolean = false) {
-        viewModelScope.launch {
-            // 始终刷新本地阅读历史与收藏状态
-            val history = readingHistoryUseCase.getReadingHistoryItem(galleryId)
-            _readingHistory.value = history
+        // 阅读历史与收藏状态并行加载，不阻塞详情首屏
+        refreshLocalState(galleryId)
 
+        // 非强制刷新且当前已持有该画廊的完整数据，直接复用
+        if (!forceRefresh && currentDetail?.id == galleryId && _detailState.value is DetailUiState.Success) {
+            return
+        }
+
+        _previewItem.value = getCachedGalleryPreviewUseCase(galleryId)
+
+        if (forceRefresh) {
+            _detailState.value = DetailUiState.Loading
+            _relatedState.value = RelatedUiState.Loading
+            fetchDetail(galleryId, forceRefresh = true, silent = false)
+            return
+        }
+
+        val cached = getCachedGalleryDetailUseCase(galleryId)
+        if (cached != null) {
+            applyDetail(cached.detail)
+            // 缓存超出新鲜期时后台静默刷新，界面保持旧数据直到新数据返回
+            if (System.currentTimeMillis() - cached.cachedAt > STALE_THRESHOLD_MILLIS) {
+                fetchDetail(galleryId, forceRefresh = true, silent = true)
+            }
+            return
+        }
+
+        // 无详情缓存时先用列表快照撑起首屏，避免整页空白
+        _detailState.value = _previewItem.value
+            ?.let { DetailUiState.Preview(it) }
+            ?: DetailUiState.Loading
+        _relatedState.value = RelatedUiState.Loading
+        fetchDetail(galleryId, forceRefresh = false, silent = false)
+    }
+
+    private fun refreshLocalState(galleryId: Int) {
+        viewModelScope.launch {
+            _readingHistory.value = readingHistoryUseCase.getReadingHistoryItem(galleryId)
+        }
+        viewModelScope.launch {
             checkIsFavoriteUseCase(galleryId).onSuccess {
                 _isFavorite.value = it
             }
+        }
+    }
 
-            // 若非强刷新且数据已成功加载，拦截重复 API 网络请求
-            if (!forceRefresh && currentDetail?.id == galleryId && _detailState.value is DetailUiState.Success) {
-                return@launch
-            }
-
-            _detailState.value = DetailUiState.Loading
-            _relatedState.value = RelatedUiState.Loading
-
-            // 阶段加载：获取画廊详情（包含相关推荐）
+    private fun fetchDetail(galleryId: Int, forceRefresh: Boolean, silent: Boolean) {
+        detailJob?.cancel()
+        detailJob = viewModelScope.launch {
             getGalleryDetailUseCase(galleryId, includeRelated = true, forceRefresh = forceRefresh)
                 .onSuccess { detail ->
-                    currentDetail = detail
-                    _detailState.value = DetailUiState.Success(detail)
-
-                    if (!detail.related.isNullOrEmpty()) {
-                        _relatedState.value = RelatedUiState.Success(detail.related)
-                    } else {
-                        fetchRelatedIndependently(galleryId)
-                    }
+                    applyDetail(detail)
                 }
                 .onFailure { error ->
-                    _detailState.value = DetailUiState.Error(NetworkErrorParser.parse(error))
-                    _relatedState.value = RelatedUiState.Error(NetworkErrorParser.parse(error))
+                    AppLogger.w("Detail", "画廊 $galleryId 详情加载失败 (silent=$silent)")
+                    // 静默刷新失败时保留已展示的旧数据，不打断阅读
+                    if (silent) return@onFailure
+                    val message = NetworkErrorParser.parse(error)
+                    _detailState.value = DetailUiState.Error(message)
+                    _relatedState.value = RelatedUiState.Error(message)
                 }
+        }
+    }
+
+    private fun applyDetail(detail: GalleryDetail) {
+        currentDetail = detail
+        _detailState.value = DetailUiState.Success(detail)
+
+        val related = detail.related
+        if (!related.isNullOrEmpty()) {
+            _relatedState.value = RelatedUiState.Success(related)
+        } else if (_relatedState.value !is RelatedUiState.Success) {
+            fetchRelatedIndependently(detail.id)
         }
     }
 
@@ -117,6 +168,7 @@ class DetailViewModel @Inject constructor(
                     _relatedState.value = RelatedUiState.Success(list)
                 }
                 .onFailure { error ->
+                    AppLogger.w("Detail", "画廊 $galleryId 相关推荐加载失败")
                     _relatedState.value = RelatedUiState.Error(NetworkErrorParser.parse(error))
                 }
         }
@@ -157,6 +209,7 @@ class DetailViewModel @Inject constructor(
                 blacklisted = false
             )
             toggleFavoriteUseCase(listItem, newState).onFailure { error ->
+                AppLogger.w("Detail", "画廊 ${detail.id} 收藏切换失败，回滚为 $previousState")
                 // 请求失败回滚状态
                 _isFavorite.value = previousState
                 currentDetail = detail
@@ -185,6 +238,10 @@ class DetailViewModel @Inject constructor(
 
     sealed interface DetailUiState {
         object Loading : DetailUiState
+
+        /** 列表快照预填的首屏，详情数据到达前先展示已知信息 */
+        data class Preview(val item: GalleryListItem) : DetailUiState
+
         data class Success(val detail: GalleryDetail) : DetailUiState
         data class Error(val message: String) : DetailUiState
     }
@@ -193,5 +250,10 @@ class DetailViewModel @Inject constructor(
         object Loading : RelatedUiState
         data class Success(val list: List<GalleryListItem>) : RelatedUiState
         data class Error(val message: String) : RelatedUiState
+    }
+
+    private companion object {
+        /** 内存缓存的新鲜期，超过则命中后触发一次后台静默刷新 */
+        const val STALE_THRESHOLD_MILLIS = 5 * 60 * 1000L
     }
 }

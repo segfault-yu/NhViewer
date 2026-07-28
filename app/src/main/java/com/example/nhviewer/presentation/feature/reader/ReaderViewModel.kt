@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import com.example.nhviewer.util.NetworkErrorParser
+import com.example.nhviewer.util.log.AppLogger
 import javax.inject.Inject
 import com.example.nhviewer.data.local.SettingsManager
 
@@ -106,6 +107,7 @@ class ReaderViewModel @Inject constructor(
                     saveHistoryDirectly(galleryId, startPage)
                 }
                 .onFailure { error ->
+                    AppLogger.w("Reader", "画廊 $galleryId 阅读详情加载失败")
                     _detailState.value = ReaderUiState.Error(NetworkErrorParser.parse(error))
                 }
         }

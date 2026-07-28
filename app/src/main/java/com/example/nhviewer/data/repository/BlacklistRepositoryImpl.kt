@@ -8,6 +8,7 @@ import com.example.nhviewer.data.remote.dto.BlacklistRequest
 import com.example.nhviewer.data.remote.dto.toDomain
 import com.example.nhviewer.domain.model.Tag
 import com.example.nhviewer.domain.repository.BlacklistRepository
+import com.example.nhviewer.util.log.AppLogger
 import com.example.nhviewer.util.runCatchingCancelable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +42,7 @@ class BlacklistRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getBlacklist(): Result<List<Tag>> = runCatchingCancelable {
+    override suspend fun getBlacklist(): Result<List<Tag>> = runCatchingCancelable("Blacklist") {
         try {
             val response = api.getBlacklist()
             val remoteList = response.tags.map { it.toDomain() }
@@ -61,21 +62,23 @@ class BlacklistRepositoryImpl @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            AppLogger.w("Blacklist", "黑名单拉取失败，回退本地缓存", e)
             dao.getBlacklist().map { it.toDomain() }
         }
     }
 
-    override suspend fun addToBlacklist(tag: Tag): Result<Unit> = runCatchingCancelable {
+    override suspend fun addToBlacklist(tag: Tag): Result<Unit> = runCatchingCancelable("Blacklist") {
         dao.insertTag(BlacklistTagEntity(tag.id, tag.name, tag.type))
         try {
             api.addToBlacklist(BlacklistRequest(tag.id))
             Unit
         } catch (e: IOException) {
             // Keep local
+            AppLogger.w("Blacklist", "标签 ${tag.id} 加入黑名单上行失败，仅保留本地", e)
         }
     }
 
-    override suspend fun removeFromBlacklist(tagId: Int): Result<Unit> = runCatchingCancelable {
+    override suspend fun removeFromBlacklist(tagId: Int): Result<Unit> = runCatchingCancelable("Blacklist") {
         dao.deleteTagById(tagId)
         try {
             val response = api.removeFromBlacklist(tagId)
@@ -84,10 +87,11 @@ class BlacklistRepositoryImpl @Inject constructor(
             }
         } catch (e: IOException) {
             // Keep local
+            AppLogger.w("Blacklist", "标签 $tagId 移出黑名单上行失败，仅保留本地", e)
         }
     }
 
-    override suspend fun refreshBlacklist(): Result<Unit> = runCatchingCancelable {
+    override suspend fun refreshBlacklist(): Result<Unit> = runCatchingCancelable("Blacklist") {
         getBlacklist()
         Unit
     }

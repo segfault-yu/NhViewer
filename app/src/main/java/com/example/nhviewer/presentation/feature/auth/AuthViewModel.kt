@@ -9,6 +9,7 @@ import com.example.nhviewer.domain.usecase.ResetPasswordConfirmUseCase
 import com.example.nhviewer.domain.usecase.GetPowChallengeUseCase
 import com.example.nhviewer.domain.usecase.GetCaptchaConfigUseCase
 import com.example.nhviewer.util.NetworkErrorParser
+import com.example.nhviewer.util.log.AppLogger
 import com.example.nhviewer.util.PowSolver
 import androidx.annotation.StringRes
 import com.example.nhviewer.R
@@ -94,9 +95,11 @@ class AuthViewModel @Inject constructor(
                     val nonce = PowSolver.solve(powDto.challenge, powDto.difficulty)
                     flow.value = PrefetchState.Success(PrefetchedPow(powDto.challenge, nonce))
                 } catch (e: Exception) {
+                    AppLogger.w("Auth", "PoW 计算失败 (action=$action)", e)
                     flow.value = PrefetchState.Failure(e)
                 }
             }.onFailure {
+                AppLogger.w("Auth", "PoW 挑战获取失败 (action=$action)")
                 flow.value = PrefetchState.Failure(it)
             }
         }
@@ -110,6 +113,7 @@ class AuthViewModel @Inject constructor(
             getCaptchaConfigUseCase().onSuccess { captchaDto ->
                 captchaPrefetchState.value = PrefetchState.Success(captchaDto.siteKey)
             }.onFailure {
+                AppLogger.w("Auth", "验证码配置获取失败")
                 captchaPrefetchState.value = PrefetchState.Failure(it)
             }
         }
@@ -222,6 +226,7 @@ class AuthViewModel @Inject constructor(
                 _isLoading.value = false
                 _captchaSiteKey.value = captchaSiteKeyVal
             } catch (e: Exception) {
+                AppLogger.w("Auth", "安全校验准备失败 (action=$action)", e)
                 _isLoading.value = false
                 _powStatus.value = "Idle"
                 emitError("准备安全校验失败: ${NetworkErrorParser.parse(e)}")
@@ -284,9 +289,12 @@ class AuthViewModel @Inject constructor(
             }
             resetCaptchaPrefetch()
 
+            // 只记操作类型与结果，用户名、密码、令牌一律不入日志
             result.onSuccess {
+                AppLogger.i("Auth", "认证操作成功 (action=$actionStr)")
                 _uiEvent.emit(AuthUiEvent.Success)
             }.onFailure {
+                AppLogger.w("Auth", "认证操作失败 (action=$actionStr)")
                 emitError(NetworkErrorParser.parse(it))
             }
         }

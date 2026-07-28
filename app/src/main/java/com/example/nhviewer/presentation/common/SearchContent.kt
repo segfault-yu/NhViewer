@@ -69,6 +69,7 @@ import com.example.nhviewer.R
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.SearchHistory
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.ui.theme.NhMotion
 import com.example.nhviewer.util.NetworkErrorParser
 import com.example.nhviewer.util.RelativeTimeFormatter
 import com.example.nhviewer.util.i18n.LocalTagDisplayMode
@@ -101,7 +102,6 @@ fun SwipeToDeleteHistoryItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
                     .background(
                         color = MaterialTheme.colorScheme.errorContainer,
                         shape = CircleShape
@@ -117,9 +117,10 @@ fun SwipeToDeleteHistoryItem(
             }
         },
         enableDismissFromStartToEnd = false,
+        // 水平内边距与区块标题保持 16dp 对齐，垂直 8dp 使相邻条目间距维持原有 16dp
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         ListItem(
             headlineContent = {
@@ -160,7 +161,6 @@ fun SwipeToDeleteHistoryItem(
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = CircleShape
@@ -433,7 +433,10 @@ fun SearchResultGrid(
     Box(modifier = modifier.fillMaxSize()) {
         AnimatedContent(
             targetState = currentState,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            transitionSpec = {
+                fadeIn(animationSpec = NhMotion.Effects.default()) togetherWith
+                    fadeOut(animationSpec = NhMotion.Effects.default())
+            },
             label = "SearchResultGridState"
         ) { targetState ->
             when (targetState) {

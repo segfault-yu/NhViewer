@@ -1,6 +1,7 @@
 package com.example.nhviewer.presentation.feature.reader
 
 import android.app.Activity
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -49,6 +50,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -99,7 +101,11 @@ import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.rememberZoomableImageState
 import com.example.nhviewer.presentation.common.ErrorScreen
+import com.example.nhviewer.presentation.common.FALLBACK_IMAGE_HOST
 import com.example.nhviewer.presentation.common.LoadingIndicator
+import com.example.nhviewer.presentation.common.normalizeCdnHost
+import com.example.nhviewer.ui.theme.NhMotion
+import kotlinx.coroutines.CancellationException
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -245,11 +251,7 @@ fun ReaderScreen(
                 LaunchedEffect(currentPage, cdnHost) {
                     val loader = context.imageLoader
                     val pages = detail.pages
-                    val hosts = if (cdnHost.isNotEmpty()) {
-                        if (cdnHost.startsWith("http")) cdnHost else "https://$cdnHost"
-                    } else {
-                        "https://i.nhentai.net"
-                    }
+                    val hosts = normalizeCdnHost(cdnHost, FALLBACK_IMAGE_HOST)
 
                     val disposables = mutableListOf<coil.request.Disposable>()
 
@@ -345,7 +347,21 @@ fun ReaderContent(
     modifier: Modifier = Modifier
 ) {
     var showOverlays by remember { mutableStateOf(false) }
+    var showSettingsSheet by remember { mutableStateOf(false) }
+    var overlayProgress by remember { mutableFloatStateOf(0f) }
     val context = LocalContext.current
+
+    // 第 2 级返回：工具栏显示时，手势进度驱动顶/底工具栏跟手滑出；设置面板打开时让位给它自己的预见式返回
+    PredictiveBackHandler(enabled = showOverlays && !showSettingsSheet) { progress ->
+        try {
+            progress.collect { backEvent -> overlayProgress = backEvent.progress }
+            showOverlays = false
+            overlayProgress = 0f
+        } catch (e: CancellationException) {
+            overlayProgress = 0f
+            throw e
+        }
+    }
 
     DisposableEffect(showOverlays) {
         val activity = context as? Activity
@@ -361,11 +377,7 @@ fun ReaderContent(
         }
         onDispose {}
     }
-    val hosts = if (cdnHost.isNotEmpty()) {
-        if (cdnHost.startsWith("http")) cdnHost else "https://$cdnHost"
-    } else {
-        "https://i.nhentai.net"
-    }
+    val hosts = normalizeCdnHost(cdnHost, FALLBACK_IMAGE_HOST)
 
     val scope = rememberCoroutineScope()
 
@@ -378,7 +390,6 @@ fun ReaderContent(
         else -> ContentScale.Fit
     }
 
-    var showSettingsSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
     val filterModifier = Modifier.drawWithContent {
@@ -614,9 +625,16 @@ fun ReaderContent(
         // Overlay Toolbars
         AnimatedVisibility(
             visible = showOverlays,
-            enter = slideInVertically { -it } + fadeIn(),
-            exit = slideOutVertically { -it } + fadeOut(),
-            modifier = Modifier.align(Alignment.TopCenter)
+            enter = slideInVertically(animationSpec = NhMotion.Spatial.default()) { -it } +
+                fadeIn(animationSpec = NhMotion.Effects.default()),
+            exit = slideOutVertically(animationSpec = NhMotion.Spatial.default()) { -it } +
+                fadeOut(animationSpec = NhMotion.Effects.default()),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .graphicsLayer {
+                    translationY = -overlayProgress * size.height
+                    alpha = 1f - overlayProgress
+                }
         ) {
             ReaderTopBar(
                 title = detail.prettyTitle ?: detail.englishTitle,
@@ -626,9 +644,16 @@ fun ReaderContent(
 
         AnimatedVisibility(
             visible = showOverlays,
-            enter = slideInVertically { it } + fadeIn(),
-            exit = slideOutVertically { it } + fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
+            enter = slideInVertically(animationSpec = NhMotion.Spatial.default()) { it } +
+                fadeIn(animationSpec = NhMotion.Effects.default()),
+            exit = slideOutVertically(animationSpec = NhMotion.Spatial.default()) { it } +
+                fadeOut(animationSpec = NhMotion.Effects.default()),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .graphicsLayer {
+                    translationY = overlayProgress * size.height
+                    alpha = 1f - overlayProgress
+                }
         ) {
             val thumbHosts = hosts.replace("://i", "://t")
             ReaderBottomBar(
@@ -646,8 +671,8 @@ fun ReaderContent(
         // 常驻页码提示胶囊
         AnimatedVisibility(
             visible = showPersistentPageNumber && !showOverlays,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = fadeIn(animationSpec = NhMotion.Effects.default()),
+            exit = fadeOut(animationSpec = NhMotion.Effects.default()),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))

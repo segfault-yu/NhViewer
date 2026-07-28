@@ -14,7 +14,7 @@ class CommentRepositoryImpl @Inject constructor(
     private val api: CommentApi
 ) : CommentRepository {
 
-    override suspend fun getComments(galleryId: Int): Result<List<Comment>> = runCatchingCancelable {
+    override suspend fun getComments(galleryId: Int): Result<List<Comment>> = runCatchingCancelable("Comment") {
         api.getComments(galleryId).result.map { it.toDomain() }
     }
 
@@ -23,19 +23,19 @@ class CommentRepositoryImpl @Inject constructor(
         content: String,
         powSolution: String,
         captchaToken: String
-    ): Result<Comment> = runCatchingCancelable {
+    ): Result<Comment> = runCatchingCancelable("Comment") {
         val request = PostCommentRequest(content, powSolution, captchaToken)
         api.postComment(galleryId, request).toDomain()
     }
 
-    override suspend fun deleteComment(commentId: Int): Result<Unit> = runCatchingCancelable {
+    override suspend fun deleteComment(commentId: Int): Result<Unit> = runCatchingCancelable("Comment") {
         val response = api.deleteComment(commentId)
         if (!response.isSuccessful) {
             throw Exception("删除评论失败: ${response.code()}")
         }
     }
 
-    override suspend fun reportComment(commentId: Int): Result<Unit> = runCatchingCancelable {
+    override suspend fun reportComment(commentId: Int): Result<Unit> = runCatchingCancelable("Comment") {
         val response = api.reportComment(commentId)
         if (!response.isSuccessful) {
             throw Exception("举报评论失败: ${response.code()}")

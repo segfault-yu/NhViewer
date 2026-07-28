@@ -1,5 +1,6 @@
 package com.example.nhviewer.data.repository
 
+import com.example.nhviewer.data.local.GalleryMemoryCache
 import com.example.nhviewer.data.local.dao.FavoriteCacheDao
 import com.example.nhviewer.data.local.entity.FavoriteCacheEntity
 import com.example.nhviewer.data.local.entity.toDomain
@@ -7,6 +8,7 @@ import com.example.nhviewer.data.remote.FavoriteApi
 import com.example.nhviewer.data.remote.dto.toDomain
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.repository.FavoriteRepository
+import com.example.nhviewer.util.log.AppLogger
 import com.example.nhviewer.util.runCatchingCancelable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,18 +19,20 @@ import javax.inject.Singleton
 @Singleton
 class FavoriteRepositoryImpl @Inject constructor(
     private val api: FavoriteApi,
-    private val dao: FavoriteCacheDao
+    private val dao: FavoriteCacheDao,
+    private val memoryCache: GalleryMemoryCache
 ) : FavoriteRepository {
 
     override val favoritesFlow: Flow<List<GalleryListItem>> = dao.getFavoritesFlow().map { list ->
         list.map { it.toDomain() }
     }
 
-    override suspend fun getFavorites(page: Int): Result<List<GalleryListItem>> = runCatchingCancelable {
+    override suspend fun getFavorites(page: Int): Result<List<GalleryListItem>> = runCatchingCancelable("Favorite") {
         try {
             val response = api.getFavorites(page)
             val items = response.result.map { it.toDomain() }
-            
+            memoryCache.putPreviews(items)
+
             // Sync with local cache
             val now = System.currentTimeMillis()
             items.forEach { item ->
@@ -63,15 +67,17 @@ class FavoriteRepositoryImpl @Inject constructor(
             items
         } catch (e: IOException) {
             // Offline fallback
-            dao.getFavorites().map { it.toDomain() }
+            AppLogger.w("Favorite", "收藏列表第 $page 页拉取失败，回退本地缓存", e)
+            dao.getFavorites().map { it.toDomain() }.also { memoryCache.putPreviews(it) }
         }
     }
 
-    override suspend fun getRandomFavorite(): Result<GalleryListItem> = runCatchingCancelable {
+    override suspend fun getRandomFavorite(): Result<GalleryListItem> = runCatchingCancelable("Favorite") {
         try {
             api.getRandomFavorite().toDomain()
         } catch (e: IOException) {
             // Local fallback
+            AppLogger.w("Favorite", "随机收藏获取失败，改从本地缓存抽取", e)
             val local = dao.getFavorites()
             if (local.isEmpty()) {
                 throw NoSuchElementException("本地收藏夹为空")
@@ -80,7 +86,7 @@ class FavoriteRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun checkIsFavorite(galleryId: Int): Result<Boolean> = runCatchingCancelable {
+    override suspend fun checkIsFavorite(galleryId: Int): Result<Boolean> = runCatchingCancelable("Favorite") {
         val cached = dao.getFavoriteById(galleryId)
         if (cached != null) {
             cached.syncStatus != 2 // Not pending delete
@@ -94,12 +100,13 @@ class FavoriteRepositoryImpl @Inject constructor(
                 }
                 response.isFavorite
             } catch (e: IOException) {
+                AppLogger.w("Favorite", "查询画廊 $galleryId 收藏状态失败，按未收藏处理", e)
                 false
             }
         }
     }
 
-    override suspend fun toggleFavorite(gallery: GalleryListItem, isFavorite: Boolean): Result<Unit> = runCatchingCancelable {
+    override suspend fun toggleFavorite(gallery: GalleryListItem, isFavorite: Boolean): Result<Unit> = runCatchingCancelable("Favorite") {
         val now = System.currentTimeMillis()
         if (isFavorite) {
             val entity = FavoriteCacheEntity(
@@ -123,6 +130,7 @@ class FavoriteRepositoryImpl @Inject constructor(
                 }
             } catch (e: IOException) {
                 // Keep as pending add for offline sync
+                AppLogger.w("Favorite", "添加收藏 ${gallery.id} 上行失败，留待离线同步", e)
             }
         } else {
             val cached = dao.getFavoriteById(gallery.id)
@@ -141,6 +149,7 @@ class FavoriteRepositoryImpl @Inject constructor(
                         }
                     } catch (e: IOException) {
                         // Keep as pending delete for offline sync
+                        AppLogger.w("Favorite", "取消收藏 ${gallery.id} 上行失败，留待离线同步", e)
                     }
                 }
             } else {
@@ -150,7 +159,7 @@ class FavoriteRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun syncOfflineFavorites(): Result<Unit> = runCatchingCancelable {
+    override suspend fun syncOfflineFavorites(): Result<Unit> = runCatchingCancelable("Favorite") {
         // Sync pending adds
         val pendingAdds = dao.getFavoritesBySyncStatus(1)
         pendingAdds.forEach { item ->
@@ -161,6 +170,7 @@ class FavoriteRepositoryImpl @Inject constructor(
                 }
             } catch (e: IOException) {
                 // Ignore, retry later
+                AppLogger.w("Favorite", "离线同步添加收藏 ${item.galleryId} 失败，下次重试", e)
             }
         }
 
@@ -174,6 +184,7 @@ class FavoriteRepositoryImpl @Inject constructor(
                 }
             } catch (e: IOException) {
                 // Ignore, retry later
+                AppLogger.w("Favorite", "离线同步取消收藏 ${item.galleryId} 失败，下次重试", e)
             }
         }
     }

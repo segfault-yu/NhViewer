@@ -9,6 +9,7 @@ import com.example.nhviewer.domain.usecase.GetSessionsUseCase
 import com.example.nhviewer.domain.usecase.LogoutUseCase
 import com.example.nhviewer.domain.usecase.RevokeSessionUseCase
 import com.example.nhviewer.util.NetworkErrorParser
+import com.example.nhviewer.util.log.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -58,6 +59,7 @@ class ProfileViewModel @Inject constructor(
                 _sessions.value = it
                 _errorMessage.value = null
             }.onFailure {
+                AppLogger.w("Profile", "会话列表加载失败")
                 _errorMessage.value = NetworkErrorParser.parse(it)
             }
             _isLoading.value = false
@@ -68,8 +70,10 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             revokeSessionUseCase(sessionId).onSuccess {
+                AppLogger.i("Profile", "会话已注销")
                 loadSessions()
             }.onFailure {
+                AppLogger.w("Profile", "注销单个会话失败")
                 _errorMessage.value = NetworkErrorParser.parse(it)
             }
             _isLoading.value = false
@@ -80,6 +84,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             logoutUseCase().onFailure {
+                AppLogger.w("Profile", "退出登录失败")
                 _errorMessage.value = NetworkErrorParser.parse(it)
             }
             _isLoading.value = false
@@ -90,8 +95,10 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             userRepository.logoutAll().onSuccess {
+                AppLogger.i("Profile", "已注销全部会话")
                 _sessions.value = emptyList()
             }.onFailure {
+                AppLogger.w("Profile", "注销全部会话失败")
                 _errorMessage.value = NetworkErrorParser.parse(it)
             }
             _isLoading.value = false

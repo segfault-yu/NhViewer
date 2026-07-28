@@ -17,6 +17,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+.kotlin/
 
 # Android build outputs
 *.apk
@@ -33,25 +34,23 @@ crashlytics.properties
 Thumbs.db
 
 # 开发辅助文件
-implementation_plan.md
-nhentai_api_v2.txt
-BUGFIX.md
-14.md
+*_plan.md
 11.md
 12.md
 13.md
-md3_refactor_plan.md
+14.md
 15.md
 16.md
-.claude
+BUGFIX.md
+TRANSLATING.md
+nhentai_api_v2.txt
+docs/motion-api-baseline.md
+
 # IDE Configs
 .idea/
 .vscode/
 
 # Agent files
+.claude
 .agents/
-cache_refactor_plan.md
 skills-lock.json
-TRANSLATING.md
-.agents/AGENTS.md
-.agents/AGENTS.md

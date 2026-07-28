@@ -1,10 +1,6 @@
 package com.example.nhviewer.presentation.feature.search
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -20,7 +16,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,11 +28,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.R
+import com.example.nhviewer.presentation.common.NhSearchBar
 import com.example.nhviewer.presentation.common.SearchQueryBuilder
 import com.example.nhviewer.presentation.common.SearchResultGrid
 import com.example.nhviewer.presentation.common.SearchSortBar
-import com.example.nhviewer.presentation.common.SearchSuggestionPanel
 import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
+import com.example.nhviewer.ui.theme.NhMotion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,15 +68,19 @@ fun SearchScreen(
                 .fillMaxWidth()
                 .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 6.dp)
         ) {
-            SearchBar(
+            NhSearchBar(
                 query = searchQuery,
                 onQueryChange = { viewModel.onSearchQueryChanged(it) },
                 onSearch = {
                     viewModel.search(it)
                     focusManager.clearFocus()
                 },
-                active = active,
-                onActiveChange = { viewModel.onActiveChanged(it) },
+                expanded = active,
+                onExpandedChange = { viewModel.onActiveChanged(it) },
+                searchHistory = searchHistory,
+                autocompleteSuggestions = autocompleteSuggestions,
+                onDeleteHistory = { viewModel.deleteSearchHistory(it) },
+                onClearAllHistory = { viewModel.clearSearchHistory() },
                 placeholder = {
                     Text(
                         text = stringResource(R.string.home_search_placeholder),
@@ -107,62 +107,25 @@ fun SearchScreen(
                 },
                 colors = SearchBarDefaults.colors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
-                    )
-            ) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-                    exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
-                ) {
-                    SearchQueryBuilder(
-                        rawQuery = searchQuery,
-                        onQueryChanged = { viewModel.onSearchQueryChanged(it) },
-                        onTriggerSearch = { query ->
-                            viewModel.search(query)
-                            focusManager.clearFocus()
-                        }
-                    )
-                }
-                SearchSuggestionPanel(
-                    searchQuery = searchQuery,
-                    searchHistory = searchHistory,
-                    autocompleteSuggestions = autocompleteSuggestions,
-                    onSearch = { viewModel.search(it) },
-                    onDeleteHistory = { viewModel.deleteSearchHistory(it) },
-                    onClearAllHistory = { viewModel.clearSearchHistory() }
                 )
-            }
+            )
         }
 
         if (!active) {
             if (searchQuery.isNotEmpty()) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(animationSpec = tween(250)),
-                    exit = fadeOut(animationSpec = tween(250))
-                ) {
-                    SearchQueryBuilder(
-                        rawQuery = searchQuery,
-                        onQueryChanged = { viewModel.onSearchQueryChanged(it) },
-                        onTriggerSearch = { query ->
-                            viewModel.search(query)
-                            focusManager.clearFocus()
-                        }
-                    )
-                }
+                SearchQueryBuilder(
+                    rawQuery = searchQuery,
+                    onQueryChanged = { viewModel.onSearchQueryChanged(it) },
+                    onTriggerSearch = { query ->
+                        viewModel.search(query)
+                        focusManager.clearFocus()
+                    }
+                )
             }
             AnimatedVisibility(
                 visible = searchResults.itemCount > 0,
-                enter = fadeIn(animationSpec = tween(250)),
-                exit = fadeOut(animationSpec = tween(250))
+                enter = fadeIn(animationSpec = NhMotion.Effects.default()),
+                exit = fadeOut(animationSpec = NhMotion.Effects.default())
             ) {
                 SearchSortBar(
                     sortOption = sortOption,

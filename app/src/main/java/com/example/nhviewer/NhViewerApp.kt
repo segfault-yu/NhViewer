@@ -25,9 +25,11 @@ class NhViewerApplication : Application(), ImageLoaderFactory {
         super.onCreate()
         AppLogger.init(this)
         CrashHandler.init()
+        // 持续跟随设置变化，避免只读一次导致后续改动不生效
         CoroutineScope(Dispatchers.IO).launch {
-            val level = settingsManager.logLevel.first()
-            AppLogger.setLogLevel(level)
+            settingsManager.logLevel.collect { level ->
+                AppLogger.setLogLevel(level)
+            }
         }
     }
 

@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.presentation.navigation.galleryCardSharedBounds
+import com.example.nhviewer.presentation.navigation.galleryCoverSharedElement
+import com.example.nhviewer.presentation.navigation.gallerySkipToLookaheadSize
 import com.example.nhviewer.util.i18n.LocalTagDisplayMode
 import com.example.nhviewer.util.i18n.LocalTagLanguage
 
@@ -94,12 +98,7 @@ fun GalleryCard(
 ) {
     val tagLanguage = LocalTagLanguage.current
     val tagDisplayMode = LocalTagDisplayMode.current
-    val imageUrl = if (cdnHost.isNotEmpty()) {
-        val host = if (cdnHost.startsWith("http")) cdnHost else "https://$cdnHost"
-        "$host/${item.thumbnail}"
-    } else {
-        "https://t.nhentai.net/${item.thumbnail}"
-    }
+    val imageUrl = buildGalleryImageUrl(cdnHost, item.thumbnail)
 
     ElevatedCard(
         shape = MaterialTheme.shapes.medium,
@@ -108,7 +107,9 @@ fun GalleryCard(
         ),
         modifier = modifier
             .fillMaxWidth()
+            .galleryCardSharedBounds(item.id)
             .clickable { onClick() }
+            .testTag("gallery_card")
     ) {
         if (isGridMode) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -124,7 +125,9 @@ fun GalleryCard(
                             .build(),
                         contentDescription = item.englishTitle,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .galleryCoverSharedElement(item.id)
                     )
 
                     if (isFavorited) {
@@ -159,7 +162,8 @@ fun GalleryCard(
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.gallerySkipToLookaheadSize()
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -219,7 +223,9 @@ fun GalleryCard(
                             .build(),
                         contentDescription = item.englishTitle,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .galleryCoverSharedElement(item.id)
                     )
 
                     if (isFavorited) {
@@ -254,7 +260,8 @@ fun GalleryCard(
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.gallerySkipToLookaheadSize()
                     )
 
                     if (!item.japaneseTitle.isNullOrBlank()) {

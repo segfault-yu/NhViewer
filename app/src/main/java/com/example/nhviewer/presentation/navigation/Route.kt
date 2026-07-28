@@ -44,4 +44,7 @@ sealed interface Route {
 
     @Serializable
     data object ApiKeys : Route
+
+    @Serializable
+    data object About : Route
 }

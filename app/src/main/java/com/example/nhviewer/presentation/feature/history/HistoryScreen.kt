@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.nhviewer.presentation.common.EmptyState
+import com.example.nhviewer.presentation.common.buildGalleryImageUrl
 import com.example.nhviewer.presentation.feature.home.HomeViewModel
 
 import androidx.compose.ui.res.stringResource
@@ -54,7 +55,8 @@ fun HistoryScreen(
 ) {
     val readingHistory by viewModel.readingHistory.collectAsState(initial = emptyList())
     val cdnConfig by viewModel.cdnConfig.collectAsState()
-    val thumbHost = cdnConfig?.primaryThumbHost ?: ""
+    // 与列表页保持同一 host，封面共用同一份 Coil 缓存
+    val cdnHost = cdnConfig?.primaryImageHost ?: ""
 
     Scaffold(
         topBar = {
@@ -96,12 +98,7 @@ fun HistoryScreen(
                         items = readingHistory,
                         key = { it.galleryId }
                     ) { history ->
-                        val host = when {
-                            thumbHost.startsWith("http") -> thumbHost
-                            thumbHost.isNotEmpty() -> "https://$thumbHost"
-                            else -> "https://t.nhentai.net"
-                        }
-                        val imageUrl = "$host/galleries/${history.mediaId}/thumb.webp"
+                        val imageUrl = buildGalleryImageUrl(cdnHost, "galleries/${history.mediaId}/thumb.webp")
 
                         OutlinedCard(
                             shape = MaterialTheme.shapes.medium,

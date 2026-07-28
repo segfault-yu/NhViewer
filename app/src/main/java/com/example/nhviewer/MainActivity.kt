@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.DrawerValue
@@ -151,8 +153,12 @@ fun NhViewerApp(userRepository: UserRepository) {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        // 抽屉只在首页才允许左边缘滑动唤出；其余页面的左边缘滑动是"返回上一页"的预见式返回手势，
+        // 二者共用同一块识别区域会互相打架，非首页必须关掉抽屉手势
+        gesturesEnabled = currentDestination?.hasRoute<Route.Home>() == true,
         drawerContent = {
             AppDrawerContent(
+                drawerState = drawerState,
                 currentDestination = currentDestination,
                 onNavigate = { route ->
                     scope.launch { drawerState.close() }
@@ -178,7 +184,9 @@ fun NhViewerApp(userRepository: UserRepository) {
         NhViewerNavGraph(
             navController = navController,
             onOpenDrawer = { scope.launch { drawerState.open() } },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         )
     }
 }

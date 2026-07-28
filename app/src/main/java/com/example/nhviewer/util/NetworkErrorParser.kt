@@ -1,6 +1,7 @@
 package com.example.nhviewer.util
 
 import com.example.nhviewer.data.remote.interceptor.RateLimitException
+import com.example.nhviewer.util.log.AppLogger
 import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
@@ -71,12 +72,14 @@ object NetworkErrorParser {
     }
 }
 
-inline fun <T> runCatchingCancelable(block: () -> T): Result<T> {
+// tag 用于定位失败来源；协程取消是正常控制流，原样重抛且不记日志
+inline fun <T> runCatchingCancelable(tag: String, block: () -> T): Result<T> {
     return try {
         Result.success(block())
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
     } catch (e: Throwable) {
+        AppLogger.w(tag, "操作失败: ${e.javaClass.simpleName}", e)
         Result.failure(e)
     }
 }

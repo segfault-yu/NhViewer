@@ -1,7 +1,5 @@
 package com.example.nhviewer.presentation.common
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,11 +12,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -39,55 +32,44 @@ fun ErrorScreen(
     modifier: Modifier = Modifier,
     onRetry: (() -> Unit)? = null
 ) {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        visible = true
-    }
-
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(),
-        modifier = modifier.fillMaxSize()
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
+        Icon(
+            imageVector = Icons.Outlined.ErrorOutline,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.error
+        )
+
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Outlined.ErrorOutline,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.error
+            Text(
+                text = stringResource(R.string.common_error_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        if (onRetry != null) {
+            Button(
+                onClick = onRetry,
+                modifier = Modifier.padding(top = 8.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.common_error_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            if (onRetry != null) {
-                Button(
-                    onClick = onRetry,
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text(stringResource(R.string.common_retry))
-                }
+                Text(stringResource(R.string.common_retry))
             }
         }
     }

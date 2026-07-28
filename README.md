@@ -1,5 +1,7 @@
 # NHViewer 漫画阅读器
 
+<img src="docs/images/icon.png" alt="NHViewer 应用图标" width="120" />
+
 基于 nhhentai API v2 构建的个人自用、开源 Android 原生漫画阅读与管理应用。
 
 ---
@@ -11,8 +13,8 @@
 | 编程语言 | Kotlin 2.2.10 |
 | UI 框架 | Jetpack Compose (Material 3 Expressive) |
 | 架构设计 | Clean Architecture (data → domain → presentation) |
-| 最低 SDK 支持 | API 24 (Android 7.0) |
-| 目标 SDK 版本 | API 35 (Android 15) |
+| 最低 SDK 支持 | API 29 (Android 10) |
+| 目标 SDK 版本 | API 36 (Android 16) |
 | 核心构建工具 | Gradle (Kotlin DSL + Version Catalog) |
 | 软件授权 | MIT / 开源 |
 
@@ -34,7 +36,8 @@
 | 本地数据库 | **Room** | 2.7.0 | SQLite 抽象层，用于历史与缓存 |
 | 键值存储 | **DataStore Preferences** | 1.1.1 | 替代 SharedPreferences 的响应式存储 |
 | 安全加密存储 | **Security Crypto** | 1.1.0-alpha06 | EncryptedSharedPreferences 加密 Token 存储 |
-| 导航路由 | **Navigation Compose** | 2.8.5 | 类型安全（Type-safe）的页面导航 |
+| 导航路由 | **Navigation Compose** | 2.9.8 | 类型安全（Type-safe）的页面导航，含预见式返回（Predictive Back）支持 |
+| 动效与共享元素 | **Compose Animation** | - | `androidx.compose.animation`，驱动转场动效与列表→详情 Hero 共享元素转场 |
 | 数据分页 | **Paging 3** | 3.3.5 | 列表大数据流式加载与分页管理 |
 
 ---
@@ -81,13 +84,15 @@ app/src/main/java/com/example/nhviewer/
 │   │   ├── profile/                   // 个人中心与资料修改
 │   │   ├── reader/                    // 漫画阅读器与缩略图导航栏
 │   │   ├── search/                    // 搜索与智能自动补全
-│   │   ├── settings/                  // 设置 (主题/语言/API Key/会话)
+│   │   ├── settings/                  // 设置 (主题/语言/API Key/会话/关于)
 │   │   ├── tagged/                    // 按标签浏览画廊
 │   │   └── tags/                      // 标签大全与分类排序
-│   └── navigation/                    // 路由路径 (Route) 与 NavGraph 导航图配置
+│   └── navigation/                    // 路由路径 (Route)、NavGraph 导航图配置
+│       └── SharedTransitionScopes.kt  // 共享元素转场 Scope 的 CompositionLocal 下发
 │
 ├── di/                                // Hilt 依赖注入模块 (DatabaseModule, NetworkModule 等)
 ├── ui/theme/                          // Compose Material 3 主题样式 (Color, Theme, Type, Shape)
+│   └── Motion.kt                      // 动效令牌唯一真源 (NhMotion)，含预见式返回转场组合
 └── util/                              // 工具类 (i18n 多语言、PoW 解算工具、标签翻译器)
 ```
 
@@ -100,17 +105,19 @@ app/src/main/java/com/example/nhviewer/
 | 工具/环境 | 最低要求 | 推荐配置 |
 |---|---|---|
 | **Android Studio** | Ladybug | 2024.2.1 或更新版本 |
-| **JDK 版本** | JDK 17 | JDK 21 |
-| **Android SDK Min** | API 24 (Android 7.0) | API 34+ |
-| **Android SDK Target**| API 35 | API 35 (Android 15) |
-| **Gradle** | 8.13+ | 9.4.1 |
+| **JDK 版本** | JDK 17（运行 AGP 9.x 的硬性要求） | JDK 21 |
+| **Android SDK Min** | API 29 (Android 10) | - |
+| **Android SDK Target / Compile** | API 36 (Android 16) | - |
+| **Gradle** | 项目自带 Gradle Wrapper，自动使用 9.4.1，无需单独安装 | - |
+
+Kotlin/Java 字节码目标版本固定为 **JVM 11**（`app/build.gradle.kts` 中 `compileOptions` 与 Kotlin `jvmTarget` 已保持一致），与运行 Gradle 本身所需的 JDK 17+ 是两回事，不要混淆。
 
 ### 编译与构建步骤
 
 1. **克隆项目到本地**：
    ```bash
-   git clone https://github.com/your-username/nhentai.git
-   cd nhentai
+   git clone https://github.com/rinchao0721/NhViewer.git
+   cd NhViewer
    ```
 
 2. **配置 local.properties**：
@@ -135,3 +142,9 @@ app/src/main/java/com/example/nhviewer/
    ```bash
    ./gradlew installDebug
    ```
+
+5. **构建 Release 版本（可选）**：
+   ```bash
+   ./gradlew assembleRelease
+   ```
+   若在 `local.properties` 中配置了 `KEYSTORE_FILE`/`KEYSTORE_PASSWORD`/`KEY_ALIAS`/`KEY_PASSWORD` 四项签名信息，产物会自动签名；未配置则产出未签名 APK（文件名会带 `-unsigned` 后缀，仅供本地调试，不可直接分发）。构建完成后会额外复制一份到 `app/build/outputs/release_apk/NHViewer-v<版本号>-release[-unsigned].apk`，原始产物路径不受影响。

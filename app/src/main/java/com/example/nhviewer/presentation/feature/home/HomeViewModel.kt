@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.nhviewer.util.NetworkErrorParser
+import com.example.nhviewer.util.log.AppLogger
 import javax.inject.Inject
 
 @HiltViewModel
@@ -96,6 +97,7 @@ class HomeViewModel @Inject constructor(
                     _popularGalleriesState.value = PopularState.Success(list)
                 }
                 .onFailure { error ->
+                    AppLogger.w("Home", "热门画廊加载失败 (forceRefresh=$forceRefresh)")
                     _popularGalleriesState.value = PopularState.Error(NetworkErrorParser.parse(error))
                 }
         }
@@ -116,7 +118,7 @@ class HomeViewModel @Inject constructor(
                     _navigationEvent.emit(HomeNavigationEvent.NavigateToDetail(id))
                 }
                 .onFailure {
-                    // Handle random fetch failure
+                    AppLogger.w("Home", "随机画廊获取失败")
                 }
         }
     }

@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.nhviewer.presentation.common.CaptchaDialog
 
@@ -176,7 +177,10 @@ fun ApiKeyScreen(
     }
 
     if (powStatus != "Idle" && powStatus != "Waiting Captcha...") {
-        Dialog(onDismissRequest = {}) {
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier

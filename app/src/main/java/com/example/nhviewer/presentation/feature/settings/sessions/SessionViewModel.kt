@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.nhviewer.domain.model.UserSession
 import com.example.nhviewer.domain.usecase.GetSessionsUseCase
 import com.example.nhviewer.domain.usecase.RevokeSessionUseCase
+import com.example.nhviewer.util.log.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +41,7 @@ class SessionViewModel @Inject constructor(
                 _sessions.value = it
                 _errorMessageRes.value = null
             }.onFailure {
+                AppLogger.w("Session", "会话列表加载失败")
                 _errorMessageRes.value = R.string.sessions_error_fetch
             }
             _isLoading.value = false
@@ -50,8 +52,10 @@ class SessionViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             revokeSessionUseCase(sessionId).onSuccess {
+                AppLogger.i("Session", "会话已注销")
                 loadSessions()
             }.onFailure {
+                AppLogger.w("Session", "注销会话失败")
                 _errorMessageRes.value = R.string.sessions_error_revoke
             }
             _isLoading.value = false

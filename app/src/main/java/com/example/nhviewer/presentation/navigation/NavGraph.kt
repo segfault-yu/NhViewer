@@ -1,11 +1,17 @@
 package com.example.nhviewer.presentation.navigation
 
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,19 +28,39 @@ import com.example.nhviewer.presentation.feature.tags.TagsScreen
 import com.example.nhviewer.presentation.feature.settings.SettingsScreen
 import com.example.nhviewer.presentation.feature.settings.sessions.SessionScreen
 import com.example.nhviewer.presentation.feature.settings.apikeys.ApiKeyScreen
+import com.example.nhviewer.presentation.feature.settings.about.AboutScreen
+import com.example.nhviewer.ui.theme.NhMotion
 
+/** 等价于 [composable]，额外把当前目的地的 [AnimatedContentScope] 通过 CompositionLocal 下发，供共享元素转场使用。 */
+inline fun <reified T : Any> NavGraphBuilder.animatedComposable(
+    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+) {
+    composable<T> { backStackEntry ->
+        CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this) {
+            content(backStackEntry)
+        }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun NhViewerNavGraph(
     navController: NavHostController,
     onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = Route.Home,
-        modifier = modifier
-    ) {
-        composable<Route.Home> {
+    SharedTransitionLayout {
+        CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+            NavHost(
+                navController = navController,
+                startDestination = Route.Home,
+                enterTransition = { with(NhMotion) { enterSlide() } },
+                exitTransition = { with(NhMotion) { exitSlide() } },
+                popEnterTransition = { with(NhMotion) { popEnter() } },
+                popExitTransition = { with(NhMotion) { popExit() } },
+                modifier = modifier
+            ) {
+        animatedComposable<Route.Home> {
             HomeScreen(
                 onNavigateToDetail = { galleryId ->
                     navController.navigate(Route.GalleryDetail(galleryId))
@@ -46,7 +72,7 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.Tags> {
+        animatedComposable<Route.Tags> {
             TagsScreen(
                 onBackClick = { navController.popBackStack() },
                 onNavigateToTaggedGalleries = { tagId, tagName ->
@@ -55,7 +81,7 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.TaggedGalleries> { backStackEntry ->
+        animatedComposable<Route.TaggedGalleries> { backStackEntry ->
             val route: Route.TaggedGalleries = backStackEntry.toRoute()
             TaggedGalleriesScreen(
                 tagId = route.tagId,
@@ -67,7 +93,7 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.Favorites> {
+        animatedComposable<Route.Favorites> {
             com.example.nhviewer.presentation.feature.favorites.FavoritesScreen(
                 onBackClick = { navController.popBackStack() },
                 onNavigateToDetail = { galleryId ->
@@ -79,7 +105,7 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.Auth> {
+        animatedComposable<Route.Auth> {
             AuthScreen(
                 onNavigateBack = {
                     navController.popBackStack()
@@ -87,7 +113,7 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.Blacklist> {
+        animatedComposable<Route.Blacklist> {
             com.example.nhviewer.presentation.feature.blacklist.BlacklistScreen(
                 onBackClick = {
                     navController.popBackStack()
@@ -95,7 +121,7 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.History> {
+        animatedComposable<Route.History> {
             HistoryScreen(
                 onBackClick = {
                     navController.popBackStack()
@@ -106,7 +132,7 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.GalleryDetail> { backStackEntry ->
+        animatedComposable<Route.GalleryDetail> { backStackEntry ->
             val route: Route.GalleryDetail = backStackEntry.toRoute()
             DetailScreen(
                 galleryId = route.galleryId,
@@ -123,7 +149,7 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.Reader> { backStackEntry ->
+        animatedComposable<Route.Reader> { backStackEntry ->
             val route: Route.Reader = backStackEntry.toRoute()
             ReaderScreen(
                 galleryId = route.galleryId,
@@ -132,25 +158,34 @@ fun NhViewerNavGraph(
             )
         }
 
-        composable<Route.Settings> {
+        animatedComposable<Route.Settings> {
             SettingsScreen(
                 onBackClick = { navController.popBackStack() },
                 onNavigateToSessions = { navController.navigate(Route.Sessions) },
                 onNavigateToApiKeys = { navController.navigate(Route.ApiKeys) },
-                onNavigateToBlacklist = { navController.navigate(Route.Blacklist) }
+                onNavigateToBlacklist = { navController.navigate(Route.Blacklist) },
+                onNavigateToAbout = { navController.navigate(Route.About) }
             )
         }
 
-        composable<Route.Sessions> {
+        animatedComposable<Route.Sessions> {
             SessionScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }
 
-        composable<Route.ApiKeys> {
+        animatedComposable<Route.ApiKeys> {
             ApiKeyScreen(
                 onBackClick = { navController.popBackStack() }
             )
+        }
+
+        animatedComposable<Route.About> {
+            AboutScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+            }
         }
     }
 }

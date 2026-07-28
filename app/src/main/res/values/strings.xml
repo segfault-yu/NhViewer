@@ -241,6 +241,7 @@
     <string name="settings_clear_logs_desc">清空所有本地运行日志文件</string>
     <string name="settings_logs_cleared">日志清理成功</string>
     <string name="settings_no_logs">暂无可用日志文件</string>
+    <string name="settings_export_logs_failed">日志导出失败</string>
     <string name="settings_max_cache_title">图片缓存上限</string>
     <string name="settings_max_cache_desc">设置图片磁盘缓存容量限制 (MB)</string>
     <string name="settings_max_cache_value">%d MB</string>
@@ -297,4 +298,23 @@
 
     <!-- Captcha / Verification -->
     <string name="captcha_title">人机验证</string>
+
+    <!-- About -->
+    <string name="settings_cat_about">关于</string>
+    <string name="settings_about_title">关于 NhViewer</string>
+    <string name="settings_about_desc">版本信息、开源许可与免责声明</string>
+    <string name="about_title">关于</string>
+    <string name="about_version_fmt">测试版 %s</string>
+    <string name="about_version_hint">点击版本号可复制设备信息</string>
+    <string name="about_device_info_copied">设备信息已复制到剪贴板</string>
+    <string name="about_cat_license">许可与法律</string>
+    <string name="about_license_title">开源许可证</string>
+    <string name="about_license_name">MIT License</string>
+    <string name="about_license_body">MIT License\n\nCopyright (c) 2026 rinchao0721\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</string>
+    <string name="about_cat_credits">开源库致谢</string>
+    <string name="about_credits_desc">本项目基于以下优秀的开源项目构建</string>
+    <string name="about_cat_disclaimer">免责声明</string>
+    <string name="about_disclaimer_body">本应用为基于公开 API 构建的非官方第三方客户端，与 nhentai 官方不存在任何隶属、合作或授权关系。应用自身不托管、不上传、不分发任何图片或内容，所有内容均实时来自第三方服务器，其版权归各自权利人所有。本项目仅供个人学习与技术研究使用，使用者须遵守所在地区的法律法规，并自行承担全部使用风险。</string>
+    <string name="about_cat_privacy">隐私说明</string>
+    <string name="about_privacy_body">本应用不含任何统计、埋点或广告 SDK，不会向开发者或任何第三方回传数据。阅读历史、收藏、黑名单与偏好设置仅保存在本机 Room 数据库与 DataStore 中；登录凭证通过 EncryptedSharedPreferences 加密存储于设备内部私有空间。网络请求仅发往 nhentai API 服务器。运行日志仅写入应用私有目录，只有在您主动点击「导出日志」时才会离开设备；卸载应用即彻底清除以上全部数据。</string>
 </resources>

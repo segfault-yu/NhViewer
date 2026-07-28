@@ -4,6 +4,8 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.nhviewer.domain.model.GalleryListItem
 import com.example.nhviewer.domain.usecase.GetFavoritesUseCase
+import com.example.nhviewer.util.log.AppLogger
+import kotlinx.coroutines.CancellationException
 
 class FavoritesPagingSource(
     private val getFavoritesUseCase: GetFavoritesUseCase
@@ -26,6 +28,9 @@ class FavoritesPagingSource(
                 nextKey = if (result.isEmpty()) null else position + 1
             )
         } catch (exception: Exception) {
+            if (exception !is CancellationException) {
+                AppLogger.w("FavoritesPaging", "收藏列表第 $position 页加载失败", exception)
+            }
             LoadResult.Error(exception)
         }
     }

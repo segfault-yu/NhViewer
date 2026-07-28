@@ -1,8 +1,7 @@
 package com.example.nhviewer.presentation.feature.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -37,8 +36,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -67,13 +64,14 @@ import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.presentation.common.ErrorScreen
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
+import com.example.nhviewer.presentation.common.NhSearchBar
 import com.example.nhviewer.presentation.common.SearchQueryBuilder
 import com.example.nhviewer.presentation.common.SearchResultGrid
 import com.example.nhviewer.presentation.common.SearchSortBar
-import com.example.nhviewer.presentation.common.SearchSuggestionPanel
 import com.example.nhviewer.presentation.feature.profile.ProfileViewModel
 import com.example.nhviewer.presentation.feature.search.SearchViewModel
 import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
+import com.example.nhviewer.ui.theme.NhMotion
 import com.example.nhviewer.util.NetworkErrorParser
 import kotlinx.coroutines.flow.collectLatest
 
@@ -114,6 +112,11 @@ fun HomeScreen(
 
     val focusManager = LocalFocusManager.current
 
+    // 搜索结果态下返回键先清空搜索、回到 Tab 列表，而非直接退出 App
+    BackHandler(enabled = !active && searchQuery.isNotEmpty()) {
+        searchViewModel.onSearchQueryChanged("")
+    }
+
     LaunchedEffect(key1 = true) {
         viewModel.navigationEvent.collectLatest { event ->
             when (event) {
@@ -152,15 +155,19 @@ fun HomeScreen(
                     .then(if (active) Modifier else Modifier.statusBarsPadding())
                     .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 8.dp)
             ) {
-                SearchBar(
+                NhSearchBar(
                     query = searchQuery,
                     onQueryChange = { searchViewModel.onSearchQueryChanged(it) },
                     onSearch = {
                         searchViewModel.search(it)
                         focusManager.clearFocus()
                     },
-                    active = active,
-                    onActiveChange = { searchViewModel.onActiveChanged(it) },
+                    expanded = active,
+                    onExpandedChange = { searchViewModel.onActiveChanged(it) },
+                    searchHistory = searchHistory,
+                    autocompleteSuggestions = autocompleteSuggestions,
+                    onDeleteHistory = { searchViewModel.deleteSearchHistory(it) },
+                    onClearAllHistory = { searchViewModel.clearSearchHistory() },
                     placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                     leadingIcon = {
                         IconButton(onClick = { onOpenDrawer() }) {
@@ -195,60 +202,27 @@ fun HomeScreen(
                                 )
                             }
                         }
-                    },
-                    colors = SearchBarDefaults.colors(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .animateContentSize(animationSpec = tween(durationMillis = 300))
-                ) {
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(animationSpec = tween(300)),
-                        exit = fadeOut(animationSpec = tween(300))
-                    ) {
-                        SearchQueryBuilder(
-                            rawQuery = searchQuery,
-                            onQueryChanged = { searchViewModel.onSearchQueryChanged(it) },
-                            onTriggerSearch = { query ->
-                                searchViewModel.search(query)
-                                focusManager.clearFocus()
-                            }
-                        )
                     }
-                    SearchSuggestionPanel(
-                        searchQuery = searchQuery,
-                        searchHistory = searchHistory,
-                        autocompleteSuggestions = autocompleteSuggestions,
-                        onSearch = { searchViewModel.search(it) },
-                        onDeleteHistory = { searchViewModel.deleteSearchHistory(it) },
-                        onClearAllHistory = { searchViewModel.clearSearchHistory() }
-                    )
-                }
+                )
             }
 
             // 搜索结果页与普通主页内容区域动态切换
             if (!active && searchQuery.isNotEmpty()) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(animationSpec = tween(300)),
-                    exit = fadeOut(animationSpec = tween(300))
-                ) {
-                    SearchQueryBuilder(
-                        rawQuery = searchQuery,
-                        onQueryChanged = {
-                            searchViewModel.onSearchQueryChanged(it)
-                            // 文本改变时不触发搜索，SearchQueryBuilder 内部的选择操作会通过 onTriggerSearch 触发
-                        },
-                        onTriggerSearch = { query ->
-                            searchViewModel.search(query)
-                            focusManager.clearFocus()
-                        }
-                    )
-                }
+                SearchQueryBuilder(
+                    rawQuery = searchQuery,
+                    onQueryChanged = {
+                        searchViewModel.onSearchQueryChanged(it)
+                        // 文本改变时不触发搜索，SearchQueryBuilder 内部的选择操作会通过 onTriggerSearch 触发
+                    },
+                    onTriggerSearch = { query ->
+                        searchViewModel.search(query)
+                        focusManager.clearFocus()
+                    }
+                )
                 AnimatedVisibility(
                     visible = searchResults.itemCount > 0,
-                    enter = fadeIn(animationSpec = tween(300)),
-                    exit = fadeOut(animationSpec = tween(300))
+                    enter = fadeIn(animationSpec = NhMotion.Effects.default()),
+                    exit = fadeOut(animationSpec = NhMotion.Effects.default())
                 ) {
                     SearchSortBar(
                         sortOption = sortOption,

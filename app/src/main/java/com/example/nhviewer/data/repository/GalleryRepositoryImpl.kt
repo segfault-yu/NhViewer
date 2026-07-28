@@ -1,10 +1,12 @@
 package com.example.nhviewer.data.repository
 
+import com.example.nhviewer.data.local.GalleryMemoryCache
 import com.example.nhviewer.data.local.dao.ReadingHistoryDao
 import com.example.nhviewer.data.local.entity.toDomain
 import com.example.nhviewer.data.local.entity.toEntity
 import com.example.nhviewer.data.remote.GalleryApi
 import com.example.nhviewer.data.remote.dto.toDomain
+import com.example.nhviewer.domain.model.CachedGalleryDetail
 import com.example.nhviewer.domain.model.CdnConfig
 import com.example.nhviewer.domain.model.GalleryDetail
 import com.example.nhviewer.domain.model.GalleryListItem
@@ -22,47 +24,58 @@ import javax.inject.Singleton
 @Singleton
 class GalleryRepositoryImpl @Inject constructor(
     private val api: GalleryApi,
-    private val historyDao: ReadingHistoryDao
+    private val historyDao: ReadingHistoryDao,
+    private val memoryCache: GalleryMemoryCache
 ) : GalleryRepository {
 
-    override suspend fun getGalleries(page: Int, forceRefresh: Boolean): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable {
+    override suspend fun getGalleries(page: Int, forceRefresh: Boolean): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable("Gallery") {
         val forceHeader = if (forceRefresh) "true" else null
         val response = api.getGalleries(page, forceHeader)
+        val items = response.result.map { it.toDomain() }
+        memoryCache.putPreviews(items)
         PaginatedResult(
-            items = response.result.map { it.toDomain() },
+            items = items,
             numPages = response.numPages,
             total = response.total
         )
     }
 
-    override suspend fun getPopularGalleries(forceRefresh: Boolean): Result<List<GalleryListItem>> = runCatchingCancelable {
+    override suspend fun getPopularGalleries(forceRefresh: Boolean): Result<List<GalleryListItem>> = runCatchingCancelable("Gallery") {
         val forceHeader = if (forceRefresh) "true" else null
-        api.getPopularGalleries(forceHeader).map { it.toDomain() }
+        api.getPopularGalleries(forceHeader).map { it.toDomain() }.also {
+            memoryCache.putPreviews(it)
+        }
     }
 
-    override suspend fun getRandomGalleryId(): Result<Int> = runCatchingCancelable {
+    override suspend fun getRandomGalleryId(): Result<Int> = runCatchingCancelable("Gallery") {
         api.getRandomGallery()["id"] ?: throw NoSuchElementException("No random gallery ID returned")
     }
 
-    private val detailCache = android.util.LruCache<Int, GalleryDetail>(20)
-
-    override suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean, forceRefresh: Boolean): Result<GalleryDetail> = runCatchingCancelable {
+    override suspend fun getGalleryDetail(galleryId: Int, includeRelated: Boolean, forceRefresh: Boolean): Result<GalleryDetail> = runCatchingCancelable("Gallery") {
         if (!forceRefresh) {
-            val cached = detailCache.get(galleryId)
-            if (cached != null && (!includeRelated || !cached.related.isNullOrEmpty())) {
-                return@runCatchingCancelable cached
+            // relatedFetched 而非 related 是否为空：服务端返回空推荐时缓存依然有效
+            val cached = memoryCache.getDetail(galleryId)
+            if (cached != null && (!includeRelated || cached.relatedFetched)) {
+                return@runCatchingCancelable cached.detail
             }
         }
         val includeStr = if (includeRelated) "related" else null
         val forceHeader = if (forceRefresh) "true" else null
         api.getGalleryDetail(galleryId, includeStr, forceHeader).toDomain().also {
-            detailCache.put(galleryId, it)
+            memoryCache.putDetail(it, relatedFetched = includeRelated)
         }
     }
 
-    override suspend fun getRelatedGalleries(galleryId: Int): Result<List<GalleryListItem>> = runCatchingCancelable {
-        api.getRelatedGalleries(galleryId).result.map { it.toDomain() }
+    override suspend fun getRelatedGalleries(galleryId: Int): Result<List<GalleryListItem>> = runCatchingCancelable("Gallery") {
+        memoryCache.getRelated(galleryId)?.let { return@runCatchingCancelable it }
+        api.getRelatedGalleries(galleryId).result.map { it.toDomain() }.also {
+            memoryCache.putRelated(galleryId, it)
+        }
     }
+
+    override fun getCachedPreview(galleryId: Int): GalleryListItem? = memoryCache.getPreview(galleryId)
+
+    override fun getCachedDetail(galleryId: Int): CachedGalleryDetail? = memoryCache.getDetail(galleryId)
 
     private val cdnMutex = Mutex()
     @Volatile
@@ -72,7 +85,7 @@ class GalleryRepositoryImpl @Inject constructor(
         cachedCdnConfig?.let { return Result.success(it) }
         return cdnMutex.withLock {
             cachedCdnConfig?.let { return@withLock Result.success(it) }
-            runCatchingCancelable {
+            runCatchingCancelable("Gallery") {
                 api.getCdnConfig().toDomain().also {
                     cachedCdnConfig = it
                 }

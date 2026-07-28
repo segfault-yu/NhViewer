@@ -1,12 +1,12 @@
 package com.example.nhviewer.presentation.feature.detail
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -67,11 +67,20 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.nhviewer.R
 import com.example.nhviewer.domain.model.PageInfo
+import com.example.nhviewer.domain.model.ReadingHistory
 import com.example.nhviewer.domain.model.Tag
+import com.example.nhviewer.presentation.common.DEFAULT_COVER_RATIO
 import com.example.nhviewer.presentation.common.ErrorScreen
+import com.example.nhviewer.presentation.common.FALLBACK_THUMB_HOST
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import com.example.nhviewer.presentation.common.TagChip
+import com.example.nhviewer.presentation.common.aspectRatioOf
+import com.example.nhviewer.presentation.common.buildGalleryImageUrl
+import com.example.nhviewer.presentation.common.normalizeCdnHost
+import com.example.nhviewer.presentation.navigation.galleryCardSharedBounds
+import com.example.nhviewer.presentation.navigation.galleryCoverSharedElement
+import com.example.nhviewer.presentation.navigation.gallerySkipToLookaheadSize
 import com.example.nhviewer.util.i18n.LocalTagDisplayMode
 import com.example.nhviewer.util.i18n.LocalTagLanguage
 import com.example.nhviewer.util.i18n.TagTranslationProvider
@@ -96,14 +105,12 @@ fun DetailScreen(
     val relatedState by viewModel.relatedState.collectAsState()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     val readingHistory by viewModel.readingHistory.collectAsState()
+    val isFavorite by viewModel.isFavorite.collectAsState()
+    val previewItem by viewModel.previewItem.collectAsState()
 
     val cdnHost = cdnConfig?.primaryImageHost ?: ""
-    val thumbHost = if (cdnConfig?.primaryThumbHost.isNullOrBlank()) {
-        "https://t.nhentai.net"
-    } else {
-        val host = cdnConfig!!.primaryThumbHost
-        if (host.startsWith("http")) host else "https://$host"
-    }
+    // 页面预览缩略图仍走 thumb host，与封面走的 image host 是两类资源
+    val thumbHost = normalizeCdnHost(cdnConfig?.primaryThumbHost, FALLBACK_THUMB_HOST)
 
     LaunchedEffect(galleryId) {
         viewModel.loadGalleryDetail(galleryId)
@@ -143,13 +150,86 @@ fun DetailScreen(
         ) {
             when (val state = detailState) {
                 is DetailViewModel.DetailUiState.Loading -> {
-                    Box(
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding),
-                        contentAlignment = Alignment.Center
+                            .padding(innerPadding)
                     ) {
-                        LoadingIndicator()
+                        // 与 Success 分支同结构的封面占位符：挂上相同的 sharedElement/sharedBounds key，
+                        // 让 Hero 转场在详情数据还没返回时也有目标可以变形，不必等网络请求完成
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .widthIn(max = 600.dp)
+                                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                        ) {
+                            ElevatedCard(
+                                shape = MaterialTheme.shapes.medium,
+                                modifier = Modifier
+                                    .weight(0.4f)
+                                    .aspectRatio(DEFAULT_COVER_RATIO)
+                                    .galleryCardSharedBounds(galleryId)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                        .galleryCoverSharedElement(galleryId)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.weight(0.6f))
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 32.dp),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            LoadingIndicator()
+                        }
+                    }
+                }
+                is DetailViewModel.DetailUiState.Preview -> {
+                    val item = state.item
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+                        GalleryDetailHeader(
+                            galleryId = item.id,
+                            // 与列表卡片同一张图，Coil 内存缓存直接命中，预填首屏无需等待网络
+                            coverUrl = buildGalleryImageUrl(cdnHost, item.thumbnail),
+                            coverPlaceholderUrl = null,
+                            coverRatio = aspectRatioOf(item.thumbnailWidth, item.thumbnailHeight),
+                            title = item.englishTitle,
+                            japaneseTitle = item.japaneseTitle,
+                            numPages = item.numPages,
+                            numFavorites = item.numFavorites,
+                            uploadDate = item.uploadDate,
+                            category = null,
+                            readingHistory = readingHistory,
+                            isFavorite = isFavorite,
+                            // 详情未到达前收藏无法乐观更新收藏数，先禁用
+                            favoriteEnabled = false,
+                            onStartReading = { onStartReading(item.id, readingHistory?.lastReadPage ?: 1) },
+                            onToggleFavorite = {},
+                            modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 24.dp),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            LoadingIndicator()
+                        }
                     }
                 }
                 is DetailViewModel.DetailUiState.Error -> {
@@ -168,12 +248,7 @@ fun DetailScreen(
                     val tagLanguage = LocalTagLanguage.current
                     val tagDisplayMode = LocalTagDisplayMode.current
                     val detail = state.detail
-                    val coverUrl = if (cdnHost.isNotEmpty()) {
-                        val host = if (cdnHost.startsWith("http")) cdnHost else "https://$cdnHost"
-                        "$host/${detail.coverPath}"
-                    } else {
-                        "https://t.nhentai.net/${detail.coverPath}"
-                    }
+                    val coverUrl = buildGalleryImageUrl(cdnHost, detail.coverPath)
 
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Fixed(2),
@@ -187,174 +262,32 @@ fun DetailScreen(
                     ) {
                         // 1. Gallery Info Header
                         item(span = StaggeredGridItemSpan.FullLine) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .widthIn(max = 600.dp)
-                                ) {
-                                    val coverRatio = if (detail.coverWidth > 0 && detail.coverHeight > 0) {
-                                        detail.coverWidth.toFloat() / detail.coverHeight.toFloat()
-                                    } else {
-                                        0.7f
-                                    }
-
-                                    ElevatedCard(
-                                        shape = MaterialTheme.shapes.medium,
-                                        modifier = Modifier
-                                            .weight(0.4f)
-                                            .aspectRatio(coverRatio)
-                                    ) {
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(coverUrl)
-                                                .crossfade(true)
-                                                .build(),
-                                            contentDescription = detail.englishTitle,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .clip(MaterialTheme.shapes.medium)
-                                        )
-                                    }
-
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                                        modifier = Modifier
-                                            .weight(0.6f)
-                                            .padding(start = 16.dp)
-                                    ) {
-                                        Text(
-                                            text = detail.prettyTitle ?: detail.englishTitle,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onBackground
-                                        )
-
-                                        if (!detail.japaneseTitle.isNullOrEmpty()) {
-                                            Text(
-                                                text = detail.japaneseTitle,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(top = 6.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Description,
-                                                contentDescription = "Pages",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                            Text(
-                                                text = stringResource(R.string.detail_pages_count, detail.numPages),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(start = 4.dp)
-                                            )
-                                        }
-
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Favorite,
-                                                contentDescription = "Favorites",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                            Text(
-                                                text = stringResource(R.string.detail_favorites_count, detail.numFavorites),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(start = 4.dp)
-                                            )
-                                        }
-
-                                        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                                        val uploadDateStr = sdf.format(Date(detail.uploadDate * 1000))
-
-                                        Text(
-                                            text = stringResource(R.string.detail_upload_time, uploadDateStr),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-
-                                        val categoryTag = detail.tags.firstOrNull { it.type.equals("category", ignoreCase = true) }
-                                        val categoryFormatted = if (categoryTag != null) {
-                                            TagTranslationProvider.getFormattedName(categoryTag, tagLanguage, tagDisplayMode)
-                                        } else {
-                                            "Doujinshi"
-                                        }
-
-                                        Surface(
-                                            shape = MaterialTheme.shapes.extraSmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.padding(top = 4.dp)
-                                        ) {
-                                            Text(
-                                                text = categoryFormatted,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // 开始/继续阅读按钮与收藏按钮
-                                val startPage = readingHistory?.lastReadPage ?: 1
-                                val buttonText = if (readingHistory != null) {
-                                    stringResource(R.string.detail_continue_reading, startPage)
-                                } else {
-                                    stringResource(R.string.detail_start_reading)
-                                }
-
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .widthIn(max = 600.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Button(
-                                        onClick = { onStartReading(detail.id, startPage) },
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Book,
-                                            contentDescription = "Read"
-                                        )
-                                        Text(
-                                            text = " $buttonText",
-                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                        )
-                                    }
-
-                                    val isFav by viewModel.isFavorite.collectAsState()
-                                    FilledTonalIconToggleButton(
-                                        checked = isFav,
-                                        onCheckedChange = { viewModel.toggleFavorite() },
-                                        modifier = Modifier
-                                            .padding(start = 12.dp)
-                                            .size(48.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isFav) Icons.Default.Favorite else Icons.Rounded.FavoriteBorder,
-                                            contentDescription = "Favorite Toggle"
-                                        )
-                                    }
-                                }
+                            val categoryTag = detail.tags.firstOrNull { it.type.equals("category", ignoreCase = true) }
+                            val categoryFormatted = if (categoryTag != null) {
+                                TagTranslationProvider.getFormattedName(categoryTag, tagLanguage, tagDisplayMode)
+                            } else {
+                                "Doujinshi"
                             }
+
+                            GalleryDetailHeader(
+                                galleryId = detail.id,
+                                coverUrl = coverUrl,
+                                // 大图落地前沿用列表缩略图，避免从预填切到详情时闪一下灰块
+                                coverPlaceholderUrl = previewItem?.let { buildGalleryImageUrl(cdnHost, it.thumbnail) },
+                                coverRatio = aspectRatioOf(detail.coverWidth, detail.coverHeight),
+                                title = detail.prettyTitle ?: detail.englishTitle,
+                                japaneseTitle = detail.japaneseTitle,
+                                numPages = detail.numPages,
+                                numFavorites = detail.numFavorites,
+                                uploadDate = detail.uploadDate,
+                                category = categoryFormatted,
+                                readingHistory = readingHistory,
+                                isFavorite = isFavorite,
+                                favoriteEnabled = true,
+                                onStartReading = { onStartReading(detail.id, readingHistory?.lastReadPage ?: 1) },
+                                onToggleFavorite = { viewModel.toggleFavorite() },
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
                         }
 
                         // 2. Tag Sections grouped by type
@@ -447,6 +380,192 @@ fun DetailScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * 详情页头部。列表快照预填与详情数据共用同一结构，
+ * 避免两套布局导致数据到达时封面尺寸与文字位置跳动。
+ */
+@Composable
+private fun GalleryDetailHeader(
+    galleryId: Int,
+    coverUrl: String,
+    coverPlaceholderUrl: String?,
+    coverRatio: Float,
+    title: String,
+    japaneseTitle: String?,
+    numPages: Int,
+    numFavorites: Int,
+    uploadDate: Long?,
+    category: String?,
+    readingHistory: ReadingHistory?,
+    isFavorite: Boolean,
+    favoriteEnabled: Boolean,
+    onStartReading: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 600.dp)
+        ) {
+            ElevatedCard(
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .weight(0.4f)
+                    .aspectRatio(coverRatio)
+                    .galleryCardSharedBounds(galleryId)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(coverUrl)
+                        .placeholderMemoryCacheKey(coverPlaceholderUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(MaterialTheme.shapes.medium)
+                        .galleryCoverSharedElement(galleryId)
+                )
+            }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .weight(0.6f)
+                    .padding(start = 16.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.gallerySkipToLookaheadSize()
+                )
+
+                if (!japaneseTitle.isNullOrEmpty()) {
+                    Text(
+                        text = japaneseTitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Description,
+                        contentDescription = "Pages",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.detail_pages_count, numPages),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = "Favorites",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.detail_favorites_count, numFavorites),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
+
+                // 列表快照可能不带上传时间，缺失时整行不渲染
+                if (uploadDate != null) {
+                    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                    val uploadDateStr = sdf.format(Date(uploadDate * 1000))
+
+                    Text(
+                        text = stringResource(R.string.detail_upload_time, uploadDateStr),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (category != null) {
+                    Surface(
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Text(
+                            text = category,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 开始/继续阅读按钮与收藏按钮
+        val buttonText = if (readingHistory != null) {
+            stringResource(R.string.detail_continue_reading, readingHistory.lastReadPage)
+        } else {
+            stringResource(R.string.detail_start_reading)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 600.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = onStartReading,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Book,
+                    contentDescription = "Read"
+                )
+                Text(
+                    text = " $buttonText",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+
+            FilledTonalIconToggleButton(
+                checked = isFavorite,
+                onCheckedChange = { onToggleFavorite() },
+                enabled = favoriteEnabled,
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .size(48.dp)
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = "Favorite Toggle"
+                )
             }
         }
     }
@@ -546,6 +665,7 @@ fun PagePreviewSection(
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
+    BackHandler(enabled = isExpanded) { isExpanded = false }
     val showExpandButton = pages.size > 8
     val visiblePages = if (isExpanded || !showExpandButton) pages else pages.take(8)
 
@@ -562,53 +682,60 @@ fun PagePreviewSection(
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val itemWidth = (maxWidth - 24.dp) / 4
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                visiblePages.forEach { page ->
-                    val pageUrl = "$thumbHost/${page.thumbnail}"
-                    val ratio = if (page.thumbnailWidth > 0 && page.thumbnailHeight > 0) {
-                        page.thumbnailWidth.toFloat() / page.thumbnailHeight.toFloat()
-                    } else {
-                        0.7f
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .width(itemWidth)
-                            .clickable { onPageClick(page.number) }
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(ratio)
-                                .clip(MaterialTheme.shapes.small)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                        ) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(pageUrl)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = "Page ${page.number}",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            visiblePages.chunked(4).forEach { rowPages ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    rowPages.forEach { page ->
+                        val pageUrl = "$thumbHost/${page.thumbnail}"
+                        val ratio = if (page.thumbnailWidth > 0 && page.thumbnailHeight > 0) {
+                            page.thumbnailWidth.toFloat() / page.thumbnailHeight.toFloat()
+                        } else {
+                            0.7f
                         }
 
-                        Text(
-                            text = page.number.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onPageClick(page.number) }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(ratio)
+                                    .clip(MaterialTheme.shapes.small)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                            ) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(pageUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Page ${page.number}",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            Text(
+                                text = page.number.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
+                    if (rowPages.size < 4) {
+                        repeat(4 - rowPages.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }

@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -19,29 +22,42 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.example.nhviewer.HiltTestRunner"
     }
 
     signingConfigs {
-        val keystoreFilePath = project.findProperty("KEYSTORE_FILE") as? String
-        val keystorePassword = project.findProperty("KEYSTORE_PASSWORD") as? String
-        val keyAlias = project.findProperty("KEY_ALIAS") as? String
-        val keyPassword = project.findProperty("KEY_PASSWORD") as? String
+        val localProps = Properties()
+        val localPropsFile = rootProject.file("local.properties")
+        if (localPropsFile.exists()) {
+            localProps.load(FileInputStream(localPropsFile))
+        }
+
+        val keystoreFilePath = localProps.getProperty("KEYSTORE_FILE") ?: (project.findProperty("KEYSTORE_FILE") as? String)
+        val keystorePassword = localProps.getProperty("KEYSTORE_PASSWORD") ?: (project.findProperty("KEYSTORE_PASSWORD") as? String)
+        val keyAlias = localProps.getProperty("KEY_ALIAS") ?: (project.findProperty("KEY_ALIAS") as? String)
+        val keyPassword = localProps.getProperty("KEY_PASSWORD") ?: (project.findProperty("KEY_PASSWORD") as? String)
 
         if (!keystoreFilePath.isNullOrEmpty() &&
             !keystorePassword.isNullOrEmpty() &&
             !keyAlias.isNullOrEmpty() &&
             !keyPassword.isNullOrEmpty()
         ) {
-            val keystoreFile = file(keystoreFilePath)
-            if (keystoreFile.exists()) {
+            val appDirFile = file(keystoreFilePath)
+            val rootDirFile = rootProject.file(keystoreFilePath)
+            val targetKeystore = if (appDirFile.exists()) appDirFile else if (rootDirFile.exists()) rootDirFile else null
+
+            if (targetKeystore != null) {
                 create("release") {
-                    storeFile = keystoreFile
+                    storeFile = targetKeystore
                     storePassword = keystorePassword
                     this.keyAlias = keyAlias
                     this.keyPassword = keyPassword
+                    enableV1Signing = true
+                    enableV2Signing = true
+                    enableV3Signing = false
+                    enableV4Signing = false
                 }
             }
         }
@@ -49,13 +65,18 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlin {
         compilerOptions {
@@ -66,6 +87,62 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions {
+        unitTests {
+            // 让 android.util.Log 等静态桩返回默认值而非抛异常，无需引入 Robolectric
+            isReturnDefaultValues = true
+        }
+    }
+}
+
+// object 是独立的单例类，不会像脚本顶层函数那样在 doLast 里隐式捕获整个脚本对象引用
+// （脚本顶层 fun 是脚本类的成员方法，从 doLast 里调用会把脚本实例也序列化进去，破坏配置缓存）
+object ReleaseArtifacts {
+    /** 把 release APK 复制一份到独立目录，命名带项目名与版本号，原始产物保持不动。 */
+    fun copyRenamedApk(
+        logger: org.gradle.api.logging.Logger,
+        apkDir: File,
+        distDir: File,
+        targetBaseName: String,
+        isUnsigned: Boolean,
+        missingArtifactMessage: String
+    ) {
+        val sourceFile = listOf("app-release.apk", "app-release-unsigned.apk")
+            .map { File(apkDir, it) }
+            .firstOrNull { it.exists() }
+            ?: throw GradleException(missingArtifactMessage)
+
+        if (isUnsigned) {
+            logger.warn("未配置 release 签名，产出为未签名 APK，不可直接分发")
+        }
+        val targetName = "$targetBaseName${if (isUnsigned) "-unsigned" else ""}.apk"
+
+        distDir.mkdirs()
+        sourceFile.copyTo(File(distDir, targetName), overwrite = true)
+    }
+}
+
+// 版本号、签名状态与目录 Provider 必须在 configureEach 内取成局部变量：
+// 脚本顶层 val 会编译成脚本类字段，doLast 直接引用会持有脚本对象引用，破坏配置缓存
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    val appVersionName = android.defaultConfig.versionName ?: "0.0.0"
+    val hasReleaseSigning = android.signingConfigs.findByName("release") != null
+    val apkOutputDir = layout.buildDirectory.dir("outputs/apk/release")
+    val apkDistDir = layout.buildDirectory.dir("outputs/release_apk")
+
+    doLast {
+        val apkDir = apkOutputDir.get().asFile
+        val signedApkExists = File(apkDir, "app-release.apk").exists()
+
+        ReleaseArtifacts.copyRenamedApk(
+            logger = logger,
+            apkDir = apkDir,
+            distDir = apkDistDir.get().asFile,
+            targetBaseName = "NHViewer-v$appVersionName-release",
+            isUnsigned = !hasReleaseSigning || !signedApkExists,
+            missingArtifactMessage = "assembleRelease 未产出 APK，请检查 ${apkDir.absolutePath}"
+        )
+    }
 }
 
 dependencies {
@@ -74,6 +151,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -119,6 +197,8 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.dagger.hilt.android.testing)
+    kspAndroidTest(libs.dagger.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
