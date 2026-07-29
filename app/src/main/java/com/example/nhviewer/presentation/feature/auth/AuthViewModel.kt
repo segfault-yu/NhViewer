@@ -49,10 +49,6 @@ class AuthViewModel @Inject constructor(
 
     private var pendingAction: PendingAuthAction? = null
 
-    // 保留 challenge 原文和解算出的 nonce，提交时一并回传给服务端
-    private var powChallenge: String = ""
-    private var powNonce: String = ""
-
     sealed interface PrefetchState<out T> {
         object Idle : PrefetchState<Nothing>
         object Loading : PrefetchState<Nothing>
@@ -60,49 +56,12 @@ class AuthViewModel @Inject constructor(
         data class Failure(val error: Throwable) : PrefetchState<Nothing>
     }
 
-    data class PrefetchedPow(
-        val challenge: String,
-        val nonce: String
-    )
-
-    private val powPrefetchMap = mapOf(
-        "login" to MutableStateFlow<PrefetchState<PrefetchedPow>>(PrefetchState.Idle),
-        "register" to MutableStateFlow<PrefetchState<PrefetchedPow>>(PrefetchState.Idle),
-        "reset" to MutableStateFlow<PrefetchState<PrefetchedPow>>(PrefetchState.Idle)
-    )
-
+    // 验证码 site key 是静态配置、可复用，提前拉取没毛；
+    // PoW challenge 是一次性、短时效的，不提前拉取解算，在 onCaptchaSuccess 里现取现算
     private val captchaPrefetchState = MutableStateFlow<PrefetchState<String>>(PrefetchState.Idle)
 
     init {
-        prefetchSecurityConfigs()
-    }
-
-    fun prefetchSecurityConfigs() {
-        prefetchPow("login")
-        prefetchPow("register")
-        prefetchPow("reset")
         prefetchCaptcha()
-    }
-
-    private fun prefetchPow(action: String) {
-        val flow = powPrefetchMap[action] ?: return
-        if (flow.value is PrefetchState.Loading || flow.value is PrefetchState.Success) return
-
-        viewModelScope.launch {
-            flow.value = PrefetchState.Loading
-            getPowChallengeUseCase(action).onSuccess { powDto ->
-                try {
-                    val nonce = PowSolver.solve(powDto.challenge, powDto.difficulty)
-                    flow.value = PrefetchState.Success(PrefetchedPow(powDto.challenge, nonce))
-                } catch (e: Exception) {
-                    AppLogger.w("Auth", "PoW 计算失败 (action=$action)", e)
-                    flow.value = PrefetchState.Failure(e)
-                }
-            }.onFailure {
-                AppLogger.w("Auth", "PoW 挑战获取失败 (action=$action)")
-                flow.value = PrefetchState.Failure(it)
-            }
-        }
     }
 
     private fun prefetchCaptcha() {
@@ -119,23 +78,9 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private fun resetPrefetch(action: String) {
-        powPrefetchMap[action]?.value = PrefetchState.Idle
-        prefetchPow(action)
-    }
-
     private fun resetCaptchaPrefetch() {
         captchaPrefetchState.value = PrefetchState.Idle
         prefetchCaptcha()
-    }
-
-    private suspend fun waitForPowSuccess(action: String): PrefetchedPow {
-        val flow = powPrefetchMap[action] ?: throw Exception("未知的操作类型")
-        val resultState = flow.filter { it is PrefetchState.Success || it is PrefetchState.Failure }.first()
-        if (resultState is PrefetchState.Failure) {
-            throw resultState.error
-        }
-        return (resultState as PrefetchState.Success).data
     }
 
     private suspend fun waitForCaptchaSuccess(): String {
@@ -197,32 +142,22 @@ class AuthViewModel @Inject constructor(
         executeFlow("reset")
     }
 
+    // 展示给用户；PoW challenge 留到通过验证码后再现取现算
     private fun executeFlow(action: String) {
         viewModelScope.launch {
-            val powFlow = powPrefetchMap[action] ?: return@launch
-            val captchaFlow = captchaPrefetchState
-
-            if (powFlow.value is PrefetchState.Failure || powFlow.value is PrefetchState.Idle) {
-                prefetchPow(action)
-            }
-            if (captchaFlow.value is PrefetchState.Failure || captchaFlow.value is PrefetchState.Idle) {
+            if (captchaPrefetchState.value is PrefetchState.Failure || captchaPrefetchState.value is PrefetchState.Idle) {
                 prefetchCaptcha()
             }
 
-            val isAlreadySuccess = powFlow.value is PrefetchState.Success && captchaFlow.value is PrefetchState.Success
-            
+            val isAlreadySuccess = captchaPrefetchState.value is PrefetchState.Success
+
             if (!isAlreadySuccess) {
                 _isLoading.value = true
                 _powStatus.value = "正在准备安全验证..."
             }
 
             try {
-                val powData = waitForPowSuccess(action)
                 val captchaSiteKeyVal = waitForCaptchaSuccess()
-
-                powChallenge = powData.challenge
-                powNonce = powData.nonce
-
                 _isLoading.value = false
                 _captchaSiteKey.value = captchaSiteKeyVal
             } catch (e: Exception) {
@@ -230,14 +165,14 @@ class AuthViewModel @Inject constructor(
                 _isLoading.value = false
                 _powStatus.value = "Idle"
                 emitError("准备安全校验失败: ${NetworkErrorParser.parse(e)}")
-                resetPrefetch(action)
+                resetCaptchaPrefetch()
             }
         }
     }
 
     fun onCaptchaSuccess(captchaResponse: String) {
         _captchaSiteKey.value = null
-        _powStatus.value = "正在提交凭据..."
+        _powStatus.value = "正在验证安全性..."
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -250,46 +185,40 @@ class AuthViewModel @Inject constructor(
                 null -> null
             }
 
-            val result = when (action) {
-                is PendingAuthAction.Login -> {
-                    loginUseCase(
-                        action.username, action.password,
-                        powChallenge, powNonce, captchaResponse
-                    ).map { Unit }
+            // 紧贴提交前才请求并解算 PoW challenge，避免填表单、过验证码耗费的时间导致 challenge 过期
+            val result: Result<Unit> = if (action == null || actionStr == null) {
+                Result.failure(Exception("无可执行的操作"))
+            } else {
+                val powResult = getPowChallengeUseCase(actionStr)
+                val powDto = powResult.getOrNull()
+                if (powDto == null) {
+                    Result.failure(powResult.exceptionOrNull() ?: Exception("PoW 挑战获取失败"))
+                } else {
+                    val nonce = PowSolver.solve(powDto.challenge, powDto.difficulty)
+                    _powStatus.value = "正在提交凭据..."
+                    when (action) {
+                        is PendingAuthAction.Login -> loginUseCase(
+                            action.username, action.password, powDto.challenge, nonce, captchaResponse
+                        ).map { Unit }
+                        is PendingAuthAction.Register -> registerUseCase(
+                            action.username, action.email, action.password, powDto.challenge, nonce, captchaResponse
+                        ).map { Unit }
+                        is PendingAuthAction.ResetPassword -> resetPasswordUseCase(
+                            action.usernameOrEmail, powDto.challenge, nonce, captchaResponse
+                        )
+                        is PendingAuthAction.ConfirmReset -> resetPasswordConfirmUseCase(
+                            action.token, action.newPw, powDto.challenge, nonce, captchaResponse
+                        )
+                    }
                 }
-                is PendingAuthAction.Register -> {
-                    registerUseCase(
-                        action.username, action.email, action.password,
-                        powChallenge, powNonce, captchaResponse
-                    ).map { Unit }
-                }
-                is PendingAuthAction.ResetPassword -> {
-                    resetPasswordUseCase(
-                        action.usernameOrEmail,
-                        powChallenge, powNonce, captchaResponse
-                    )
-                }
-                is PendingAuthAction.ConfirmReset -> {
-                    resetPasswordConfirmUseCase(
-                        action.token, action.newPw,
-                        powChallenge, powNonce, captchaResponse
-                    )
-                }
-                null -> Result.failure(Exception("无可执行的操作"))
             }
 
             _isLoading.value = false
             _powStatus.value = "Idle"
             pendingAction = null
-            powChallenge = ""
-            powNonce = ""
-
-            if (actionStr != null) {
-                resetPrefetch(actionStr)
-            }
             resetCaptchaPrefetch()
 
-            // 只记操作类型与结果，用户名、密码、令牌一律不入日志
+            // 只记操作类型与结果，用户名、密码、令牌不入日志
             result.onSuccess {
                 AppLogger.i("Auth", "认证操作成功 (action=$actionStr)")
                 _uiEvent.emit(AuthUiEvent.Success)
@@ -304,20 +233,7 @@ class AuthViewModel @Inject constructor(
         _captchaSiteKey.value = null
         _isLoading.value = false
         _powStatus.value = "Idle"
-        val action = pendingAction
         pendingAction = null
-        powChallenge = ""
-        powNonce = ""
-
-        if (action != null) {
-            val actionStr = when (action) {
-                is PendingAuthAction.Login -> "login"
-                is PendingAuthAction.Register -> "register"
-                is PendingAuthAction.ResetPassword -> "reset"
-                is PendingAuthAction.ConfirmReset -> "reset"
-            }
-            resetPrefetch(actionStr)
-        }
     }
 
     private fun emitError(msg: String) {

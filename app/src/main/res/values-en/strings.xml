@@ -284,7 +284,7 @@
     <string name="settings_about_title">About NhViewer</string>
     <string name="settings_about_desc">Version, licenses and disclaimer</string>
     <string name="about_title">About</string>
-    <string name="about_version_fmt">Beta %s</string>
+    <string name="about_version_fmt">v%s</string>
     <string name="about_version_hint">Tap the version to copy device info</string>
     <string name="about_device_info_copied">Device info copied to clipboard</string>
     <string name="about_cat_license">License &amp; Legal</string>

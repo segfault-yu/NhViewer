@@ -304,7 +304,7 @@
     <string name="settings_about_title">关于 NhViewer</string>
     <string name="settings_about_desc">版本信息、开源许可与免责声明</string>
     <string name="about_title">关于</string>
-    <string name="about_version_fmt">测试版 %s</string>
+    <string name="about_version_fmt">v%s</string>
     <string name="about_version_hint">点击版本号可复制设备信息</string>
     <string name="about_device_info_copied">设备信息已复制到剪贴板</string>
     <string name="about_cat_license">许可与法律</string>

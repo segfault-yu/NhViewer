@@ -66,6 +66,7 @@ object NetworkErrorParser {
             lower.contains("invalid proof of work") -> "验证计算失败 (PoW 验证错误)"
             lower.contains("password is too short") -> "密码长度不足"
             lower.contains("token expired") || lower.contains("expired token") -> "验证链接已过期"
+            lower.contains("challenge") && (lower.contains("expired") || lower.contains("already used")) -> "安全验证已过期，请重新提交"
             lower.contains("invalid token") -> "无效的验证链接或凭证"
             else -> msg
         }
