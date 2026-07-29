@@ -1,52 +1,50 @@
-# NHViewer Manga Reader
+# NHViewer 漫画阅读器
 
-**English** | [简体中文](README.zh-CN.md)
+[English](README.md) | **简体中文**
 
-<img src="docs/images/icon.png" alt="NHViewer App Icon" width="120" />
+<img src="docs/images/icon.png" alt="NHViewer 应用图标" width="120" />
 
-A personal-use, open-source native Android app for reading and managing manga, built on the nhentai API v2.
+基于 nhentai API v2 构建的个人自用、开源 Android 原生漫画阅读与管理应用。
 
 ---
 
-## Project Overview
+## 项目概览
 
-| Attribute | Choice |
+| 属性 | 选型 |
 |---|---|
-| Language | Kotlin 2.2.10 |
-| UI Framework | Jetpack Compose (Material 3 Expressive) |
-| Architecture | Clean Architecture (data → domain → presentation) |
-| Minimum SDK | API 29 (Android 10) |
-| Target SDK | API 36 (Android 16) |
-| Build Tool | Gradle (Kotlin DSL + Version Catalog) |
-| License | MIT / Open Source |
+| 编程语言 | Kotlin 2.2.10 |
+| UI 框架 | Jetpack Compose (Material 3 Expressive) |
+| 架构设计 | Clean Architecture (data → domain → presentation) |
+| 最低 SDK 支持 | API 29 (Android 10) |
+| 目标 SDK 版本 | API 36 (Android 16) |
+| 核心构建工具 | Gradle (Kotlin DSL + Version Catalog) |
+| 软件授权 | MIT / 开源 |
 
 ---
 
-## Tech Stack & Dependencies
+## 技术栈与依赖
 
-| Role | Library / Technology | Version | Description |
+| 职责分工 | 开源库 / 技术选型 | 版本号 | 说明 |
 |---|---|---|---|
-| Core language | **Kotlin** | 2.2.10 | Statically typed, with coroutine support |
-| Declarative UI | **Jetpack Compose BOM** | 2025.12.00 | Android's native declarative UI framework |
-| Visual design | **Material 3 Expressive** | - | Latest components from `androidx.compose.material3` |
-| Dependency injection | **Hilt** | 2.59.2 | Compile-time dependency injection |
-| Async & data flow | **Kotlin Coroutines & Flow** | - | Reactive concurrency handling and state subscription |
-| Networking | **Retrofit 2 & OkHttp 4** | 2.11.0 / 4.12.0 | RESTful API client with network interceptors |
-| Data serialization | **Kotlinx Serialization** | 1.7.3 | Official high-performance JSON serializer/deserializer |
-| Image loading | **Coil Compose** | 2.6.0 | Async image-loading library built for Compose |
-| Image gesture zoom | **Telephoto** | 0.19.0 | High-performance gesture zoom and sub-sampling for large images |
-| Local database | **Room** | 2.7.0 | SQLite abstraction layer used for history and caching |
-| Key-value storage | **DataStore Preferences** | 1.1.1 | Reactive key-value storage replacing SharedPreferences |
-| Encrypted storage | **Security Crypto** | 1.1.0-alpha06 | Encrypted token storage via EncryptedSharedPreferences |
-| Navigation | **Navigation Compose** | 2.9.8 | Type-safe screen navigation, with Predictive Back support |
-| Motion & shared elements | **Compose Animation** | - | `androidx.compose.animation`; drives transition motion and list-to-detail Hero shared-element transitions |
-| Pagination | **Paging 3** | 3.3.5 | Streaming and pagination for large list data |
+| 核心语言 | **Kotlin** | 2.2.10 | 强类型、协程支持 |
+| 声明式 UI | **Jetpack Compose BOM** | 2025.12.00 | Android 原生响应式 UI 框架 |
+| 视觉设计 | **Material 3 Expressive** | - | `androidx.compose.material3` 最新组件 |
+| 依赖注入 | **Hilt** | 2.59.2 | 编译期依赖注入 |
+| 异步与数据流 | **Kotlin Coroutines & Flow** | - | 响应式并发处理与状态订阅 |
+| 网络请求 | **Retrofit 2 & OkHttp 4** | 2.11.0 / 4.12.0 | RESTful API 客户端与网络拦截器 |
+| 数据序列化 | **Kotlinx Serialization** | 1.7.3 | 官方高效 JSON 编解码器 |
+| 图片加载 | **Coil Compose** | 2.6.0 | Compose 专属异步图片加载库 |
+| 图片手势缩放 | **Telephoto** | 0.19.0 | 高性能大图手势缩放与采样组件 |
+| 本地数据库 | **Room** | 2.7.0 | SQLite 抽象层，用于历史与缓存 |
+| 键值存储 | **DataStore Preferences** | 1.1.1 | 替代 SharedPreferences 的响应式存储 |
+| 安全加密存储 | **Security Crypto** | 1.1.0-alpha06 | EncryptedSharedPreferences 加密 Token 存储 |
+| 导航路由 | **Navigation Compose** | 2.9.8 | 类型安全（Type-safe）的页面导航，含预见式返回（Predictive Back）支持 |
+| 动效与共享元素 | **Compose Animation** | - | `androidx.compose.animation`，驱动转场动效与列表→详情 Hero 共享元素转场 |
+| 数据分页 | **Paging 3** | 3.3.5 | 列表大数据流式加载与分页管理 |
 
 ---
 
-## Project Directory Structure
-
-> Inline comments in the tree below are kept in Chinese, matching the actual comments in the source files.
+## 项目目录结构
 
 ```
 app/src/main/java/com/example/nhviewer/
@@ -102,53 +100,53 @@ app/src/main/java/com/example/nhviewer/
 
 ---
 
-## Build & Environment Requirements
+## 构建与环境要求
 
-### Requirements
+### 环境要求
 
-| Tool / Environment | Minimum | Recommended |
+| 工具/环境 | 最低要求 | 推荐配置 |
 |---|---|---|
-| **Android Studio** | Ladybug | 2024.2.1 or newer |
-| **JDK version** | JDK 17 (hard requirement to run AGP 9.x) | JDK 21 |
+| **Android Studio** | Ladybug | 2024.2.1 或更新版本 |
+| **JDK 版本** | JDK 17（运行 AGP 9.x 的硬性要求） | JDK 21 |
 | **Android SDK Min** | API 29 (Android 10) | - |
 | **Android SDK Target / Compile** | API 36 (Android 16) | - |
-| **Gradle** | Bundled Gradle Wrapper, automatically uses 9.4.1 — no separate install needed | - |
+| **Gradle** | 项目自带 Gradle Wrapper，自动使用 9.4.1，无需单独安装 | - |
 
-The Kotlin/Java bytecode target is pinned to **JVM 11** (kept consistent between `compileOptions` and the Kotlin `jvmTarget` in `app/build.gradle.kts`). This is separate from the JDK 17+ required to run Gradle itself — don't confuse the two.
+Kotlin/Java 字节码目标版本固定为 **JVM 11**（`app/build.gradle.kts` 中 `compileOptions` 与 Kotlin `jvmTarget` 已保持一致），与运行 Gradle 本身所需的 JDK 17+ 是两回事，不要混淆。
 
-### Build Steps
+### 编译与构建步骤
 
-1. **Clone the repository**:
+1. **克隆项目到本地**：
    ```bash
    git clone https://github.com/rinchao0721/NhViewer.git
    cd NhViewer
    ```
 
-2. **Configure `local.properties`**:
-   Make sure `local.properties` in the project root points to the correct Android SDK path:
+2. **配置 local.properties**：
+   在项目根目录下确保 `local.properties` 指向正确的 Android SDK 路径：
    ```properties
    sdk.dir=C\:\\Users\\username\\AppData\\Local\\Android\\Sdk
    ```
 
-3. **Build the debug APK**:
-   Use the project's bundled Gradle Wrapper to compile and run Kotlin syntax checks:
+3. **编译调试版本 (Debug APK)**：
+   使用项目内置的 Gradle Wrapper 执行编译与 Kotlin 语法检查：
    ```bash
-   # Run the Kotlin compilation check
+   # 执行 Kotlin 源代码编译检查
    ./gradlew compileDebugKotlin
 
-   # Build the debug APK
+   # 构建 Debug 安装包
    ./gradlew assembleDebug
    ```
-   Once the build succeeds, the APK is output to: `app/build/outputs/apk/debug/app-debug.apk`.
+   编译成功后，APK 输出路径为：`app/build/outputs/apk/debug/app-debug.apk`。
 
-4. **Install and run**:
-   With an Android device connected or an emulator running:
+4. **安装并运行**：
+   连接 Android 设备或启动模拟器后执行：
    ```bash
    ./gradlew installDebug
    ```
 
-5. **Build a release version (optional)**:
+5. **构建 Release 版本（可选）**：
    ```bash
    ./gradlew assembleRelease
    ```
-   If `KEYSTORE_FILE` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD` are all configured in `local.properties`, the output is signed automatically; otherwise an unsigned APK is produced (its filename gets a `-unsigned` suffix — for local debugging only, not for distribution). After the build, a copy is also placed at `app/build/outputs/release_apk/NHViewer-v<version>-release[-unsigned].apk`, without affecting the original output path.
+   若在 `local.properties` 中配置了 `KEYSTORE_FILE`/`KEYSTORE_PASSWORD`/`KEY_ALIAS`/`KEY_PASSWORD` 四项签名信息，产物会自动签名；未配置则产出未签名 APK（文件名会带 `-unsigned` 后缀，仅供本地调试，不可直接分发）。构建完成后会额外复制一份到 `app/build/outputs/release_apk/NHViewer-v<版本号>-release[-unsigned].apk`，原始产物路径不受影响。
