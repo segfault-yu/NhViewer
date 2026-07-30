@@ -76,6 +76,9 @@ class DetailViewModel @Inject constructor(
     private var currentDetail: GalleryDetail? = null
     private var detailJob: Job? = null
 
+    // 记录已为哪个画廊提前发起过相关推荐预取，避免同一画廊重复请求
+    private var relatedPrefetchStartedForId: Int? = null
+
     init {
         loadCdnConfig()
         prefillFromSnapshot()
@@ -92,7 +95,26 @@ class DetailViewModel @Inject constructor(
 
         val preview = getCachedGalleryPreviewUseCase(galleryId) ?: return
         _previewItem.value = preview
-        _detailState.value = DetailUiState.Preview(preview)
+        showPreviewSkeleton(galleryId, preview)
+    }
+
+    /**
+     * 用列表快照搭建首屏骨架：标题/封面/页数/收藏数都是卡片自带数据，直接展示。
+     * 标签、页面预览这些卡片没有的数据一律等详情接口（galleryApi）一次性补齐；
+     */
+    private fun showPreviewSkeleton(galleryId: Int, item: GalleryListItem) {
+        val current = _detailState.value
+        if (current !is DetailUiState.Preview || current.item.id != galleryId) {
+            _detailState.value = DetailUiState.Preview(item)
+        }
+
+        if (relatedPrefetchStartedForId == galleryId) return
+        relatedPrefetchStartedForId = galleryId
+
+        if (_relatedState.value !is RelatedUiState.Success) {
+            _relatedState.value = RelatedUiState.Loading
+            fetchRelatedIndependently(galleryId)
+        }
     }
 
     private fun loadCdnConfig() {
@@ -132,10 +154,13 @@ class DetailViewModel @Inject constructor(
         }
 
         // 无详情缓存时先用列表快照撑起首屏，避免整页空白
-        _detailState.value = _previewItem.value
-            ?.let { DetailUiState.Preview(it) }
-            ?: DetailUiState.Loading
-        _relatedState.value = RelatedUiState.Loading
+        val preview = _previewItem.value
+        if (preview != null) {
+            showPreviewSkeleton(galleryId, preview)
+        } else {
+            _detailState.value = DetailUiState.Loading
+            _relatedState.value = RelatedUiState.Loading
+        }
         fetchDetail(galleryId, forceRefresh = false, silent = false)
     }
 
@@ -238,12 +263,6 @@ class DetailViewModel @Inject constructor(
         }
     }
 
-    private fun emitMessage(msg: String) {
-        viewModelScope.launch {
-            _uiEvent.emit(DetailUiEvent.ShowMessage(msg))
-        }
-    }
-
     private fun emitMessageRes(@StringRes resId: Int) {
         viewModelScope.launch {
             _uiEvent.emit(DetailUiEvent.ShowMessageRes(resId))
@@ -258,7 +277,10 @@ class DetailViewModel @Inject constructor(
     sealed interface DetailUiState {
         object Loading : DetailUiState
 
-        /** 列表快照预填的首屏，详情数据到达前先展示已知信息 */
+        /**
+         * 列表快照预填的首屏，详情数据到达前先展示已知信息。
+         * 标签、页面预览等卡片没有的字段不在这里提供，由 Success 阶段的详情数据统一补齐。
+         */
         data class Preview(val item: GalleryListItem) : DetailUiState
 
         data class Success(val detail: GalleryDetail) : DetailUiState

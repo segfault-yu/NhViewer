@@ -5,5 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FavoriteCheckResponse(
-    @SerialName("is_favorite") val isFavorite: Boolean
+    // 服务端字段已改为 favorited，is_favorite 不再下发
+    @SerialName("favorited") val isFavorite: Boolean = false
 )

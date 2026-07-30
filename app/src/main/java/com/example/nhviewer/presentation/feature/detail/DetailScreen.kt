@@ -2,7 +2,6 @@ package com.example.nhviewer.presentation.feature.detail
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
@@ -56,7 +56,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -194,41 +193,54 @@ fun DetailScreen(
                 is DetailViewModel.DetailUiState.Preview -> {
                     val item = state.item
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
+                    // 骨架结构与 Success 分支共用同一套 LazyVerticalStaggeredGrid + contentPadding，
+                    // 避免详情数据到达后从 Column 切到网格布局导致内容跳动
+                    LazyVerticalStaggeredGrid(
+                        columns = StaggeredGridCells.Fixed(2),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            top = innerPadding.calculateTopPadding() + 16.dp,
+                            end = 16.dp,
+                            bottom = innerPadding.calculateBottomPadding() + 16.dp
+                        ),
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        GalleryDetailHeader(
-                            galleryId = item.id,
-                            // 与列表卡片同一张图，Coil 内存缓存直接命中，预填首屏无需等待网络
-                            coverUrl = buildGalleryImageUrl(thumbHost, item.thumbnail),
-                            coverPlaceholderUrl = null,
-                            coverRatio = aspectRatioOf(item.thumbnailWidth, item.thumbnailHeight),
-                            title = item.englishTitle,
-                            japaneseTitle = item.japaneseTitle,
-                            numPages = item.numPages,
-                            numFavorites = item.numFavorites,
-                            uploadDate = item.uploadDate,
-                            category = null,
-                            readingHistory = readingHistory,
-                            isFavorite = isFavorite,
-                            // 详情未到达前收藏无法乐观更新收藏数，先禁用
-                            favoriteEnabled = false,
-                            onStartReading = { onStartReading(item.id, readingHistory?.lastReadPage ?: 1) },
-                            onToggleFavorite = {},
-                            modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                        item(span = StaggeredGridItemSpan.FullLine) {
+                            GalleryDetailHeader(
+                                galleryId = item.id,
+                                // 与列表卡片同一张图，Coil 内存缓存直接命中，预填首屏无需等待网络
+                                coverUrl = buildGalleryImageUrl(thumbHost, item.thumbnail),
+                                coverPlaceholderUrl = null,
+                                coverRatio = aspectRatioOf(item.thumbnailWidth, item.thumbnailHeight),
+                                title = item.englishTitle,
+                                japaneseTitle = item.japaneseTitle,
+                                numPages = item.numPages,
+                                numFavorites = item.numFavorites,
+                                uploadDate = item.uploadDate,
+                                category = null,
+                                readingHistory = readingHistory,
+                                isFavorite = isFavorite,
+                                // 详情未到达前收藏无法乐观更新收藏数，先禁用
+                                favoriteEnabled = false,
+                                onStartReading = { onStartReading(item.id, readingHistory?.lastReadPage ?: 1) },
+                                onToggleFavorite = {},
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                        }
+
+                        // 卡片数据里没有完整标签，骨架阶段固定展示局部 loading，等详情接口一次性补齐
+                        tagsSection(
+                            tags = emptyList(),
+                            isLoading = true,
+                            onTagClick = { tag -> onTagClick(tag.id, tag.name) }
                         )
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(top = 24.dp),
-                            contentAlignment = Alignment.TopCenter
-                        ) {
-                            LoadingIndicator()
-                        }
+                        // 相关推荐走独立接口，骨架阶段就已提前发起
+                        relatedSection(
+                            relatedState = relatedState,
+                            thumbHost = thumbHost,
+                            onNavigateToDetail = onNavigateToDetail
+                        )
                     }
                 }
                 is DetailViewModel.DetailUiState.Error -> {
@@ -290,28 +302,13 @@ fun DetailScreen(
                         }
 
                         // 2. Tag Sections grouped by type
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            Column(
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.detail_section_tags),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                Box(modifier = Modifier.padding(top = 8.dp)) {
-                                    TagGroupSection(
-                                        tags = detail.tags,
-                                        onTagClick = { tag ->
-                                            onTagClick(tag.id, tag.name)
-                                        }
-                                    )
-                                }
-                            }
-                        }
+                        tagsSection(
+                            tags = detail.tags,
+                            isLoading = false,
+                            onTagClick = { tag -> onTagClick(tag.id, tag.name) }
+                        )
 
-                        // 3. Page Preview Section (缩略图网格预览)
+                        // 3. Page Preview Section (缩略图网格预览，只有详情接口才有 pages 数据)
                         if (detail.pages.isNotEmpty()) {
                             item(span = StaggeredGridItemSpan.FullLine) {
                                 PagePreviewSection(
@@ -324,61 +321,116 @@ fun DetailScreen(
                             }
                         }
 
-                        // 4. Related Galleries Header
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            Text(
-                                text = stringResource(R.string.detail_section_recommendations),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            )
-                        }
-
-                        // 5. Related Galleries Grid Items (Waterfall)
-                        when (val relState = relatedState) {
-                            is DetailViewModel.RelatedUiState.Loading -> {
-                                item(span = StaggeredGridItemSpan.FullLine) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(32.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        LoadingIndicator()
-                                    }
-                                }
-                            }
-                            is DetailViewModel.RelatedUiState.Error -> {
-                                item(span = StaggeredGridItemSpan.FullLine) {
-                                    Text(
-                                        text = stringResource(R.string.detail_recommendations_failed),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(16.dp)
-                                    )
-                                }
-                            }
-                            is DetailViewModel.RelatedUiState.Success -> {
-                                items(
-                                    items = relState.list,
-                                    key = { it.id }
-                                ) { relatedItem ->
-                                    GalleryCard(
-                                        item = relatedItem,
-                                        cdnHost = thumbHost,
-                                        onClick = {
-                                            onNavigateToDetail(relatedItem.id)
-                                        },
-                                        modifier = Modifier.padding(6.dp),
-                                        showTags = false,
-                                        isGridMode = true
-                                    )
-                                }
-                            }
-                        }
+                        // 4 & 5. Related Galleries Header + Grid Items (Waterfall)
+                        relatedSection(
+                            relatedState = relatedState,
+                            thumbHost = thumbHost,
+                            onNavigateToDetail = onNavigateToDetail
+                        )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * 标签区块。Preview 与 Success 分支共用，骨架阶段标签由 tagIds 单独查得，
+ * isLoading 为 true 时展示局部 loading 而不是让整个区块空着。
+ */
+private fun LazyStaggeredGridScope.tagsSection(
+    tags: List<Tag>,
+    isLoading: Boolean,
+    onTagClick: (Tag) -> Unit
+) {
+    item(span = StaggeredGridItemSpan.FullLine) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.detail_section_tags),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Box(modifier = Modifier.padding(top = 8.dp)) {
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        LoadingIndicator()
+                    }
+                } else {
+                    TagGroupSection(
+                        tags = tags,
+                        onTagClick = onTagClick
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 相关推荐区块（含标题）。Preview 与 Success 分支共用，走独立接口，
+ * 骨架阶段就已提前发起请求，不依赖详情接口是否返回。
+ */
+private fun LazyStaggeredGridScope.relatedSection(
+    relatedState: DetailViewModel.RelatedUiState,
+    thumbHost: String,
+    onNavigateToDetail: (Int) -> Unit
+) {
+    item(span = StaggeredGridItemSpan.FullLine) {
+        Text(
+            text = stringResource(R.string.detail_section_recommendations),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
+    }
+
+    when (relatedState) {
+        is DetailViewModel.RelatedUiState.Loading -> {
+            item(span = StaggeredGridItemSpan.FullLine) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingIndicator()
+                }
+            }
+        }
+        is DetailViewModel.RelatedUiState.Error -> {
+            item(span = StaggeredGridItemSpan.FullLine) {
+                Text(
+                    text = stringResource(R.string.detail_recommendations_failed),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+        is DetailViewModel.RelatedUiState.Success -> {
+            items(
+                items = relatedState.list,
+                key = { it.id }
+            ) { relatedItem ->
+                GalleryCard(
+                    item = relatedItem,
+                    cdnHost = thumbHost,
+                    onClick = {
+                        onNavigateToDetail(relatedItem.id)
+                    },
+                    modifier = Modifier.padding(6.dp),
+                    showTags = false,
+                    isGridMode = true
+                )
             }
         }
     }

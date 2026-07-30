@@ -51,7 +51,8 @@ class GalleryMemoryCache @Inject constructor() {
     fun getRelated(galleryId: Int): List<GalleryListItem>? = relatedCache.get(galleryId)
 
     private companion object {
-        const val PREVIEW_CAPACITY = 300
+        // 分页列表快速下拉时 Paging3 会连续预取多页，300 太容易被挤出导致点开详情时缓存已丢失
+        const val PREVIEW_CAPACITY = 1000
         const val DETAIL_CAPACITY = 30
     }
 }
