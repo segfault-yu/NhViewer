@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Clear
@@ -50,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -418,8 +420,17 @@ fun SearchResultGrid(
     onNavigateToDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
     minSize: Int = 340,
-    bottomPadding: Dp = 12.dp
+    bottomPadding: Dp = 12.dp,
+    scrollToTopKey: Any? = null
 ) {
+    val gridState = rememberLazyStaggeredGridState()
+
+    LaunchedEffect(scrollToTopKey) {
+        if (scrollToTopKey != null) {
+            gridState.animateScrollToItem(0)
+        }
+    }
+
     val currentState = remember(searchResults.loadState.refresh, searchResults.itemCount) {
         when {
             searchResults.itemCount > 0 -> 3
@@ -477,6 +488,7 @@ fun SearchResultGrid(
                 else -> {
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Adaptive(minSize = minSize.dp),
+                        state = gridState,
                         contentPadding = PaddingValues(
                             start = 12.dp,
                             top = 12.dp,

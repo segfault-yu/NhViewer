@@ -136,7 +136,7 @@ class ReaderViewModel @Inject constructor(
             val history = ReadingHistory(
                 galleryId = galleryId,
                 mediaId = detail.mediaId,
-                title = detail.prettyTitle ?: detail.englishTitle,
+                title = detail.englishTitle,
                 lastReadPage = page,
                 totalPages = detail.numPages,
                 timestamp = System.currentTimeMillis()

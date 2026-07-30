@@ -286,7 +286,7 @@ fun DetailScreen(
                                 // 大图落地前沿用列表缩略图，避免从预填切到详情时闪一下灰块
                                 coverPlaceholderUrl = previewItem?.let { buildGalleryImageUrl(thumbHost, it.thumbnail) },
                                 coverRatio = aspectRatioOf(detail.coverWidth, detail.coverHeight),
-                                title = detail.prettyTitle ?: detail.englishTitle,
+                                title = detail.englishTitle,
                                 japaneseTitle = detail.japaneseTitle,
                                 numPages = detail.numPages,
                                 numFavorites = detail.numFavorites,
@@ -486,7 +486,6 @@ private fun GalleryDetailHeader(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(MaterialTheme.shapes.medium)
                         .galleryCoverSharedElement(galleryId)
                 )
             }

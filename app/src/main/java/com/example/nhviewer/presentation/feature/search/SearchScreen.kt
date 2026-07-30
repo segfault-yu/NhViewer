@@ -55,6 +55,7 @@ fun SearchScreen(
     val searchResults = viewModel.searchResults.collectAsLazyPagingItems()
     val favoritedIds by viewModel.favoritedIds.collectAsState()
     val totalResults by viewModel.totalResults.collectAsState()
+    val searchTrigger by viewModel.searchTrigger.collectAsState()
 
     val focusManager = LocalFocusManager.current
 
@@ -139,7 +140,8 @@ fun SearchScreen(
                 cdnHost = cdnHost,
                 favoritedIds = favoritedIds,
                 onNavigateToDetail = onNavigateToDetail,
-                minSize = gridBaseWidth
+                minSize = gridBaseWidth,
+                scrollToTopKey = searchTrigger
             )
         }
     }

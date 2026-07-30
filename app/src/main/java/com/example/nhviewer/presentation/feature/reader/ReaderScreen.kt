@@ -637,7 +637,7 @@ fun ReaderContent(
                 }
         ) {
             ReaderTopBar(
-                title = detail.prettyTitle ?: detail.englishTitle,
+                title = detail.englishTitle,
                 onBackClick = onBackClick
             )
         }

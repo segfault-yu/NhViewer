@@ -4,7 +4,6 @@ import com.example.nhviewer.domain.model.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// 实际响应体是 GET /api/v2/user 的 UserMeResponse：没有 registered_at/role 字段，
 // 身份用 is_staff/is_superuser 两个布尔位表示，与登录响应内嵌的 UserInfoDto 是同一套字段
 @Serializable
 data class UserProfileDto(

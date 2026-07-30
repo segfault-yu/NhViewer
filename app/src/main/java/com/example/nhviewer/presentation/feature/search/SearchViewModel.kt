@@ -67,6 +67,7 @@ class SearchViewModel @Inject constructor(
     val searchHistory: Flow<List<SearchHistory>> = searchHistoryUseCase.getSearchHistory()
 
     private val _searchTrigger = MutableStateFlow<Pair<String, String>?>(null)
+    val searchTrigger: StateFlow<Pair<String, String>?> = _searchTrigger.asStateFlow()
 
     val searchResults: Flow<PagingData<GalleryListItem>> = _searchTrigger
         .flatMapLatest { trigger ->
