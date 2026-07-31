@@ -1,14 +1,17 @@
 package com.example.nhviewer.presentation.feature.search
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
@@ -22,7 +25,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -65,11 +77,45 @@ fun SearchScreen(
 
     val focusManager = LocalFocusManager.current
 
+    // 沉浸式滚动
+    var isChromeVisible by remember { mutableStateOf(true) }
+    val chromeHideThresholdPx = with(LocalDensity.current) { 8.dp.toPx() }
+    val chromeScrollConnection = remember(chromeHideThresholdPx) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                when {
+                    available.y < -chromeHideThresholdPx -> isChromeVisible = false
+                    available.y > chromeHideThresholdPx -> isChromeVisible = true
+                }
+                return Offset.Zero
+            }
+        }
+    }
+    val searchResultGridState = rememberLazyStaggeredGridState()
+    // 新一次搜索（关键词/筛选/排序变化）时重置显示状态
+    LaunchedEffect(searchTrigger) {
+        isChromeVisible = true
+    }
+    LaunchedEffect(searchResultGridState) {
+        snapshotFlow {
+            searchResultGridState.firstVisibleItemIndex to searchResultGridState.firstVisibleItemScrollOffset
+        }.collect { (index, offset) ->
+            if (index == 0 && offset == 0) isChromeVisible = true
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        AnimatedVisibility(
+            visible = isChromeVisible,
+            enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                fadeIn(animationSpec = NhMotion.Effects.default()),
+            exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                fadeOut(animationSpec = NhMotion.Effects.default())
+        ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -121,28 +167,39 @@ fun SearchScreen(
                 )
             )
         }
+        }
 
         if (!active) {
-            if (searchQuery.isNotEmpty()) {
-                SearchQueryBuilder(
-                    rawQuery = searchQuery,
-                    onQueryChanged = { viewModel.onSearchQueryChanged(it) },
-                    onTriggerSearch = { query ->
-                        viewModel.search(query)
-                        focusManager.clearFocus()
-                    }
-                )
-            }
             AnimatedVisibility(
-                visible = searchResults.itemCount > 0,
-                enter = fadeIn(animationSpec = NhMotion.Effects.default()),
-                exit = fadeOut(animationSpec = NhMotion.Effects.default())
+                visible = isChromeVisible,
+                enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                    fadeIn(animationSpec = NhMotion.Effects.default()),
+                exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                    fadeOut(animationSpec = NhMotion.Effects.default())
             ) {
-                SearchSortBar(
-                    sortOption = sortOption,
-                    onSortOptionChanged = { viewModel.onSortOptionChanged(it) },
-                    totalCount = totalResults
-                )
+                Column {
+                    if (searchQuery.isNotEmpty()) {
+                        SearchQueryBuilder(
+                            rawQuery = searchQuery,
+                            onQueryChanged = { viewModel.onSearchQueryChanged(it) },
+                            onTriggerSearch = { query ->
+                                viewModel.search(query)
+                                focusManager.clearFocus()
+                            }
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = searchResults.itemCount > 0,
+                        enter = fadeIn(animationSpec = NhMotion.Effects.default()),
+                        exit = fadeOut(animationSpec = NhMotion.Effects.default())
+                    ) {
+                        SearchSortBar(
+                            sortOption = sortOption,
+                            onSortOptionChanged = { viewModel.onSortOptionChanged(it) },
+                            totalCount = totalResults
+                        )
+                    }
+                }
             }
 
             SearchResultGrid(
@@ -150,7 +207,9 @@ fun SearchScreen(
                 cdnHost = cdnHost,
                 favoritedIds = favoritedIds,
                 onNavigateToDetail = onNavigateToDetail,
-                scrollToTopKey = searchTrigger
+                scrollToTopKey = searchTrigger,
+                gridState = searchResultGridState,
+                scrollConnection = chromeScrollConnection
             )
         }
     }

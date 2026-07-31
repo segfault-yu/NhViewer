@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
@@ -59,6 +60,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -421,10 +424,10 @@ fun SearchResultGrid(
     modifier: Modifier = Modifier,
     minSize: Int = 340,
     bottomPadding: Dp = 12.dp,
-    scrollToTopKey: Any? = null
+    scrollToTopKey: Any? = null,
+    gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
+    scrollConnection: NestedScrollConnection? = null
 ) {
-    val gridState = rememberLazyStaggeredGridState()
-
     LaunchedEffect(scrollToTopKey) {
         if (scrollToTopKey != null) {
             gridState.animateScrollToItem(0)
@@ -495,7 +498,15 @@ fun SearchResultGrid(
                             end = 12.dp,
                             bottom = bottomPadding
                         ),
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (scrollConnection != null) {
+                                    Modifier.nestedScroll(scrollConnection)
+                                } else {
+                                    Modifier
+                                }
+                            )
                     ) {
                         items(
                             count = searchResults.itemCount,

@@ -2,8 +2,12 @@ package com.example.nhviewer.presentation.feature.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,9 +23,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -48,9 +54,15 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -102,11 +114,31 @@ fun HomeScreen(
     val totalResults by searchViewModel.totalResults.collectAsState()
     val searchTrigger by searchViewModel.searchTrigger.collectAsState()
 
+    // 沉浸式滚动
+    var isChromeVisible by remember { mutableStateOf(true) }
+    val chromeHideThresholdPx = with(LocalDensity.current) { 8.dp.toPx() }
+    val chromeScrollConnection = remember(chromeHideThresholdPx) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                when {
+                    available.y < -chromeHideThresholdPx -> isChromeVisible = false
+                    available.y > chromeHideThresholdPx -> isChromeVisible = true
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
         stringResource(R.string.home_tab_latest),
         stringResource(R.string.home_tab_popular)
     )
+
+    // 切换"最新/热门" tab 时重新显示工具区，不带上一个列表滚动到一半的隐藏状态
+    LaunchedEffect(selectedTabIndex) {
+        isChromeVisible = true
+    }
 
     val focusManager = LocalFocusManager.current
 
@@ -127,7 +159,13 @@ fun HomeScreen(
 
     Scaffold(
         floatingActionButton = {
-            if (!active) {
+            AnimatedVisibility(
+                visible = !active && isChromeVisible,
+                enter = slideInVertically(animationSpec = NhMotion.Spatial.default()) { it } +
+                    fadeIn(animationSpec = NhMotion.Effects.default()),
+                exit = slideOutVertically(animationSpec = NhMotion.Spatial.default()) { it } +
+                    fadeOut(animationSpec = NhMotion.Effects.default())
+            ) {
                 FloatingActionButton(
                     onClick = { viewModel.playRandom() },
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -146,93 +184,124 @@ fun HomeScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 顶部常驻 SearchBar，融合“我的”入口
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(
-                        if (active) {
-                            Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        } else {
-                            Modifier.statusBarsPadding()
-                        }
-                    )
-                    .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 8.dp)
+            // 顶部常驻 SearchBar，融合"我的"入口，沉浸式滚动时随 isChromeVisible 一起隐藏/显示
+            AnimatedVisibility(
+                visible = isChromeVisible,
+                enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                    fadeIn(animationSpec = NhMotion.Effects.default()),
+                exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                    fadeOut(animationSpec = NhMotion.Effects.default())
             ) {
-                NhSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchViewModel.onSearchQueryChanged(it) },
-                    onSearch = {
-                        searchViewModel.search(it)
-                        focusManager.clearFocus()
-                    },
-                    expanded = active,
-                    onExpandedChange = { searchViewModel.onActiveChanged(it) },
-                    searchHistory = searchHistory,
-                    autocompleteSuggestions = autocompleteSuggestions,
-                    onDeleteHistory = { searchViewModel.deleteSearchHistory(it) },
-                    onClearAllHistory = { searchViewModel.clearSearchHistory() },
-                    placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
-                    leadingIcon = {
-                        IconButton(onClick = { onOpenDrawer() }) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Menu"
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 4.dp)
-                        ) {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchViewModel.onSearchQueryChanged("") }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (active) {
+                                Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            } else {
+                                Modifier.statusBarsPadding()
+                            }
+                        )
+                        .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 8.dp)
+                ) {
+                    NhSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchViewModel.onSearchQueryChanged(it) },
+                        onSearch = {
+                            searchViewModel.search(it)
+                            focusManager.clearFocus()
+                        },
+                        expanded = active,
+                        onExpandedChange = { searchViewModel.onActiveChanged(it) },
+                        searchHistory = searchHistory,
+                        autocompleteSuggestions = autocompleteSuggestions,
+                        onDeleteHistory = { searchViewModel.deleteSearchHistory(it) },
+                        onClearAllHistory = { searchViewModel.clearSearchHistory() },
+                        placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
+                        leadingIcon = {
+                            IconButton(onClick = { onOpenDrawer() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = "Menu"
+                                )
+                            }
+                        },
+                        trailingIcon = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(end = 4.dp)
+                            ) {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchViewModel.onSearchQueryChanged("") }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Clear"
+                                        )
+                                    }
+                                }
+                                IconButton(onClick = {
+                                    if (searchQuery.isNotBlank()) {
+                                        searchViewModel.search(searchQuery)
+                                        focusManager.clearFocus()
+                                    }
+                                }) {
                                     Icon(
-                                        imageVector = Icons.Default.Clear,
-                                        contentDescription = "Clear"
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = "Search"
                                     )
                                 }
                             }
-                            IconButton(onClick = {
-                                if (searchQuery.isNotBlank()) {
-                                    searchViewModel.search(searchQuery)
-                                    focusManager.clearFocus()
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Search"
-                                )
-                            }
                         }
-                    }
-                )
+                    )
+                }
             }
 
             // 搜索结果页与普通主页内容区域动态切换
             if (!active && searchQuery.isNotEmpty()) {
-                SearchQueryBuilder(
-                    rawQuery = searchQuery,
-                    onQueryChanged = {
-                        searchViewModel.onSearchQueryChanged(it)
-                        // 文本改变时不触发搜索，SearchQueryBuilder 内部的选择操作会通过 onTriggerSearch 触发
-                    },
-                    onTriggerSearch = { query ->
-                        searchViewModel.search(query)
-                        focusManager.clearFocus()
+                val searchResultGridState = rememberLazyStaggeredGridState()
+                // 进入搜索结果态时重置显示状态（同时覆盖了清空关键词后再次搜索的情况）
+                LaunchedEffect(Unit) {
+                    isChromeVisible = true
+                }
+                LaunchedEffect(searchResultGridState) {
+                    snapshotFlow {
+                        searchResultGridState.firstVisibleItemIndex to searchResultGridState.firstVisibleItemScrollOffset
+                    }.collect { (index, offset) ->
+                        if (index == 0 && offset == 0) isChromeVisible = true
                     }
-                )
+                }
+
                 AnimatedVisibility(
-                    visible = searchResults.itemCount > 0,
-                    enter = fadeIn(animationSpec = NhMotion.Effects.default()),
-                    exit = fadeOut(animationSpec = NhMotion.Effects.default())
+                    visible = isChromeVisible,
+                    enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                        fadeIn(animationSpec = NhMotion.Effects.default()),
+                    exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                        fadeOut(animationSpec = NhMotion.Effects.default())
                 ) {
-                    SearchSortBar(
-                        sortOption = sortOption,
-                        onSortOptionChanged = { searchViewModel.onSortOptionChanged(it) },
-                        totalCount = totalResults
-                    )
+                    Column {
+                        SearchQueryBuilder(
+                            rawQuery = searchQuery,
+                            onQueryChanged = {
+                                searchViewModel.onSearchQueryChanged(it)
+                                // 文本改变时不触发搜索，SearchQueryBuilder 内部的选择操作会通过 onTriggerSearch 触发
+                            },
+                            onTriggerSearch = { query ->
+                                searchViewModel.search(query)
+                                focusManager.clearFocus()
+                            }
+                        )
+                        AnimatedVisibility(
+                            visible = searchResults.itemCount > 0,
+                            enter = fadeIn(animationSpec = NhMotion.Effects.default()),
+                            exit = fadeOut(animationSpec = NhMotion.Effects.default())
+                        ) {
+                            SearchSortBar(
+                                sortOption = sortOption,
+                                onSortOptionChanged = { searchViewModel.onSortOptionChanged(it) },
+                                totalCount = totalResults
+                            )
+                        }
+                    }
                 }
 
                 SearchResultGrid(
@@ -242,25 +311,36 @@ fun HomeScreen(
                     onNavigateToDetail = onNavigateToDetail,
                     minSize = 340,
                     bottomPadding = 12.dp + innerPadding.calculateBottomPadding(),
-                    scrollToTopKey = searchTrigger
+                    scrollToTopKey = searchTrigger,
+                    gridState = searchResultGridState,
+                    scrollConnection = chromeScrollConnection
                 )
             } else if (!active) {
-                PrimaryTabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    modifier = Modifier.fillMaxWidth()
+                // "最新/热门" tab 栏与顶部搜索栏一起随 isChromeVisible 隐藏/显示
+                AnimatedVisibility(
+                    visible = isChromeVisible,
+                    enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                        fadeIn(animationSpec = NhMotion.Effects.default()),
+                    exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                        fadeOut(animationSpec = NhMotion.Effects.default())
                 ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            text = {
-                                Text(
-                                    text = title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        )
+                    PrimaryTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -269,8 +349,16 @@ fun HomeScreen(
                         0 -> {
                             val pullRefreshState = rememberPullToRefreshState()
                             var isRefreshing by remember { mutableStateOf(false) }
+                            val latestGridState = rememberLazyStaggeredGridState()
                             LaunchedEffect(latestGalleries.loadState.refresh) {
                                 isRefreshing = latestGalleries.loadState.refresh is LoadState.Loading
+                            }
+                            LaunchedEffect(latestGridState) {
+                                snapshotFlow {
+                                    latestGridState.firstVisibleItemIndex to latestGridState.firstVisibleItemScrollOffset
+                                }.collect { (index, offset) ->
+                                    if (index == 0 && offset == 0) isChromeVisible = true
+                                }
                             }
 
                             PullToRefreshBox(
@@ -288,13 +376,16 @@ fun HomeScreen(
                                 } else {
                                     LazyVerticalStaggeredGrid(
                                         columns = StaggeredGridCells.Adaptive(minSize = 340.dp),
+                                        state = latestGridState,
                                         contentPadding = PaddingValues(
                                             start = 12.dp,
                                             top = 12.dp,
                                             end = 12.dp,
                                             bottom = 12.dp + innerPadding.calculateBottomPadding()
                                         ),
-                                        modifier = Modifier.fillMaxSize()
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .nestedScroll(chromeScrollConnection)
                                     ) {
                                         items(
                                             count = latestGalleries.itemCount,
@@ -340,6 +431,14 @@ fun HomeScreen(
                         1 -> {
                             val pullRefreshState = rememberPullToRefreshState()
                             val isRefreshing = popularState is HomeViewModel.PopularState.Loading
+                            val popularGridState = rememberLazyGridState()
+                            LaunchedEffect(popularGridState) {
+                                snapshotFlow {
+                                    popularGridState.firstVisibleItemIndex to popularGridState.firstVisibleItemScrollOffset
+                                }.collect { (index, offset) ->
+                                    if (index == 0 && offset == 0) isChromeVisible = true
+                                }
+                            }
 
                             PullToRefreshBox(
                                 state = pullRefreshState,
@@ -365,13 +464,16 @@ fun HomeScreen(
                                     is HomeViewModel.PopularState.Success -> {
                                         LazyVerticalGrid(
                                             columns = GridCells.Adaptive(minSize = 340.dp),
+                                            state = popularGridState,
                                             contentPadding = PaddingValues(
                                                 start = 12.dp,
                                                 top = 12.dp,
                                                 end = 12.dp,
                                                 bottom = 12.dp + innerPadding.calculateBottomPadding()
                                             ),
-                                            modifier = Modifier.fillMaxSize()
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .nestedScroll(chromeScrollConnection)
                                         ) {
                                             items(
                                                 items = state.items,
