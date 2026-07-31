@@ -34,7 +34,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -103,7 +102,6 @@ fun SettingsScreen(
     }
 
     val themeMode by viewModel.themeMode.collectAsState()
-    val gridBaseWidth by viewModel.gridBaseWidth.collectAsState()
     val readerDirection by viewModel.readerDirection.collectAsState()
     val defaultDownloadFormat by viewModel.defaultDownloadFormat.collectAsState()
     val dynamicColor by viewModel.dynamicColor.collectAsState()
@@ -775,31 +773,6 @@ fun SettingsScreen(
                     )
                 },
                 modifier = Modifier.clickable { viewModel.setDynamicColor(!dynamicColor) }
-            )
-            ListItem(
-                headlineContent = {
-                    Text(
-                        text = stringResource(R.string.settings_grid_density_title),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                supportingContent = {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.settings_grid_base_width, gridBaseWidth),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Slider(
-                            value = gridBaseWidth.toFloat(),
-                            onValueChange = { viewModel.setGridBaseWidth(it.toInt()) },
-                            valueRange = 120f..240f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                },
-                leadingContent = { Icon(Icons.Default.Palette, contentDescription = null) }
             )
 
             SettingsCategoryHeader(title = stringResource(R.string.settings_cat_filter))

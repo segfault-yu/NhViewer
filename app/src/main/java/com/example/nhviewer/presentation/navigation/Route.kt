@@ -13,7 +13,7 @@ sealed interface Route {
     data object Profile : Route
 
     @Serializable
-    data object Search : Route
+    data class Search(val initialQuery: String? = null) : Route
 
     @Serializable
     data object Tags : Route
@@ -26,9 +26,6 @@ sealed interface Route {
 
     @Serializable
     data object History : Route
-
-    @Serializable
-    data class TaggedGalleries(val tagId: Int, val tagName: String) : Route
 
     @Serializable
     data class GalleryDetail(val galleryId: Int) : Route

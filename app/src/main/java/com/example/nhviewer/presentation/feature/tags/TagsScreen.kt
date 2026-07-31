@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.nhviewer.domain.model.Tag
 import com.example.nhviewer.util.i18n.LocalTagDisplayMode
 import com.example.nhviewer.util.i18n.LocalTagLanguage
 import com.example.nhviewer.util.i18n.TagTranslationProvider
@@ -61,7 +62,7 @@ import com.example.nhviewer.R
 @Composable
 fun TagsScreen(
     onBackClick: () -> Unit,
-    onNavigateToTaggedGalleries: (Int, String) -> Unit,
+    onNavigateToSearch: (Tag) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TagsViewModel = hiltViewModel()
 ) {
@@ -214,7 +215,7 @@ fun TagsScreen(
                                         .fillMaxWidth()
                                         .padding(6.dp)
                                         .clickable {
-                                            onNavigateToTaggedGalleries(tag.id, tag.name)
+                                            onNavigateToSearch(tag)
                                         }
                                 ) {
                                     Row(

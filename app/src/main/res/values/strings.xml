@@ -94,10 +94,6 @@
     <string name="tag_type_male_full">男性 (Male)</string>
     <string name="tag_type_tag_full">其他 (Other)</string>
 
-    <!-- Tagged Galleries Screen -->
-    <string name="tagged_title">标签: %s</string>
-    <string name="tagged_empty">该标签下暂无画廊数据</string>
-
     <!-- History Screen -->
     <string name="history_title">最近阅读</string>
     <string name="history_empty_title">暂无最近阅读记录</string>
@@ -256,8 +252,6 @@
     <string name="settings_cat_appearance">外观与显示</string>
     <string name="settings_dynamic_color_title">动态取色</string>
     <string name="settings_dynamic_color_desc">基于壁纸的主题配色 (Android 12+)</string>
-    <string name="settings_grid_density_title">网格密度 (自适应宽度)</string>
-    <string name="settings_grid_base_width">当前基准宽度: %ddp</string>
     <string name="settings_cat_filter">内容过滤</string>
     <string name="settings_blacklist_desc">屏蔽特定标签的画廊</string>
     <string name="settings_cat_language">语言与标签</string>

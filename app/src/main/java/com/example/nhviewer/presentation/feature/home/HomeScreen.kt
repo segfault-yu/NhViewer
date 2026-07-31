@@ -70,7 +70,6 @@ import com.example.nhviewer.presentation.common.SearchResultGrid
 import com.example.nhviewer.presentation.common.SearchSortBar
 import com.example.nhviewer.presentation.feature.profile.ProfileViewModel
 import com.example.nhviewer.presentation.feature.search.SearchViewModel
-import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
 import com.example.nhviewer.ui.theme.NhMotion
 import com.example.nhviewer.util.NetworkErrorParser
 import kotlinx.coroutines.flow.collectLatest
@@ -84,10 +83,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
     searchViewModel: SearchViewModel = hiltViewModel(),
-    profileViewModel: ProfileViewModel = hiltViewModel(),
-    settingsViewModel: SettingsViewModel = hiltViewModel()
+    profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
-    val gridBaseWidth by settingsViewModel.gridBaseWidth.collectAsState()
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     val cdnHost = cdnConfig?.primaryThumbHost ?: ""
 
@@ -103,6 +100,7 @@ fun HomeScreen(
     val autocompleteSuggestions by searchViewModel.autocompleteSuggestions.collectAsState()
     val searchResults = searchViewModel.searchResults.collectAsLazyPagingItems()
     val totalResults by searchViewModel.totalResults.collectAsState()
+    val searchTrigger by searchViewModel.searchTrigger.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
@@ -152,7 +150,13 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (active) Modifier else Modifier.statusBarsPadding())
+                    .then(
+                        if (active) {
+                            Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        } else {
+                            Modifier.statusBarsPadding()
+                        }
+                    )
                     .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 8.dp)
             ) {
                 NhSearchBar(
@@ -237,7 +241,8 @@ fun HomeScreen(
                     favoritedIds = favoritedIds,
                     onNavigateToDetail = onNavigateToDetail,
                     minSize = 340,
-                    bottomPadding = 12.dp + innerPadding.calculateBottomPadding()
+                    bottomPadding = 12.dp + innerPadding.calculateBottomPadding(),
+                    scrollToTopKey = searchTrigger
                 )
             } else if (!active) {
                 PrimaryTabRow(

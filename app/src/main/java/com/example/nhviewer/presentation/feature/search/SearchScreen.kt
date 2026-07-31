@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -32,18 +33,23 @@ import com.example.nhviewer.presentation.common.NhSearchBar
 import com.example.nhviewer.presentation.common.SearchQueryBuilder
 import com.example.nhviewer.presentation.common.SearchResultGrid
 import com.example.nhviewer.presentation.common.SearchSortBar
-import com.example.nhviewer.presentation.feature.settings.SettingsViewModel
 import com.example.nhviewer.ui.theme.NhMotion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
+    onBackClick: () -> Unit,
     onNavigateToDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    initialQuery: String? = null,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
-    val settingsViewModel: SettingsViewModel = hiltViewModel()
-    val gridBaseWidth by settingsViewModel.gridBaseWidth.collectAsState()
+    LaunchedEffect(initialQuery) {
+        if (!initialQuery.isNullOrBlank()) {
+            viewModel.search(initialQuery)
+        }
+    }
+
     val searchQuery by viewModel.searchQuery.collectAsState()
     val active by viewModel.active.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
@@ -89,11 +95,15 @@ fun SearchScreen(
                     )
                 },
                 leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    // 独立搜索页没有底部导航兜底，收起态点这个箭头退出页面；
+                    // 展开态（建议面板）时先收起面板而不是直接退出，避免误触返回
+                    IconButton(onClick = { if (active) viewModel.onActiveChanged(false) else onBackClick() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -140,7 +150,6 @@ fun SearchScreen(
                 cdnHost = cdnHost,
                 favoritedIds = favoritedIds,
                 onNavigateToDetail = onNavigateToDetail,
-                minSize = gridBaseWidth,
                 scrollToTopKey = searchTrigger
             )
         }

@@ -94,10 +94,6 @@
     <string name="tag_type_male_full">Male</string>
     <string name="tag_type_tag_full">Other</string>
 
-    <!-- Tagged Galleries Screen -->
-    <string name="tagged_title">Tag: %s</string>
-    <string name="tagged_empty">No galleries under this tag</string>
-
     <!-- History Screen -->
     <string name="history_title">Recent History</string>
     <string name="history_empty_title">No reading history</string>
@@ -237,8 +233,6 @@
     <string name="settings_cat_appearance">Appearance &amp; Display</string>
     <string name="settings_dynamic_color_title">Dynamic Color</string>
     <string name="settings_dynamic_color_desc">Theme based on wallpaper colors (Android 12+)</string>
-    <string name="settings_grid_density_title">Grid Density (Adaptive Width)</string>
-    <string name="settings_grid_base_width">Current Base Width: %ddp</string>
     <string name="settings_cat_filter">Content Filtering</string>
     <string name="settings_blacklist_desc">Block galleries containing specific tags</string>
     <string name="settings_cat_language">Language &amp; Tags</string>

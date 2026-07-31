@@ -21,7 +21,6 @@ class SettingsManager @Inject constructor(
 ) {
     private object PreferencesKeys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
-        val GRID_BASE_WIDTH = intPreferencesKey("grid_base_width")
         val READER_DIRECTION = stringPreferencesKey("reader_direction")
         val DEFAULT_DOWNLOAD_FORMAT = stringPreferencesKey("default_download_format")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
@@ -111,18 +110,6 @@ class SettingsManager @Inject constructor(
         }
         .map { preferences ->
             preferences[PreferencesKeys.THEME_MODE] ?: "system"
-        }
-
-    val gridBaseWidth: Flow<Int> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { preferences ->
-            preferences[PreferencesKeys.GRID_BASE_WIDTH] ?: 160
         }
 
     val readerDirection: Flow<String> = dataStore.data
@@ -278,12 +265,6 @@ class SettingsManager @Inject constructor(
     suspend fun setThemeMode(mode: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME_MODE] = mode
-        }
-    }
-
-    suspend fun setGridBaseWidth(width: Int) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.GRID_BASE_WIDTH] = width
         }
     }
 

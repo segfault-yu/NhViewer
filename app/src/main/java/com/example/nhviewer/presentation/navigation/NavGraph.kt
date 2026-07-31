@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.example.nhviewer.domain.model.Tag
 import com.example.nhviewer.presentation.feature.auth.AuthScreen
 import com.example.nhviewer.presentation.feature.detail.DetailScreen
 import com.example.nhviewer.presentation.feature.history.HistoryScreen
@@ -23,13 +24,14 @@ import com.example.nhviewer.presentation.feature.home.HomeScreen
 import com.example.nhviewer.presentation.feature.profile.ProfileScreen
 import com.example.nhviewer.presentation.feature.reader.ReaderScreen
 import com.example.nhviewer.presentation.feature.search.SearchScreen
-import com.example.nhviewer.presentation.feature.tagged.TaggedGalleriesScreen
 import com.example.nhviewer.presentation.feature.tags.TagsScreen
 import com.example.nhviewer.presentation.feature.settings.SettingsScreen
 import com.example.nhviewer.presentation.feature.settings.sessions.SessionScreen
 import com.example.nhviewer.presentation.feature.settings.apikeys.ApiKeyScreen
 import com.example.nhviewer.presentation.feature.settings.about.AboutScreen
 import com.example.nhviewer.ui.theme.NhMotion
+import com.example.nhviewer.util.i18n.LocalTagLanguage
+import com.example.nhviewer.util.i18n.TagTranslationProvider
 
 /** 等价于 [composable]，额外把当前目的地的 [AnimatedContentScope] 通过 CompositionLocal 下发，供共享元素转场使用。 */
 inline fun <reified T : Any> NavGraphBuilder.animatedComposable(
@@ -49,6 +51,11 @@ fun NhViewerNavGraph(
     onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val tagLanguage = LocalTagLanguage.current
+    val onTagClick: (Tag) -> Unit = { tag ->
+        navController.navigate(Route.Search(TagTranslationProvider.toSearchQueryToken(tag, tagLanguage)))
+    }
+
     SharedTransitionLayout {
         CompositionLocalProvider(LocalSharedTransitionScope provides this) {
             NavHost(
@@ -75,17 +82,14 @@ fun NhViewerNavGraph(
         animatedComposable<Route.Tags> {
             TagsScreen(
                 onBackClick = { navController.popBackStack() },
-                onNavigateToTaggedGalleries = { tagId, tagName ->
-                    navController.navigate(Route.TaggedGalleries(tagId, tagName))
-                }
+                onNavigateToSearch = onTagClick
             )
         }
 
-        animatedComposable<Route.TaggedGalleries> { backStackEntry ->
-            val route: Route.TaggedGalleries = backStackEntry.toRoute()
-            TaggedGalleriesScreen(
-                tagId = route.tagId,
-                tagName = route.tagName,
+        animatedComposable<Route.Search> { backStackEntry ->
+            val route: Route.Search = backStackEntry.toRoute()
+            SearchScreen(
+                initialQuery = route.initialQuery,
                 onBackClick = { navController.popBackStack() },
                 onNavigateToDetail = { galleryId ->
                     navController.navigate(Route.GalleryDetail(galleryId))
@@ -140,9 +144,7 @@ fun NhViewerNavGraph(
                 onStartReading = { galleryId, startPage ->
                     navController.navigate(Route.Reader(galleryId, startPage))
                 },
-                onTagClick = { tagId, tagName ->
-                    navController.navigate(Route.TaggedGalleries(tagId, tagName))
-                },
+                onTagClick = onTagClick,
                 onNavigateToDetail = { galleryId ->
                     navController.navigate(Route.GalleryDetail(galleryId))
                 }

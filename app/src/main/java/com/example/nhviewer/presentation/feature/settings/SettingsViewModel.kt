@@ -29,13 +29,6 @@ class SettingsViewModel @Inject constructor(
             initialValue = "system"
         )
 
-    val gridBaseWidth: StateFlow<Int> = settingsManager.gridBaseWidth
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 160
-        )
-
     val readerDirection: StateFlow<String> = settingsManager.readerDirection
         .stateIn(
             scope = viewModelScope,
@@ -157,12 +150,6 @@ class SettingsViewModel @Inject constructor(
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
             settingsManager.setThemeMode(mode)
-        }
-    }
-
-    fun setGridBaseWidth(width: Int) {
-        viewModelScope.launch {
-            settingsManager.setGridBaseWidth(width)
         }
     }
 

@@ -160,4 +160,10 @@ object TagTranslationProvider {
 
         return "tag"
     }
+
+    /** 把标签转成搜索语法里的一个词，如 `female:"束缚"`，供点击标签跳转搜索页时拼接查询串。 */
+    fun toSearchQueryToken(tag: Tag, targetLang: String = "zh"): String {
+        val trueType = getTrueTagType(tag.name, tag.type, targetLang)
+        return "$trueType:\"${tag.name}\""
+    }
 }

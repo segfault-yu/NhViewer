@@ -94,7 +94,7 @@ fun DetailScreen(
     galleryId: Int,
     onBackClick: () -> Unit,
     onStartReading: (Int, Int) -> Unit,
-    onTagClick: (Int, String) -> Unit,
+    onTagClick: (Tag) -> Unit,
     onNavigateToDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DetailViewModel = hiltViewModel()
@@ -232,7 +232,7 @@ fun DetailScreen(
                         tagsSection(
                             tags = emptyList(),
                             isLoading = true,
-                            onTagClick = { tag -> onTagClick(tag.id, tag.name) }
+                            onTagClick = onTagClick
                         )
 
                         // 相关推荐走独立接口，骨架阶段就已提前发起
@@ -305,7 +305,7 @@ fun DetailScreen(
                         tagsSection(
                             tags = detail.tags,
                             isLoading = false,
-                            onTagClick = { tag -> onTagClick(tag.id, tag.name) }
+                            onTagClick = onTagClick
                         )
 
                         // 3. Page Preview Section (缩略图网格预览，只有详情接口才有 pages 数据)
