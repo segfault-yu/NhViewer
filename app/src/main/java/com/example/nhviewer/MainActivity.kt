@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -77,11 +76,12 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         // 迁移旧版本 DataStore 里保存的显式语言选择到官方 AppCompatDelegate API，
-        // 仅在从未设置过(即刚从旧版本升级、或全新安装)时执行一次，
-        // 避免覆盖系统设置或本次会话里已经生效的选择
-        if (AppCompatDelegate.getApplicationLocales().isEmpty) {
-            lifecycleScope.launch {
+        // 用持久化标记判断是否迁移过，而不是看 AppCompatDelegate 当前语言是否为空——
+        // 否则用户在系统设置里主动选择"跟随系统"后，每次冷启动都会被这里重新拉回旧值
+        lifecycleScope.launch {
+            if (!settingsManager.isAppLanguageMigrated()) {
                 LanguageManager.applyAppLanguage(settingsManager.appLanguage.first())
+                settingsManager.markAppLanguageMigrated()
             }
         }
 

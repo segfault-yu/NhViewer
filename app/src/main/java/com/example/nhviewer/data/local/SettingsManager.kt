@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
@@ -34,6 +35,7 @@ class SettingsManager @Inject constructor(
         val PAGE_TRANSITION_ANIM = booleanPreferencesKey("page_transition_anim")
         val SHOW_PERSISTENT_PAGE_NUMBER = booleanPreferencesKey("show_persistent_page_number")
         val APP_LANGUAGE = stringPreferencesKey("app_language")
+        val APP_LANGUAGE_MIGRATED = booleanPreferencesKey("app_language_migrated")
         val TAG_LANGUAGE = stringPreferencesKey("tag_language")
         val TAG_DISPLAY_MODE = stringPreferencesKey("tag_display_mode")
         val MAX_IMAGE_CACHE_MB = intPreferencesKey("max_image_cache_mb")
@@ -343,6 +345,32 @@ class SettingsManager @Inject constructor(
     suspend fun setAppLanguage(language: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.APP_LANGUAGE] = language
+        }
+    }
+
+    /**
+     * 是否已经执行过应用语言迁移(把旧版本 DataStore 里的显式语言选择迁移到 AppCompatDelegate)。
+     * 这个标记与"当前 AppCompatDelegate 语言是否为空"无关，
+     * 避免把用户在系统设置里主动选择的"跟随系统"误判成"从未迁移过"。
+     */
+    suspend fun isAppLanguageMigrated(): Boolean {
+        return dataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
+            }
+            .map { preferences ->
+                preferences[PreferencesKeys.APP_LANGUAGE_MIGRATED] ?: false
+            }
+            .first()
+    }
+
+    suspend fun markAppLanguageMigrated() {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.APP_LANGUAGE_MIGRATED] = true
         }
     }
 
