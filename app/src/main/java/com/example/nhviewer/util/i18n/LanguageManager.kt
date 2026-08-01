@@ -1,7 +1,9 @@
 package com.example.nhviewer.util.i18n
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.os.Build
 import android.os.LocaleList
 import androidx.compose.runtime.compositionLocalOf
@@ -35,6 +37,19 @@ val LocalAddToBlacklist = compositionLocalOf<(Tag) -> Unit> { {} }
 object LanguageManager {
 
     /**
+     * 仅覆盖 Resources、保留原 Context 引用链的包装类。
+     * createConfigurationContext() 返回的是与 Activity 无关的裸 ContextImpl，
+     * 若直接用它整体替换 LocalContext，会导致 hiltViewModel() 沿 ContextWrapper
+     * 链向上找 Activity 时失败而崩溃，因此这里改为包裹原 Context 只换 Resources。
+     */
+    private class LocaleContextWrapper(
+        base: Context,
+        private val localizedResources: Resources
+    ) : ContextWrapper(base) {
+        override fun getResources(): Resources = localizedResources
+    }
+
+    /**
      * 根据 appLanguage 配置创建包装对应 Locale 语言环境的 Context
      * @param context 原始 Context
      * @param appLanguage 语言选项 ("system", "zh", "en")
@@ -53,6 +68,7 @@ object LanguageManager {
             @Suppress("DEPRECATION")
             config.locale = locale
         }
-        return context.createConfigurationContext(config)
+        val localizedResources = context.createConfigurationContext(config).resources
+        return LocaleContextWrapper(context, localizedResources)
     }
 }
