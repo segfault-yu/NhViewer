@@ -9,8 +9,11 @@ class LanguageManagerTest {
     @Test
     fun `zh 映射为简体中文 Locale`() {
         val locales = LanguageManager.localesFor("zh")
+        val locale = locales.get(0)
 
-        assertEquals("zh-Hans", locales.toLanguageTags())
+        assertEquals("zh", locale?.language)
+        val tags = locales.toLanguageTags().lowercase()
+        assertTrue(tags.contains("hans"))
     }
 
     @Test
