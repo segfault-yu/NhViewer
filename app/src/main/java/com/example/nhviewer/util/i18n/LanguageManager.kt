@@ -1,14 +1,9 @@
 package com.example.nhviewer.util.i18n
 
-import android.content.Context
-import android.content.ContextWrapper
-import android.content.res.Configuration
-import android.content.res.Resources
-import android.os.Build
-import android.os.LocaleList
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.compositionLocalOf
+import androidx.core.os.LocaleListCompat
 import com.example.nhviewer.domain.model.Tag
-import java.util.Locale
 
 /**
  * 标签显示模式 CompositionLocal 容器 (支持全局响应标签模式切换)
@@ -32,43 +27,37 @@ val LocalBlacklistedTagIds = compositionLocalOf<Set<Int>> { emptySet() }
 val LocalAddToBlacklist = compositionLocalOf<(Tag) -> Unit> { {} }
 
 /**
- * 软件界面语言与 Context Locale 管理器
+ * 软件界面语言管理器，基于官方 AndroidX Per-app Language 机制
+ * (AppCompatDelegate.setApplicationLocales)，与系统"设置 -> 应用信息 -> 语言"共用同一套存储。
  */
 object LanguageManager {
 
     /**
-     * 仅覆盖 Resources、保留原 Context 引用链的包装类。
-     * createConfigurationContext() 返回的是与 Activity 无关的裸 ContextImpl，
-     * 若直接用它整体替换 LocalContext，会导致 hiltViewModel() 沿 ContextWrapper
-     * 链向上找 Activity 时失败而崩溃，因此这里改为包裹原 Context 只换 Resources。
+     * 把 appLanguage 配置("system"/"zh"/"en")转换为 LocaleListCompat
      */
-    private class LocaleContextWrapper(
-        base: Context,
-        private val localizedResources: Resources
-    ) : ContextWrapper(base) {
-        override fun getResources(): Resources = localizedResources
+    fun localesFor(appLanguage: String): LocaleListCompat = when (appLanguage) {
+        "zh" -> LocaleListCompat.forLanguageTags("zh-Hans")
+        "en" -> LocaleListCompat.forLanguageTags("en")
+        else -> LocaleListCompat.getEmptyLocaleList() // 跟随系统语言
     }
 
     /**
-     * 根据 appLanguage 配置创建包装对应 Locale 语言环境的 Context
-     * @param context 原始 Context
-     * @param appLanguage 语言选项 ("system", "zh", "en")
+     * 应用 appLanguage 配置为当前应用语言，会按需触发 Activity 重建
      */
-    fun createLocaleContext(context: Context, appLanguage: String): Context {
-        val locale = when (appLanguage) {
-            "zh" -> Locale.SIMPLIFIED_CHINESE
-            "en" -> Locale.ENGLISH
-            else -> return context // 默认跟随系统语言
-        }
+    fun applyAppLanguage(appLanguage: String) {
+        AppCompatDelegate.setApplicationLocales(localesFor(appLanguage))
+    }
 
-        val config = Configuration(context.resources.configuration)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            config.setLocales(LocaleList(locale))
-        } else {
-            @Suppress("DEPRECATION")
-            config.locale = locale
+    /**
+     * 读取当前生效的应用语言，映射回 "system"/"zh"/"en"
+     */
+    fun currentAppLanguage(): String {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        if (locales.isEmpty) return "system"
+        return when (locales.get(0)?.language) {
+            "zh" -> "zh"
+            "en" -> "en"
+            else -> "system"
         }
-        val localizedResources = context.createConfigurationContext(config).resources
-        return LocaleContextWrapper(context, localizedResources)
     }
 }
