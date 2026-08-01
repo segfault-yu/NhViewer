@@ -17,6 +17,12 @@ object NhMotion {
         fun <T> default(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.8f, stiffness = 380f)
         fun <T> fast(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.6f, stiffness = 800f)
         fun <T> slow(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.8f, stiffness = 200f)
+
+        /**
+         * 临界阻尼，不回弹。用于随滚动连续触发的尺寸隐藏/显示（如沉浸式工具栏），
+         * default() 的欠阻尼回弹在连续滚动时会被感知成"界面又多动了一下"。
+         */
+        fun <T> noBounce(): FiniteAnimationSpec<T> = spring(dampingRatio = 1f, stiffness = 380f)
     }
 
     /** 透明度/颜色类动效（无回弹）。 */
