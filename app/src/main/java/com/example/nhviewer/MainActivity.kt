@@ -1,9 +1,10 @@
 package com.example.nhviewer
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -22,9 +23,11 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.example.nhviewer.domain.model.ReadingHistory
 import com.example.nhviewer.presentation.feature.home.HomeViewModel
 import com.example.nhviewer.presentation.navigation.AppDrawerContent
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,10 +58,9 @@ import com.example.nhviewer.util.i18n.LocalTagLanguage
 import androidx.compose.runtime.CompositionLocalProvider
 import com.example.nhviewer.util.i18n.LocalTagDisplayMode
 import com.example.nhviewer.util.i18n.TagTranslationProvider
-import androidx.compose.ui.platform.LocalContext
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var settingsManager: SettingsManager
@@ -73,19 +75,24 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         TagTranslationProvider.init(this)
         enableEdgeToEdge()
+
+        // 迁移旧版本 DataStore 里保存的显式语言选择到官方 AppCompatDelegate API，
+        // 仅在从未设置过(即刚从旧版本升级、或全新安装)时执行一次，
+        // 避免覆盖系统设置或本次会话里已经生效的选择
+        if (AppCompatDelegate.getApplicationLocales().isEmpty) {
+            lifecycleScope.launch {
+                LanguageManager.applyAppLanguage(settingsManager.appLanguage.first())
+            }
+        }
+
         setContent {
             val themeMode by settingsManager.themeMode.collectAsState(initial = "system")
             val dynamicColor by settingsManager.dynamicColor.collectAsState(initial = true)
-            val appLanguage by settingsManager.appLanguage.collectAsState(initial = "system")
             val tagLanguage by settingsManager.tagLanguage.collectAsState(initial = "zh")
             val tagDisplayMode by settingsManager.tagDisplayMode.collectAsState(initial = "only_translation")
             val blacklistedTagIds by blacklistRepository.blacklistedTagIds.collectAsState()
 
             val scope = rememberCoroutineScope()
-            val context = LocalContext.current
-            val localeContext = remember(appLanguage, context) {
-                LanguageManager.createLocaleContext(context, appLanguage)
-            }
 
             val onAddToBlacklist: (Tag) -> Unit = remember {
                 { tag ->
@@ -102,7 +109,6 @@ class MainActivity : ComponentActivity() {
             }
 
             CompositionLocalProvider(
-                LocalContext provides localeContext,
                 LocalTagLanguage provides tagLanguage,
                 LocalTagDisplayMode provides tagDisplayMode,
                 LocalBlacklistedTagIds provides blacklistedTagIds,
