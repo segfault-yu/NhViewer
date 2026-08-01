@@ -3,9 +3,12 @@ package com.example.nhviewer.presentation.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nhviewer.data.local.SettingsManager
+import com.example.nhviewer.util.i18n.LanguageManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -113,12 +116,11 @@ class SettingsViewModel @Inject constructor(
             initialValue = true
         )
 
-    val appLanguage: StateFlow<String> = settingsManager.appLanguage
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "system"
-        )
+    // 语言的事实来源是 AppCompatDelegate，不再从 DataStore 的 Flow 派生：
+    // AppCompatDelegate.setApplicationLocales 触发的 Activity 重建会重新构造本 ViewModel，
+    // 构造时重新读取一次即可反映系统设置里外部触发的语言变更
+    private val _appLanguage = MutableStateFlow(LanguageManager.currentAppLanguage())
+    val appLanguage: StateFlow<String> = _appLanguage.asStateFlow()
 
     val tagLanguage: StateFlow<String> = settingsManager.tagLanguage
         .stateIn(
@@ -229,6 +231,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsManager.setAppLanguage(language)
         }
+        LanguageManager.applyAppLanguage(language)
+        _appLanguage.value = language
     }
 
     fun setTagLanguage(language: String) {
