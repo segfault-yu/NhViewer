@@ -8,6 +8,7 @@ ksp = "2.2.10-2.0.2"
 coreKtx = "1.16.0"
 lifecycleRuntimeKtx = "2.9.4"
 activityCompose = "1.11.0"
+appcompat = "1.7.0"
 
 # Compose
 composeBom = "2025.12.00"
@@ -45,6 +46,7 @@ espressoCore = "3.7.0"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 # Compose
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
