@@ -46,58 +46,56 @@ A personal-use, open-source native Android app for reading and managing manga, b
 
 ## Project Directory Structure
 
-> Inline comments in the tree below are kept in Chinese, matching the actual comments in the source files.
-
 ```
 app/src/main/java/com/example/nhviewer/
-├── MainActivity.kt                    // 全局 Activity 入口与 CompositionLocal 配置
-├── NhViewerApp.kt                     // 应用根 UI、Drawer 与全局 AuthEvent 事件监听
+├── MainActivity.kt                    // Global Activity entry point and CompositionLocal setup
+├── NhViewerApp.kt                     // App root UI, Drawer, and global AuthEvent listener
 │
-├── data/                              // 数据层 (Data Layer)
-│   ├── local/                         // 本地持久化存储
-│   │   ├── dao/                       // Room DAO 接口 (ReadingHistoryDao, BlacklistTagDao 等)
-│   │   ├── entity/                    // Room 数据库实体 (ReadingHistoryEntity 等)
-│   │   ├── datastore/                 // DataStore 设置项封装 (SettingsManager)
-│   │   ├── TokenManager.kt            // 存储与加密 Token 管理类
-│   │   └── NhViewerDatabase.kt        // Room Database 数据库声明
-│   ├── paging/                        // Paging 3 分页数据源 (FavoritesPagingSource 等)
-│   ├── remote/                        // 远程 Api 数据源
-│   │   ├── dto/                       // API 响应数据传输对象 (DTO)
-│   │   ├── interceptor/               // AuthInterceptor, UserAgentInterceptor 等
-│   │   └── TokenRefreshAuthenticator.kt // 401 自动刷新 Token 校验器
-│   └── repository/                    // 领域层 Repository 接口的本地/网络实现
+├── data/                              // Data Layer
+│   ├── local/                         // Local persistence
+│   │   ├── dao/                       // Room DAO interfaces (ReadingHistoryDao, BlacklistTagDao, etc.)
+│   │   ├── entity/                    // Room database entities (ReadingHistoryEntity, etc.)
+│   │   ├── datastore/                 // DataStore settings wrapper (SettingsManager)
+│   │   ├── TokenManager.kt            // Token storage & encryption manager
+│   │   └── NhViewerDatabase.kt        // Room Database declaration
+│   ├── paging/                        // Paging 3 data sources (FavoritesPagingSource, etc.)
+│   ├── remote/                        // Remote API data sources
+│   │   ├── dto/                       // API response DTOs
+│   │   ├── interceptor/               // AuthInterceptor, UserAgentInterceptor, etc.
+│   │   └── TokenRefreshAuthenticator.kt // 401 auto token-refresh authenticator
+│   └── repository/                    // Local/network implementations of domain Repository interfaces
 │
-├── domain/                            // 领域层 (Domain Layer - 纯 Kotlin)
-│   ├── model/                         // 核心领域数据模型 (GalleryDetail, Tag, User 等)
-│   ├── repository/                    // 数据仓库接口抽象定义
-│   └── usecase/                       // 独立业务用例 (LoginUseCase, ReadingHistoryUseCase 等)
+├── domain/                            // Domain Layer (pure Kotlin)
+│   ├── model/                         // Core domain models (GalleryDetail, Tag, User, etc.)
+│   ├── repository/                    // Repository interface abstractions
+│   └── usecase/                       // Standalone business use cases (LoginUseCase, ReadingHistoryUseCase, etc.)
 │
-├── presentation/                      // 视图层 (Presentation Layer)
-│   ├── common/                        // 跨功能模块通用 UI 组件
-│   │   ├── TagChip.kt                 // 标签气泡组件
-│   │   ├── GalleryCard.kt             // 画廊卡片组件
-│   │   ├── EmptyState.kt              // 空状态占位页
-│   │   └── LoadingIndicator.kt        // 加载动画组件
-│   ├── feature/                       // 按业务功能划分的 UI 界面与 ViewModel
-│   │   ├── auth/                      // 登录 / 注册 / 密码重置
-│   │   ├── blacklist/                 // 黑名单管理
-│   │   ├── detail/                    // 画廊详情与标签列表
-│   │   ├── favorites/                 // 个人收藏夹
-│   │   ├── history/                   // 阅读历史记录
-│   │   ├── home/                      // 首页最新 / 热门画廊
-│   │   ├── profile/                   // 个人中心与资料修改
-│   │   ├── reader/                    // 漫画阅读器与缩略图导航栏
-│   │   ├── search/                    // 搜索与智能自动补全
-│   │   ├── settings/                  // 设置 (主题/语言/API Key/会话/关于)
-│   │   ├── tagged/                    // 按标签浏览画廊
-│   │   └── tags/                      // 标签大全与分类排序
-│   └── navigation/                    // 路由路径 (Route)、NavGraph 导航图配置
-│       └── SharedTransitionScopes.kt  // 共享元素转场 Scope 的 CompositionLocal 下发
+├── presentation/                      // Presentation Layer
+│   ├── common/                        // Shared UI components across features
+│   │   ├── TagChip.kt                 // Tag chip component
+│   │   ├── GalleryCard.kt             // Gallery card component
+│   │   ├── EmptyState.kt              // Empty-state placeholder
+│   │   └── LoadingIndicator.kt        // Loading animation component
+│   ├── feature/                       // UI screens & ViewModels organized by feature
+│   │   ├── auth/                      // Login / register / password reset
+│   │   ├── blacklist/                 // Blacklist management
+│   │   ├── detail/                    // Gallery detail & tag list
+│   │   ├── favorites/                 // Personal favorites
+│   │   ├── history/                   // Reading history
+│   │   ├── home/                      // Home page latest / popular galleries
+│   │   ├── profile/                   // Profile & account settings
+│   │   ├── reader/                    // Manga reader & thumbnail navigation bar
+│   │   ├── search/                    // Search with smart autocomplete
+│   │   ├── settings/                  // Settings (theme/language/API key/session/about)
+│   │   ├── tagged/                    // Browse galleries by tag
+│   │   └── tags/                      // Full tag list & category sorting
+│   └── navigation/                    // Route definitions, NavGraph configuration
+│       └── SharedTransitionScopes.kt  // CompositionLocal propagation for shared-element transition scopes
 │
-├── di/                                // Hilt 依赖注入模块 (DatabaseModule, NetworkModule 等)
-├── ui/theme/                          // Compose Material 3 主题样式 (Color, Theme, Type, Shape)
-│   └── Motion.kt                      // 动效令牌唯一真源 (NhMotion)，含预见式返回转场组合
-└── util/                              // 工具类 (i18n 多语言、PoW 解算工具、标签翻译器)
+├── di/                                // Hilt DI modules (DatabaseModule, NetworkModule, etc.)
+├── ui/theme/                          // Compose Material 3 theme (Color, Theme, Type, Shape)
+│   └── Motion.kt                      // Single source of truth for motion tokens (NhMotion), includes Predictive Back transition composables
+└── util/                              // Utilities (i18n, PoW solver, tag translator)
 ```
 
 ---
