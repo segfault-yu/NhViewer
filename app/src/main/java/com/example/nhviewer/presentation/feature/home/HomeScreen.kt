@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -50,9 +52,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -85,6 +87,7 @@ import com.example.nhviewer.presentation.feature.search.SearchViewModel
 import com.example.nhviewer.ui.theme.NhMotion
 import com.example.nhviewer.util.NetworkErrorParser
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -129,11 +132,13 @@ fun HomeScreen(
         }
     }
 
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
         stringResource(R.string.home_tab_latest),
         stringResource(R.string.home_tab_popular)
     )
+    val homePagerState = rememberPagerState(pageCount = { tabs.size })
+    val homePagerScope = rememberCoroutineScope()
+    val selectedTabIndex = homePagerState.currentPage
 
     // 切换"最新/热门" tab 时重新显示工具区，不带上一个列表滚动到一半的隐藏状态
     LaunchedEffect(selectedTabIndex) {
@@ -161,9 +166,9 @@ fun HomeScreen(
         floatingActionButton = {
             AnimatedVisibility(
                 visible = !active && isChromeVisible,
-                enter = slideInVertically(animationSpec = NhMotion.Spatial.default()) { it } +
+                enter = slideInVertically(animationSpec = NhMotion.Spatial.noBounce()) { it } +
                     fadeIn(animationSpec = NhMotion.Effects.default()),
-                exit = slideOutVertically(animationSpec = NhMotion.Spatial.default()) { it } +
+                exit = slideOutVertically(animationSpec = NhMotion.Spatial.noBounce()) { it } +
                     fadeOut(animationSpec = NhMotion.Effects.default())
             ) {
                 FloatingActionButton(
@@ -187,9 +192,9 @@ fun HomeScreen(
             // 顶部常驻 SearchBar，融合"我的"入口，沉浸式滚动时随 isChromeVisible 一起隐藏/显示
             AnimatedVisibility(
                 visible = isChromeVisible,
-                enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
                     fadeIn(animationSpec = NhMotion.Effects.default()),
-                exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
                     fadeOut(animationSpec = NhMotion.Effects.default())
             ) {
                 Box(
@@ -273,9 +278,9 @@ fun HomeScreen(
 
                 AnimatedVisibility(
                     visible = isChromeVisible,
-                    enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                    enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
                         fadeIn(animationSpec = NhMotion.Effects.default()),
-                    exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                    exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
                         fadeOut(animationSpec = NhMotion.Effects.default())
                 ) {
                     Column {
@@ -319,9 +324,9 @@ fun HomeScreen(
                 // "最新/热门" tab 栏与顶部搜索栏一起随 isChromeVisible 隐藏/显示
                 AnimatedVisibility(
                     visible = isChromeVisible,
-                    enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                    enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
                         fadeIn(animationSpec = NhMotion.Effects.default()),
-                    exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                    exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
                         fadeOut(animationSpec = NhMotion.Effects.default())
                 ) {
                     PrimaryTabRow(
@@ -331,7 +336,7 @@ fun HomeScreen(
                         tabs.forEachIndexed { index, title ->
                             Tab(
                                 selected = selectedTabIndex == index,
-                                onClick = { selectedTabIndex = index },
+                                onClick = { homePagerScope.launch { homePagerState.animateScrollToPage(index) } },
                                 text = {
                                     Text(
                                         text = title,
@@ -344,8 +349,11 @@ fun HomeScreen(
                     }
                 }
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    when (selectedTabIndex) {
+                HorizontalPager(
+                    state = homePagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    when (page) {
                         0 -> {
                             val pullRefreshState = rememberPullToRefreshState()
                             var isRefreshing by remember { mutableStateOf(false) }

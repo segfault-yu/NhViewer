@@ -111,9 +111,9 @@ fun SearchScreen(
     ) {
         AnimatedVisibility(
             visible = isChromeVisible,
-            enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+            enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
                 fadeIn(animationSpec = NhMotion.Effects.default()),
-            exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+            exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
                 fadeOut(animationSpec = NhMotion.Effects.default())
         ) {
         Box(
@@ -172,9 +172,9 @@ fun SearchScreen(
         if (!active) {
             AnimatedVisibility(
                 visible = isChromeVisible,
-                enter = expandVertically(animationSpec = NhMotion.Spatial.default(), expandFrom = Alignment.Top) +
+                enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
                     fadeIn(animationSpec = NhMotion.Effects.default()),
-                exit = shrinkVertically(animationSpec = NhMotion.Spatial.default(), shrinkTowards = Alignment.Top) +
+                exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
                     fadeOut(animationSpec = NhMotion.Effects.default())
             ) {
                 Column {
