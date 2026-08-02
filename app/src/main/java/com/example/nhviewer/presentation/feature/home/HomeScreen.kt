@@ -2,10 +2,8 @@ package com.example.nhviewer.presentation.feature.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -64,6 +62,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -119,7 +118,10 @@ fun HomeScreen(
 
     // 沉浸式滚动
     var isChromeVisible by remember { mutableStateOf(true) }
-    val chromeHideThresholdPx = with(LocalDensity.current) { 8.dp.toPx() }
+    val density = LocalDensity.current
+    // 覆盖层实际渲染高度（随字体缩放/内容变化），用于给列表让出等量顶部内边距，避免覆盖层盖住第一项
+    var chromeHeightDp by remember { mutableStateOf(0.dp) }
+    val chromeHideThresholdPx = with(density) { 8.dp.toPx() }
     val chromeScrollConnection = remember(chromeHideThresholdPx) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -186,82 +188,10 @@ fun HomeScreen(
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 顶部常驻 SearchBar，融合"我的"入口，沉浸式滚动时随 isChromeVisible 一起隐藏/显示
-            AnimatedVisibility(
-                visible = isChromeVisible,
-                enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
-                    fadeIn(animationSpec = NhMotion.Effects.default()),
-                exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
-                    fadeOut(animationSpec = NhMotion.Effects.default())
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (active) {
-                                Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                            } else {
-                                Modifier.statusBarsPadding()
-                            }
-                        )
-                        .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 8.dp)
-                ) {
-                    NhSearchBar(
-                        query = searchQuery,
-                        onQueryChange = { searchViewModel.onSearchQueryChanged(it) },
-                        onSearch = {
-                            searchViewModel.search(it)
-                            focusManager.clearFocus()
-                        },
-                        expanded = active,
-                        onExpandedChange = { searchViewModel.onActiveChanged(it) },
-                        searchHistory = searchHistory,
-                        autocompleteSuggestions = autocompleteSuggestions,
-                        onDeleteHistory = { searchViewModel.deleteSearchHistory(it) },
-                        onClearAllHistory = { searchViewModel.clearSearchHistory() },
-                        placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
-                        leadingIcon = {
-                            IconButton(onClick = { onOpenDrawer() }) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = "Menu"
-                                )
-                            }
-                        },
-                        trailingIcon = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(end = 4.dp)
-                            ) {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { searchViewModel.onSearchQueryChanged("") }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = "Clear"
-                                        )
-                                    }
-                                }
-                                IconButton(onClick = {
-                                    if (searchQuery.isNotBlank()) {
-                                        searchViewModel.search(searchQuery)
-                                        focusManager.clearFocus()
-                                    }
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = "Search"
-                                    )
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-
-            // 搜索结果页与普通主页内容区域动态切换
+            // 内容层：从屏幕最顶端开始铺满，顶部工具区是浮在它上面的覆盖层
             if (!active && searchQuery.isNotEmpty()) {
                 val searchResultGridState = rememberLazyStaggeredGridState()
                 // 进入搜索结果态时重置显示状态（同时覆盖了清空关键词后再次搜索的情况）
@@ -276,79 +206,19 @@ fun HomeScreen(
                     }
                 }
 
-                AnimatedVisibility(
-                    visible = isChromeVisible,
-                    enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
-                        fadeIn(animationSpec = NhMotion.Effects.default()),
-                    exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
-                        fadeOut(animationSpec = NhMotion.Effects.default())
-                ) {
-                    Column {
-                        SearchQueryBuilder(
-                            rawQuery = searchQuery,
-                            onQueryChanged = {
-                                searchViewModel.onSearchQueryChanged(it)
-                                // 文本改变时不触发搜索，SearchQueryBuilder 内部的选择操作会通过 onTriggerSearch 触发
-                            },
-                            onTriggerSearch = { query ->
-                                searchViewModel.search(query)
-                                focusManager.clearFocus()
-                            }
-                        )
-                        AnimatedVisibility(
-                            visible = searchResults.itemCount > 0,
-                            enter = fadeIn(animationSpec = NhMotion.Effects.default()),
-                            exit = fadeOut(animationSpec = NhMotion.Effects.default())
-                        ) {
-                            SearchSortBar(
-                                sortOption = sortOption,
-                                onSortOptionChanged = { searchViewModel.onSortOptionChanged(it) },
-                                totalCount = totalResults
-                            )
-                        }
-                    }
-                }
-
                 SearchResultGrid(
                     searchResults = searchResults,
                     cdnHost = cdnHost,
                     favoritedIds = favoritedIds,
                     onNavigateToDetail = onNavigateToDetail,
                     minSize = 340,
+                    topPadding = chromeHeightDp + 12.dp,
                     bottomPadding = 12.dp + innerPadding.calculateBottomPadding(),
                     scrollToTopKey = searchTrigger,
                     gridState = searchResultGridState,
                     scrollConnection = chromeScrollConnection
                 )
             } else if (!active) {
-                // "最新/热门" tab 栏与顶部搜索栏一起随 isChromeVisible 隐藏/显示
-                AnimatedVisibility(
-                    visible = isChromeVisible,
-                    enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
-                        fadeIn(animationSpec = NhMotion.Effects.default()),
-                    exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
-                        fadeOut(animationSpec = NhMotion.Effects.default())
-                ) {
-                    PrimaryTabRow(
-                        selectedTabIndex = selectedTabIndex,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedTabIndex == index,
-                                onClick = { homePagerScope.launch { homePagerState.animateScrollToPage(index) } },
-                                text = {
-                                    Text(
-                                        text = title,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
-
                 HorizontalPager(
                     state = homePagerState,
                     modifier = Modifier.fillMaxSize()
@@ -387,7 +257,7 @@ fun HomeScreen(
                                         state = latestGridState,
                                         contentPadding = PaddingValues(
                                             start = 12.dp,
-                                            top = 12.dp,
+                                            top = chromeHeightDp + 12.dp,
                                             end = 12.dp,
                                             bottom = 12.dp + innerPadding.calculateBottomPadding()
                                         ),
@@ -475,7 +345,7 @@ fun HomeScreen(
                                             state = popularGridState,
                                             contentPadding = PaddingValues(
                                                 start = 12.dp,
-                                                top = 12.dp,
+                                                top = chromeHeightDp + 12.dp,
                                                 end = 12.dp,
                                                 bottom = 12.dp + innerPadding.calculateBottomPadding()
                                             ),
@@ -498,6 +368,133 @@ fun HomeScreen(
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 覆盖层：顶部搜索栏 + （tab 栏 或 筛选/排序栏），浮在内容层之上，随 isChromeVisible 隐藏/显示。
+            AnimatedVisibility(
+                visible = isChromeVisible,
+                enter = slideInVertically(animationSpec = NhMotion.Spatial.noBounce()) { -it } +
+                    fadeIn(animationSpec = NhMotion.Effects.default()),
+                exit = slideOutVertically(animationSpec = NhMotion.Spatial.noBounce()) { -it } +
+                    fadeOut(animationSpec = NhMotion.Effects.default()),
+                modifier = Modifier.align(Alignment.TopCenter)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .onGloballyPositioned { coordinates ->
+                            chromeHeightDp = with(density) { coordinates.size.height.toDp() }
+                        }
+                ) {
+                    // 顶部常驻 SearchBar，融合"我的"入口
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (active) {
+                                    Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                } else {
+                                    Modifier.statusBarsPadding()
+                                }
+                            )
+                            .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 8.dp)
+                    ) {
+                        NhSearchBar(
+                            query = searchQuery,
+                            onQueryChange = { searchViewModel.onSearchQueryChanged(it) },
+                            onSearch = {
+                                searchViewModel.search(it)
+                                focusManager.clearFocus()
+                            },
+                            expanded = active,
+                            onExpandedChange = { searchViewModel.onActiveChanged(it) },
+                            searchHistory = searchHistory,
+                            autocompleteSuggestions = autocompleteSuggestions,
+                            onDeleteHistory = { searchViewModel.deleteSearchHistory(it) },
+                            onClearAllHistory = { searchViewModel.clearSearchHistory() },
+                            placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
+                            leadingIcon = {
+                                IconButton(onClick = { onOpenDrawer() }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Menu,
+                                        contentDescription = "Menu"
+                                    )
+                                }
+                            },
+                            trailingIcon = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(end = 4.dp)
+                                ) {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchViewModel.onSearchQueryChanged("") }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = "Clear"
+                                            )
+                                        }
+                                    }
+                                    IconButton(onClick = {
+                                        if (searchQuery.isNotBlank()) {
+                                            searchViewModel.search(searchQuery)
+                                            focusManager.clearFocus()
+                                        }
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = "Search"
+                                        )
+                                    }
+                                }
+                            }
+                        )
+                    }
+
+                    if (!active && searchQuery.isNotEmpty()) {
+                        SearchQueryBuilder(
+                            rawQuery = searchQuery,
+                            onQueryChanged = {
+                                searchViewModel.onSearchQueryChanged(it)
+                                // 文本改变时不触发搜索，SearchQueryBuilder 内部的选择操作会通过 onTriggerSearch 触发
+                            },
+                            onTriggerSearch = { query ->
+                                searchViewModel.search(query)
+                                focusManager.clearFocus()
+                            }
+                        )
+                        AnimatedVisibility(
+                            visible = searchResults.itemCount > 0,
+                            enter = fadeIn(animationSpec = NhMotion.Effects.default()),
+                            exit = fadeOut(animationSpec = NhMotion.Effects.default())
+                        ) {
+                            SearchSortBar(
+                                sortOption = sortOption,
+                                onSortOptionChanged = { searchViewModel.onSortOptionChanged(it) },
+                                totalCount = totalResults
+                            )
+                        }
+                    } else if (!active) {
+                        PrimaryTabRow(
+                            selectedTabIndex = selectedTabIndex,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            tabs.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = selectedTabIndex == index,
+                                    onClick = { homePagerScope.launch { homePagerState.animateScrollToPage(index) } },
+                                    text = {
+                                        Text(
+                                            text = title,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
+                                )
                             }
                         }
                     }

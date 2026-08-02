@@ -1,10 +1,10 @@
 package com.example.nhviewer.presentation.feature.search
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -79,7 +80,10 @@ fun SearchScreen(
 
     // 沉浸式滚动
     var isChromeVisible by remember { mutableStateOf(true) }
-    val chromeHideThresholdPx = with(LocalDensity.current) { 8.dp.toPx() }
+    val density = LocalDensity.current
+    // 覆盖层实际渲染高度（随字体缩放/内容变化），用于给结果网格让出等量顶部内边距，避免覆盖层盖住第一项
+    var chromeHeightDp by remember { mutableStateOf(0.dp) }
+    val chromeHideThresholdPx = with(density) { 8.dp.toPx() }
     val chromeScrollConnection = remember(chromeHideThresholdPx) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -104,90 +108,106 @@ fun SearchScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        AnimatedVisibility(
-            visible = isChromeVisible,
-            enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
-                fadeIn(animationSpec = NhMotion.Effects.default()),
-            exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
-                fadeOut(animationSpec = NhMotion.Effects.default())
-        ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 6.dp)
-        ) {
-            NhSearchBar(
-                query = searchQuery,
-                onQueryChange = { viewModel.onSearchQueryChanged(it) },
-                onSearch = {
-                    viewModel.search(it)
-                    focusManager.clearFocus()
-                },
-                expanded = active,
-                onExpandedChange = { viewModel.onActiveChanged(it) },
-                searchHistory = searchHistory,
-                autocompleteSuggestions = autocompleteSuggestions,
-                onDeleteHistory = { viewModel.deleteSearchHistory(it) },
-                onClearAllHistory = { viewModel.clearSearchHistory() },
-                placeholder = {
-                    Text(
-                        text = stringResource(R.string.home_search_placeholder),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                },
-                leadingIcon = {
-                    // 独立搜索页没有底部导航兜底，收起态点这个箭头退出页面；
-                    // 展开态（建议面板）时先收起面板而不是直接退出，避免误触返回
-                    IconButton(onClick = { if (active) viewModel.onActiveChanged(false) else onBackClick() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                },
-                colors = SearchBarDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                )
+        // 内容层：从屏幕最顶端开始铺满，顶部工具区是浮在它上面的覆盖层
+        // 隐藏/显示工具区不会导致内容跟着重新布局挪位（做法与阅读器顶/底工具栏一致
+        if (!active) {
+            SearchResultGrid(
+                searchResults = searchResults,
+                cdnHost = cdnHost,
+                favoritedIds = favoritedIds,
+                onNavigateToDetail = onNavigateToDetail,
+                topPadding = chromeHeightDp + 12.dp,
+                scrollToTopKey = searchTrigger,
+                gridState = searchResultGridState,
+                scrollConnection = chromeScrollConnection
             )
         }
-        }
 
-        if (!active) {
-            AnimatedVisibility(
-                visible = isChromeVisible,
-                enter = expandVertically(animationSpec = NhMotion.Spatial.noBounce(), expandFrom = Alignment.Top) +
-                    fadeIn(animationSpec = NhMotion.Effects.default()),
-                exit = shrinkVertically(animationSpec = NhMotion.Spatial.noBounce(), shrinkTowards = Alignment.Top) +
-                    fadeOut(animationSpec = NhMotion.Effects.default())
-            ) {
-                Column {
-                    if (searchQuery.isNotEmpty()) {
-                        SearchQueryBuilder(
-                            rawQuery = searchQuery,
-                            onQueryChanged = { viewModel.onSearchQueryChanged(it) },
-                            onTriggerSearch = { query ->
-                                viewModel.search(query)
-                                focusManager.clearFocus()
-                            }
-                        )
+        // 覆盖层：顶部搜索栏 + 筛选/排序栏，浮在内容层之上，随 isChromeVisible 隐藏/显示
+        AnimatedVisibility(
+            visible = isChromeVisible,
+            enter = slideInVertically(animationSpec = NhMotion.Spatial.noBounce()) { -it } +
+                fadeIn(animationSpec = NhMotion.Effects.default()),
+            exit = slideOutVertically(animationSpec = NhMotion.Spatial.noBounce()) { -it } +
+                fadeOut(animationSpec = NhMotion.Effects.default()),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .onGloballyPositioned { coordinates ->
+                        chromeHeightDp = with(density) { coordinates.size.height.toDp() }
                     }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (active) 0.dp else 16.dp, vertical = 6.dp)
+                ) {
+                    NhSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { viewModel.onSearchQueryChanged(it) },
+                        onSearch = {
+                            viewModel.search(it)
+                            focusManager.clearFocus()
+                        },
+                        expanded = active,
+                        onExpandedChange = { viewModel.onActiveChanged(it) },
+                        searchHistory = searchHistory,
+                        autocompleteSuggestions = autocompleteSuggestions,
+                        onDeleteHistory = { viewModel.deleteSearchHistory(it) },
+                        onClearAllHistory = { viewModel.clearSearchHistory() },
+                        placeholder = {
+                            Text(
+                                text = stringResource(R.string.home_search_placeholder),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        },
+                        leadingIcon = {
+                            // 独立搜索页没有底部导航兜底，收起态点这个箭头退出页面；
+                            // 展开态（建议面板）时先收起面板而不是直接退出，避免误触返回
+                            IconButton(onClick = { if (active) viewModel.onActiveChanged(false) else onBackClick() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.common_back),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Clear",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        },
+                        colors = SearchBarDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
+                    )
+                }
+
+                if (!active && searchQuery.isNotEmpty()) {
+                    SearchQueryBuilder(
+                        rawQuery = searchQuery,
+                        onQueryChanged = { viewModel.onSearchQueryChanged(it) },
+                        onTriggerSearch = { query ->
+                            viewModel.search(query)
+                            focusManager.clearFocus()
+                        }
+                    )
+                }
+                if (!active) {
                     AnimatedVisibility(
                         visible = searchResults.itemCount > 0,
                         enter = fadeIn(animationSpec = NhMotion.Effects.default()),
@@ -201,16 +221,6 @@ fun SearchScreen(
                     }
                 }
             }
-
-            SearchResultGrid(
-                searchResults = searchResults,
-                cdnHost = cdnHost,
-                favoritedIds = favoritedIds,
-                onNavigateToDetail = onNavigateToDetail,
-                scrollToTopKey = searchTrigger,
-                gridState = searchResultGridState,
-                scrollConnection = chromeScrollConnection
-            )
         }
     }
 }
