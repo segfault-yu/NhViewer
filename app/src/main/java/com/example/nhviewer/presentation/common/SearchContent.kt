@@ -423,6 +423,7 @@ fun SearchResultGrid(
     onNavigateToDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
     minSize: Int = 340,
+    topPadding: Dp = 12.dp,
     bottomPadding: Dp = 12.dp,
     scrollToTopKey: Any? = null,
     gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -494,7 +495,7 @@ fun SearchResultGrid(
                         state = gridState,
                         contentPadding = PaddingValues(
                             start = 12.dp,
-                            top = 12.dp,
+                            top = topPadding,
                             end = 12.dp,
                             bottom = bottomPadding
                         ),
