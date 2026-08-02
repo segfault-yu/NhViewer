@@ -56,6 +56,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -429,10 +430,16 @@ fun SearchResultGrid(
     gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
     scrollConnection: NestedScrollConnection? = null
 ) {
-    LaunchedEffect(scrollToTopKey) {
-        if (scrollToTopKey != null) {
+    // key 用 rememberSaveable 持久化，避免详情页/阅读器返回时因组合被重建而误判为"新搜索"，
+    // 把导航返回时应保留的滚动位置又重置回顶部
+    var lastHandledScrollToTopKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val scrollToTopKeyString = scrollToTopKey?.toString()
+
+    LaunchedEffect(scrollToTopKeyString) {
+        if (scrollToTopKeyString != null && scrollToTopKeyString != lastHandledScrollToTopKey) {
             gridState.animateScrollToItem(0)
         }
+        lastHandledScrollToTopKey = scrollToTopKeyString
     }
 
     val currentState = remember(searchResults.loadState.refresh, searchResults.itemCount) {
