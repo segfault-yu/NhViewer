@@ -75,6 +75,7 @@ import coil.compose.AsyncImage
 import com.example.nhviewer.R
 import com.example.nhviewer.domain.model.AuthState
 import com.example.nhviewer.presentation.common.ErrorScreen
+import com.example.nhviewer.presentation.common.FastScrollbar
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import com.example.nhviewer.presentation.common.NhSearchBar
@@ -303,6 +304,11 @@ fun HomeScreen(
                                             }
                                         }
                                     }
+
+                                    FastScrollbar(
+                                        state = latestGridState,
+                                        modifier = Modifier.align(Alignment.CenterEnd)
+                                    )
                                 }
                             }
                         }
@@ -366,6 +372,11 @@ fun HomeScreen(
                                                 )
                                             }
                                         }
+
+                                        FastScrollbar(
+                                            state = popularGridState,
+                                            modifier = Modifier.align(Alignment.CenterEnd)
+                                        )
                                     }
                                 }
                             }

@@ -15,6 +15,7 @@
     <string name="common_error_load_failed">Failed to load. Click to retry.</string>
     <string name="common_error_load_more_failed">Failed to load more</string>
     <string name="common_error_load_gallery_failed">Failed to load galleries</string>
+    <string name="common_fast_scrollbar">Fast scroll</string>
 
     <!-- Navigation Drawer & TopBar -->
     <string name="nav_home">Home</string>

@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -52,6 +53,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.ErrorScreen
+import com.example.nhviewer.presentation.common.FastScrollbar
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import com.example.nhviewer.util.NetworkErrorParser
 
@@ -73,6 +75,7 @@ fun TagsScreen(
     val tags = viewModel.tagsFlow.collectAsLazyPagingItems()
 
     var showSortMenu by remember { mutableStateOf(false) }
+    val tagsGridState = rememberLazyGridState()
 
     val tabTypes = listOf(
         Pair("tag", stringResource(R.string.tag_type_tag)),
@@ -200,6 +203,7 @@ fun TagsScreen(
                 } else {
                     LazyVerticalGrid(
                         columns = GridCells.Adaptive(minSize = 180.dp),
+                        state = tagsGridState,
                         contentPadding = PaddingValues(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
@@ -263,6 +267,11 @@ fun TagsScreen(
                         }
                     }
                 }
+
+                FastScrollbar(
+                    state = tagsGridState,
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
             }
         }
     }

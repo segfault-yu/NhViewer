@@ -15,6 +15,7 @@
     <string name="common_error_load_failed">加载失败，点击重试</string>
     <string name="common_error_load_more_failed">加载更多失败</string>
     <string name="common_error_load_gallery_failed">加载画廊列表失败</string>
+    <string name="common_fast_scrollbar">快速滚动</string>
 
     <!-- Navigation Drawer & TopBar -->
     <string name="nav_home">首页</string>

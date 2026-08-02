@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Casino
@@ -46,6 +47,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.presentation.common.EmptyState
 import com.example.nhviewer.presentation.common.ErrorScreen
+import com.example.nhviewer.presentation.common.FastScrollbar
 import com.example.nhviewer.presentation.common.GalleryCard
 import com.example.nhviewer.presentation.common.LoadingIndicator
 import com.example.nhviewer.util.NetworkErrorParser
@@ -72,6 +74,7 @@ fun FavoritesScreen(
 
     val pullRefreshState = rememberPullToRefreshState()
     var isRefreshing by remember { mutableStateOf(false) }
+    val favoritesGridState = rememberLazyStaggeredGridState()
 
     LaunchedEffect(favorites.loadState.refresh) {
         isRefreshing = favorites.loadState.refresh is LoadState.Loading
@@ -175,6 +178,7 @@ fun FavoritesScreen(
                 } else {
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Adaptive(minSize = 340.dp),
+                        state = favoritesGridState,
                         contentPadding = PaddingValues(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
@@ -217,6 +221,11 @@ fun FavoritesScreen(
                         }
                     }
                 }
+
+                FastScrollbar(
+                    state = favoritesGridState,
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
             }
         }
     }

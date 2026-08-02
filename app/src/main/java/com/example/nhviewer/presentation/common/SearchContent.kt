@@ -569,5 +569,10 @@ fun SearchResultGrid(
                 }
             }
         }
+
+        FastScrollbar(
+            state = gridState,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        )
     }
 }
