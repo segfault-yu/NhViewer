@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
@@ -39,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.nhviewer.presentation.common.EmptyState
+import com.example.nhviewer.presentation.common.FastScrollbar
 import com.example.nhviewer.presentation.common.buildGalleryImageUrl
 import com.example.nhviewer.presentation.feature.home.HomeViewModel
 
@@ -57,6 +59,7 @@ fun HistoryScreen(
     val cdnConfig by viewModel.cdnConfig.collectAsState()
     // 与列表页保持同一 host，封面共用同一份 Coil 缓存
     val cdnHost = cdnConfig?.primaryThumbHost ?: ""
+    val historyListState = rememberLazyListState()
 
     Scaffold(
         topBar = {
@@ -87,6 +90,7 @@ fun HistoryScreen(
                 )
             } else {
                 LazyColumn(
+                    state = historyListState,
                     contentPadding = PaddingValues(
                         start = 16.dp,
                         top = 8.dp,
@@ -144,6 +148,11 @@ fun HistoryScreen(
                         }
                     }
                 }
+
+                FastScrollbar(
+                    state = historyListState,
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
             }
         }
     }
