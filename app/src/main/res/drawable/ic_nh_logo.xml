@@ -29,7 +29,7 @@
             android:fillColor="#00000000"
             android:pathData="M31,50L31,72"
             android:strokeWidth="7"
-            android:strokeColor="#34A853"
+            android:strokeColor="#EA4335"
             android:strokeLineCap="round" />
         <path
             android:fillColor="#00000000"
