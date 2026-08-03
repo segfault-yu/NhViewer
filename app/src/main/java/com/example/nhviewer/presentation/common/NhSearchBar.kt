@@ -2,11 +2,17 @@ package com.example.nhviewer.presentation.common
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarColors
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import com.example.nhviewer.domain.model.SearchHistory
 import com.example.nhviewer.domain.model.Tag
@@ -36,11 +42,31 @@ fun NhSearchBar(
     modifier: Modifier = Modifier,
     colors: SearchBarColors = SearchBarDefaults.colors()
 ) {
+    val textFieldState = rememberTextFieldState(initialText = query)
+    val latestQuery by rememberUpdatedState(query)
+
+    // 外部整体替换 query（建议词点击、清空按钮、筛选 chip 等）时，把光标显式放到末尾，
+    // 避免 Compose 沿用旧的光标下标导致后续输入插到文字中间
+    LaunchedEffect(query) {
+        if (textFieldState.text.toString() != query) {
+            textFieldState.setTextAndPlaceCursorAtEnd(query)
+        }
+    }
+
+    // 用户在输入框内自行打字产生的变化，上报给外部状态
+    LaunchedEffect(textFieldState) {
+        snapshotFlow { textFieldState.text.toString() }
+            .collect { text ->
+                if (text != latestQuery) {
+                    onQueryChange(text)
+                }
+            }
+    }
+
     SearchBar(
         inputField = {
             SearchBarDefaults.InputField(
-                query = query,
-                onQueryChange = onQueryChange,
+                state = textFieldState,
                 onSearch = onSearch,
                 expanded = expanded,
                 onExpandedChange = onExpandedChange,
@@ -66,6 +92,7 @@ fun NhSearchBar(
             searchHistory = searchHistory,
             autocompleteSuggestions = autocompleteSuggestions,
             onSearch = onSearch,
+            onQueryChange = onQueryChange,
             onDeleteHistory = onDeleteHistory,
             onClearAllHistory = onClearAllHistory
         )

@@ -186,6 +186,7 @@ fun SearchSuggestionPanel(
     searchHistory: List<SearchHistory>,
     autocompleteSuggestions: List<Tag>,
     onSearch: (String) -> Unit,
+    onQueryChange: (String) -> Unit,
     onDeleteHistory: (String) -> Unit,
     onClearAllHistory: () -> Unit,
     modifier: Modifier = Modifier,
@@ -335,8 +336,11 @@ fun SearchSuggestionPanel(
                             )
                             .clip(CircleShape)
                             .clickable {
-                                onSearch(tag.name)
-                                focusManager.clearFocus()
+                                // 只替换"最后一段正在输入的关键词"
+                                val prefix = searchQuery.trimEnd().substringBeforeLast(' ', "")
+                                val token = TagTranslationProvider.toSearchQueryToken(tag, tagLanguage)
+                                val newQuery = if (prefix.isBlank()) "$token " else "$prefix $token "
+                                onQueryChange(newQuery)
                             }
                     )
                 }

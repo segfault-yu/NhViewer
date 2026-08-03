@@ -13,14 +13,16 @@ class AutocompleteTagsUseCase @Inject constructor(
     operator fun invoke(query: String, type: String? = null, tagLanguage: String = "zh"): Flow<List<Tag>> = flow {
         val safeLang = if (tagLanguage.isBlank()) "zh" else tagLanguage.lowercase()
 
+        // 只对"当前正在输入的最后一段"做联想，前面已确认的关键词/标签不参与匹配
+        val activeToken = query.trimEnd().substringAfterLast(' ')
+
         // 1. Instant local search
-        val localResults = LocalTagIndex.searchByPrefix(query, safeLang, 15).map {
+        val localResults = LocalTagIndex.searchByPrefix(activeToken, safeLang, 15).map {
             Tag(id = 0, name = it.name, type = it.type, count = 0, url = "")
         }
         emit(localResults)
 
         // 2. Fetch remote if last active token is plain ASCII prefix without filter markers
-        val activeToken = query.trimEnd().substringAfterLast(' ')
         val hasFilterSymbol = activeToken.any { it in ":><-" }
         val isAsciiOnly = activeToken.all { it.code < 128 }
 
