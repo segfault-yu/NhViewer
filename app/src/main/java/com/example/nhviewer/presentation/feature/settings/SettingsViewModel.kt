@@ -22,7 +22,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 250
+            initialValue = SettingsManager.DEFAULT_MAX_IMAGE_CACHE_MB
         )
 
     val themeMode: StateFlow<String> = settingsManager.themeMode

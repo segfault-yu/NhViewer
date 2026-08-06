@@ -43,5 +43,8 @@ sealed interface Route {
     data object ApiKeys : Route
 
     @Serializable
+    data object CacheManagement : Route
+
+    @Serializable
     data object About : Route
 }

@@ -50,6 +50,15 @@ class GalleryMemoryCache @Inject constructor() {
     /** 返回 null 表示尚未请求过；返回空列表表示已确认该画廊无推荐 */
     fun getRelated(galleryId: Int): List<GalleryListItem>? = relatedCache.get(galleryId)
 
+    /** 当前缓存的条目总数，用于设置页展示 */
+    fun entryCount(): Int = previewCache.size() + detailCache.size() + relatedCache.size()
+
+    fun clear() {
+        previewCache.evictAll()
+        detailCache.evictAll()
+        relatedCache.evictAll()
+    }
+
     private companion object {
         // 分页列表快速下拉时 Paging3 会连续预取多页，300 太容易被挤出导致点开详情时缓存已丢失
         const val PREVIEW_CAPACITY = 1000

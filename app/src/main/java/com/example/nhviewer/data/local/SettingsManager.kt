@@ -63,7 +63,7 @@ class SettingsManager @Inject constructor(
             }
         }
         .map { preferences ->
-            preferences[PreferencesKeys.MAX_IMAGE_CACHE_MB] ?: 250
+            preferences[PreferencesKeys.MAX_IMAGE_CACHE_MB] ?: DEFAULT_MAX_IMAGE_CACHE_MB
         }
 
     val appLanguage: Flow<String> = dataStore.data
@@ -390,5 +390,15 @@ class SettingsManager @Inject constructor(
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.LOG_LEVEL] = level
         }
+    }
+
+    companion object {
+        const val DEFAULT_MAX_IMAGE_CACHE_MB = 250
+
+        /** 不限制磁盘缓存容量 */
+        const val UNLIMITED_IMAGE_CACHE_MB = 0
+
+        /** 图片磁盘缓存上限可选档位 */
+        val IMAGE_CACHE_MB_OPTIONS = listOf(100, 250, 500, 1000, UNLIMITED_IMAGE_CACHE_MB)
     }
 }

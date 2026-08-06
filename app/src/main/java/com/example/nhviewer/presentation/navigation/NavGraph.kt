@@ -166,7 +166,14 @@ fun NhViewerNavGraph(
                 onNavigateToSessions = { navController.navigate(Route.Sessions) },
                 onNavigateToApiKeys = { navController.navigate(Route.ApiKeys) },
                 onNavigateToBlacklist = { navController.navigate(Route.Blacklist) },
+                onNavigateToCache = { navController.navigate(Route.CacheManagement) },
                 onNavigateToAbout = { navController.navigate(Route.About) }
+            )
+        }
+
+        animatedComposable<Route.CacheManagement> {
+            com.example.nhviewer.presentation.feature.settings.cache.CacheScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 

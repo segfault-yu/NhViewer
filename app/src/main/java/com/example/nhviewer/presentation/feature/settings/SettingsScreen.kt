@@ -53,52 +53,42 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import android.widget.Toast
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
-import coil.imageLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.res.stringResource
 import com.example.nhviewer.R
+import com.example.nhviewer.data.local.SettingsManager
+import com.example.nhviewer.util.FileSizeFormatter
 import androidx.compose.runtime.LaunchedEffect
 
-@OptIn(ExperimentalMaterial3Api::class, coil.annotation.ExperimentalCoilApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
     onNavigateToSessions: () -> Unit,
     onNavigateToApiKeys: () -> Unit,
     onNavigateToBlacklist: () -> Unit,
+    onNavigateToCache: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var cacheSize by remember { mutableStateOf(context.getString(R.string.settings_calculating)) }
     var logsSize by remember { mutableStateOf(context.getString(R.string.settings_calculating)) }
 
-    fun formatCacheSize(bytes: Long): String {
-        if (bytes <= 0) return "0.0 B"
-        val units = listOf("B", "KB", "MB", "GB")
-        val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt()
-        return String.format("%.1f %s", bytes / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
-    }
-
-    fun updateCacheSize() {
+    fun updateLogsSize() {
         coroutineScope.launch(Dispatchers.IO) {
-            val sizeBytes = context.imageLoader.diskCache?.size ?: 0L
-            val formatted = formatCacheSize(sizeBytes)
-            val logBytes = AppLogger.getTotalLogSize(context)
-            val logFormatted = formatCacheSize(logBytes)
+            val logFormatted = FileSizeFormatter.format(AppLogger.getTotalLogSize(context))
             withContext(Dispatchers.Main) {
-                cacheSize = formatted
                 logsSize = logFormatted
             }
         }
     }
 
     LaunchedEffect(Unit) {
-        updateCacheSize()
+        updateLogsSize()
     }
 
     val themeMode by viewModel.themeMode.collectAsState()
@@ -111,6 +101,14 @@ fun SettingsScreen(
     val tagLanguage by viewModel.tagLanguage.collectAsState()
     val tagDisplayMode by viewModel.tagDisplayMode.collectAsState()
     val logLevel by viewModel.logLevel.collectAsState()
+    val maxImageCacheMb by viewModel.maxImageCacheMb.collectAsState()
+
+    val unlimitedCacheText = stringResource(R.string.settings_max_cache_unlimited)
+    fun cacheLimitLabel(mb: Int): String = if (mb == SettingsManager.UNLIMITED_IMAGE_CACHE_MB) {
+        unlimitedCacheText
+    } else {
+        context.getString(R.string.settings_max_cache_value, mb)
+    }
 
     var showDownloadFormatDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
@@ -118,6 +116,7 @@ fun SettingsScreen(
     var showAppLanguageDialog by remember { mutableStateOf(false) }
     var showTagLanguageDialog by remember { mutableStateOf(false) }
     var showLogLevelDialog by remember { mutableStateOf(false) }
+    var showMaxCacheDialog by remember { mutableStateOf(false) }
 
     val themeModeText = when (themeMode) {
         "light" -> stringResource(R.string.settings_theme_light)
@@ -368,6 +367,53 @@ fun SettingsScreen(
         )
     }
 
+    // 图片缓存上限
+    if (showMaxCacheDialog) {
+        AlertDialog(
+            onDismissRequest = { showMaxCacheDialog = false },
+            title = { Text(stringResource(R.string.settings_max_cache_title), fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SettingsManager.IMAGE_CACHE_MB_OPTIONS.forEach { value ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setMaxImageCacheMb(value)
+                                    showMaxCacheDialog = false
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = maxImageCacheMb == value,
+                                onClick = {
+                                    viewModel.setMaxImageCacheMb(value)
+                                    showMaxCacheDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = cacheLimitLabel(value),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                    Text(
+                        text = stringResource(R.string.settings_max_cache_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showMaxCacheDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
+        )
+    }
+
     // Log Level Dialog
     if (showLogLevelDialog) {
         AlertDialog(
@@ -506,6 +552,31 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = {
                     Text(
+                        text = stringResource(R.string.settings_max_cache_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.settings_max_cache_desc),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.Storage, contentDescription = null) },
+                trailingContent = {
+                    Text(
+                        text = cacheLimitLabel(maxImageCacheMb),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                modifier = Modifier.clickable { showMaxCacheDialog = true }
+            )
+            ListItem(
+                headlineContent = {
+                    Text(
                         text = stringResource(R.string.settings_clear_cache_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -519,24 +590,8 @@ fun SettingsScreen(
                     )
                 },
                 leadingContent = { Icon(Icons.Default.Storage, contentDescription = null) },
-                trailingContent = {
-                    Text(
-                        text = cacheSize,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                modifier = Modifier.clickable {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        context.imageLoader.diskCache?.clear()
-                        val sizeBytes = context.imageLoader.diskCache?.size ?: 0L
-                        val formatted = formatCacheSize(sizeBytes)
-                        withContext(Dispatchers.Main) {
-                            cacheSize = formatted
-                            Toast.makeText(context, context.getString(R.string.settings_cache_cleared), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
+                trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
+                modifier = Modifier.clickable { onNavigateToCache() }
             )
 
             SettingsCategoryHeader(title = stringResource(R.string.settings_cat_logs))
