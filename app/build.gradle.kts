@@ -95,6 +95,11 @@ android {
     }
 }
 
+// 导出 Room schema 并纳入版本控制，后续升版本才有依据编写 Migration
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 // object 是独立的单例类，不会像脚本顶层函数那样在 doLast 里隐式捕获整个脚本对象引用
 // （脚本顶层 fun 是脚本类的成员方法，从 doLast 里调用会把脚本实例也序列化进去，破坏配置缓存）
 object ReleaseArtifacts {

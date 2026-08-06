@@ -22,7 +22,12 @@ object DatabaseModule {
             context,
             NhViewerDatabase::class.java,
             "nhviewer_db"
-        ).fallbackToDestructiveMigration().build()
+        )
+            // 1、2 版本未导出 schema，无从编写迁移，只能沿用破坏性重建。
+            // 自 3 起必须提供正式 Migration：缺失时升级会直接失败，而不是静默清空
+            // 阅读历史与待同步的离线收藏
+            .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1, 2)
+            .build()
     }
 
     @Provides
