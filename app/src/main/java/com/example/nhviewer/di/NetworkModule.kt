@@ -61,8 +61,10 @@ object NetworkModule {
             .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .addInterceptor(UserAgentInterceptor())
             .addInterceptor(ForceRefreshInterceptor())
-            .addInterceptor(RateLimitInterceptor())
             .addNetworkInterceptor(CacheStrategyInterceptor())
+            // 限流须挂在网络层：作为应用拦截器时位于 OkHttp 缓存之前，
+            // 会让命中缓存的请求也白等节流，甚至在 429 锁定期内连缓存都读不到
+            .addNetworkInterceptor(RateLimitInterceptor())
             .addInterceptor(loggingInterceptor)
             .build()
     }

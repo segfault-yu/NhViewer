@@ -80,15 +80,24 @@ class GalleryRepositoryImpl @Inject constructor(
     private val cdnMutex = Mutex()
     @Volatile
     private var cachedCdnConfig: CdnConfig? = null
+    @Volatile
+    private var cdnCachedAt = 0L
+
+    private fun cdnConfigIfFresh(): CdnConfig? =
+        cachedCdnConfig?.takeIf { System.currentTimeMillis() - cdnCachedAt < CDN_TTL_MILLIS }
 
     override suspend fun getCdnConfig(): Result<CdnConfig> {
-        cachedCdnConfig?.let { return Result.success(it) }
+        cdnConfigIfFresh()?.let { return Result.success(it) }
         return cdnMutex.withLock {
-            cachedCdnConfig?.let { return@withLock Result.success(it) }
+            cdnConfigIfFresh()?.let { return@withLock Result.success(it) }
             runCatchingCancelable("Gallery") {
                 api.getCdnConfig().toDomain().also {
                     cachedCdnConfig = it
+                    cdnCachedAt = System.currentTimeMillis()
                 }
+            }.recoverCatching { error ->
+                // 过期后刷新失败时继续沿用旧配置，避免整站图片回退到默认域名
+                cachedCdnConfig ?: throw error
             }
         }
     }
@@ -109,5 +118,10 @@ class GalleryRepositoryImpl @Inject constructor(
 
     override suspend fun getReadingHistoryItem(galleryId: Int): ReadingHistory? {
         return historyDao.getHistoryItem(galleryId)?.toDomain()
+    }
+
+    private companion object {
+        // 服务端切换 CDN 后无需重启进程即可跟进
+        const val CDN_TTL_MILLIS = 6 * 60 * 60 * 1000L
     }
 }
