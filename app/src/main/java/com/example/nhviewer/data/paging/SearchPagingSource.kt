@@ -11,6 +11,7 @@ class SearchPagingSource(
     private val repository: SearchRepository,
     private val query: String,
     private val sort: String,
+    private val forceRefresh: Boolean = false,
     private val onTotalRetrieved: ((Int?) -> Unit)? = null
 ) : PagingSource<Int, GalleryListItem>() {
 
@@ -27,8 +28,10 @@ class SearchPagingSource(
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, GalleryListItem> {
         val page = params.key ?: 1
+        // 仅首屏刷新穿透 HTTP 缓存，翻页仍走缓存，避免一次下拉让后续所有分页都绕过缓存
+        val bypassCache = forceRefresh && params is LoadParams.Refresh
         return try {
-            val result = repository.searchGalleries(query, page, sort).getOrThrow()
+            val result = repository.searchGalleries(query, page, sort, bypassCache).getOrThrow()
             if (page == 1) {
                 onTotalRetrieved?.invoke(result.total)
             }

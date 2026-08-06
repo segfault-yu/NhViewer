@@ -8,7 +8,8 @@ import com.example.nhviewer.util.log.AppLogger
 import kotlinx.coroutines.CancellationException
 
 class GalleryPagingSource(
-    private val repository: GalleryRepository
+    private val repository: GalleryRepository,
+    private val forceRefresh: Boolean = false
 ) : PagingSource<Int, GalleryListItem>() {
 
     // 记录本次分页会话已返回的画廊 id：新画廊持续插入会让相邻页码的偏移窗口重叠，
@@ -24,8 +25,10 @@ class GalleryPagingSource(
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, GalleryListItem> {
         val page = params.key ?: 1
+        // 仅首屏刷新穿透 HTTP 缓存，翻页仍走缓存，避免一次下拉让后续所有分页都绕过缓存
+        val bypassCache = forceRefresh && params is LoadParams.Refresh
         return try {
-            val result = repository.getGalleries(page).getOrThrow()
+            val result = repository.getGalleries(page, bypassCache).getOrThrow()
             LoadResult.Page(
                 data = result.items.filter { seenIds.add(it.id) },
                 prevKey = if (page == 1) null else page - 1,

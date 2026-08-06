@@ -6,7 +6,7 @@ import com.example.nhviewer.domain.model.SearchHistory
 import kotlinx.coroutines.flow.Flow
 
 interface SearchRepository {
-    suspend fun searchGalleries(query: String, page: Int, sort: String): Result<PaginatedResult<GalleryListItem>>
+    suspend fun searchGalleries(query: String, page: Int, sort: String, forceRefresh: Boolean = false): Result<PaginatedResult<GalleryListItem>>
     fun getSearchHistory(): Flow<List<SearchHistory>>
     suspend fun insertSearchHistory(query: String)
     suspend fun deleteSearchHistory(query: String)

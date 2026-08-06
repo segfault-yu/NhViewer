@@ -23,9 +23,10 @@ class SearchRepositoryImpl @Inject constructor(
     private val memoryCache: GalleryMemoryCache
 ) : SearchRepository {
 
-    override suspend fun searchGalleries(query: String, page: Int, sort: String): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable("Search") {
+    override suspend fun searchGalleries(query: String, page: Int, sort: String, forceRefresh: Boolean): Result<PaginatedResult<GalleryListItem>> = runCatchingCancelable("Search") {
         val mappedSort = if (sort == "date" || sort.isBlank()) null else sort
-        val response = api.searchGalleries(query, page, mappedSort)
+        val forceHeader = if (forceRefresh) "true" else null
+        val response = api.searchGalleries(query, page, mappedSort, forceHeader)
         val items = response.result.map { it.toDomain() }
         memoryCache.putPreviews(items)
         PaginatedResult(

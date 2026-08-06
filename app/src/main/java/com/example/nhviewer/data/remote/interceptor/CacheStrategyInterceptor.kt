@@ -31,7 +31,7 @@ class CacheStrategyInterceptor : Interceptor {
         val maxAge = when {
             path.contains("/api/gallery/") -> 86400 // 详情页缓存24小时
             path.contains("/api/galleries/") -> 600 // 列表页缓存10分钟
-            path.contains("/api/v2/search") || path.contains("/api/search") -> 86400 // 搜索结果缓存24小时
+            path.contains("/api/v2/search") || path.contains("/api/search") -> 600 // 搜索结果缓存10分钟
             else -> 300
         }
 

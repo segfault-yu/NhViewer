@@ -21,6 +21,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +42,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.nhviewer.R
 import com.example.nhviewer.presentation.common.NhSearchBar
@@ -96,6 +99,7 @@ fun SearchScreen(
         }
     }
     val searchResultGridState = rememberLazyStaggeredGridState()
+    val searchPullRefreshState = rememberPullToRefreshState()
     // 新一次搜索（关键词/筛选/排序变化）时重置显示状态
     LaunchedEffect(searchTrigger) {
         isChromeVisible = true
@@ -124,7 +128,12 @@ fun SearchScreen(
                 topPadding = chromeHeightDp + 12.dp,
                 scrollToTopKey = searchTrigger,
                 gridState = searchResultGridState,
-                scrollConnection = chromeScrollConnection
+                scrollConnection = chromeScrollConnection,
+                onRefresh = {
+                    viewModel.markForceRefresh()
+                    searchResults.refresh()
+                },
+                pullRefreshState = searchPullRefreshState
             )
         }
 
@@ -221,6 +230,17 @@ fun SearchScreen(
                     }
                 }
             }
+        }
+
+        // 指示器画在覆盖层之后，否则会被顶部工具栏完全盖住；工具栏收起时贴顶显示
+        if (!active) {
+            PullToRefreshDefaults.Indicator(
+                state = searchPullRefreshState,
+                isRefreshing = searchResults.loadState.refresh is LoadState.Loading,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = if (isChromeVisible) chromeHeightDp else 0.dp)
+            )
         }
     }
 }

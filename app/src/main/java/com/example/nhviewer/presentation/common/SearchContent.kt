@@ -1,5 +1,6 @@
 package com.example.nhviewer.presentation.common
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -50,6 +51,8 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,6 +66,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -420,6 +424,7 @@ fun SearchSortBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchResultGrid(
     searchResults: LazyPagingItems<GalleryListItem>,
@@ -432,7 +437,11 @@ fun SearchResultGrid(
     bottomPadding: Dp = 12.dp,
     scrollToTopKey: Any? = null,
     gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
-    scrollConnection: NestedScrollConnection? = null
+    scrollConnection: NestedScrollConnection? = null,
+    // 两者同时非 null 才启用下拉刷新。
+    // 指示器不在这里绘制：它会被调用方的顶部悬浮工具栏盖住，须由调用方在覆盖层之后自行绘制
+    onRefresh: (() -> Unit)? = null,
+    pullRefreshState: PullToRefreshState? = null
 ) {
     // key 用 rememberSaveable 持久化，避免详情页/阅读器返回时因组合被重建而误判为"新搜索"，
     // 把导航返回时应保留的滚动位置又重置回顶部
@@ -446,6 +455,19 @@ fun SearchResultGrid(
         lastHandledScrollToTopKey = scrollToTopKeyString
     }
 
+    // 已有结果时刷新失败不会切到错误页，靠 Toast 反馈，否则下拉刷新失败后毫无提示
+    val context = LocalContext.current
+    val refreshState = searchResults.loadState.refresh
+    LaunchedEffect(refreshState) {
+        if (refreshState is LoadState.Error && searchResults.itemCount > 0) {
+            Toast.makeText(
+                context,
+                NetworkErrorParser.parse(refreshState.error),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     val currentState = remember(searchResults.loadState.refresh, searchResults.itemCount) {
         when {
             searchResults.itemCount > 0 -> 3
@@ -456,7 +478,8 @@ fun SearchResultGrid(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // 状态切换动画整体作为一块内容，按需外包下拉刷新容器
+    val stateContent = @Composable {
         AnimatedContent(
             targetState = currentState,
             transitionSpec = {
@@ -572,6 +595,23 @@ fun SearchResultGrid(
                     }
                 }
             }
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        if (onRefresh != null && pullRefreshState != null) {
+            PullToRefreshBox(
+                state = pullRefreshState,
+                isRefreshing = refreshState is LoadState.Loading,
+                onRefresh = onRefresh,
+                modifier = Modifier.fillMaxSize(),
+                // 置空，指示器由调用方绘制在顶部覆盖层之上
+                indicator = {}
+            ) {
+                stateContent()
+            }
+        } else {
+            stateContent()
         }
 
         FastScrollbar(

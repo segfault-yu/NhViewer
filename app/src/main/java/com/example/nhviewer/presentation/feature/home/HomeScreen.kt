@@ -45,6 +45,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -135,6 +136,11 @@ fun HomeScreen(
         }
     }
 
+    // 三个列表各自的下拉状态提到此处：指示器需画在顶部覆盖层之后才不会被盖住
+    val searchPullRefreshState = rememberPullToRefreshState()
+    val latestPullRefreshState = rememberPullToRefreshState()
+    val popularPullRefreshState = rememberPullToRefreshState()
+
     val tabs = listOf(
         stringResource(R.string.home_tab_latest),
         stringResource(R.string.home_tab_popular)
@@ -217,7 +223,12 @@ fun HomeScreen(
                     bottomPadding = 12.dp + innerPadding.calculateBottomPadding(),
                     scrollToTopKey = searchTrigger,
                     gridState = searchResultGridState,
-                    scrollConnection = chromeScrollConnection
+                    scrollConnection = chromeScrollConnection,
+                    onRefresh = {
+                        searchViewModel.markForceRefresh()
+                        searchResults.refresh()
+                    },
+                    pullRefreshState = searchPullRefreshState
                 )
             } else if (!active) {
                 HorizontalPager(
@@ -226,7 +237,6 @@ fun HomeScreen(
                 ) { page ->
                     when (page) {
                         0 -> {
-                            val pullRefreshState = rememberPullToRefreshState()
                             var isRefreshing by remember { mutableStateOf(false) }
                             val latestGridState = rememberLazyStaggeredGridState()
                             LaunchedEffect(latestGalleries.loadState.refresh) {
@@ -241,10 +251,15 @@ fun HomeScreen(
                             }
 
                             PullToRefreshBox(
-                                state = pullRefreshState,
+                                state = latestPullRefreshState,
                                 isRefreshing = isRefreshing,
-                                onRefresh = { latestGalleries.refresh() },
-                                modifier = Modifier.fillMaxSize()
+                                onRefresh = {
+                                    viewModel.markLatestForceRefresh()
+                                    latestGalleries.refresh()
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                                // 置空，指示器画在顶部覆盖层之后
+                                indicator = {}
                             ) {
                                 if (latestGalleries.loadState.refresh is LoadState.Error) {
                                     val error = (latestGalleries.loadState.refresh as LoadState.Error).error
@@ -313,7 +328,6 @@ fun HomeScreen(
                             }
                         }
                         1 -> {
-                            val pullRefreshState = rememberPullToRefreshState()
                             val isRefreshing = popularState is HomeViewModel.PopularState.Loading
                             val popularGridState = rememberLazyGridState()
                             LaunchedEffect(popularGridState) {
@@ -325,10 +339,12 @@ fun HomeScreen(
                             }
 
                             PullToRefreshBox(
-                                state = pullRefreshState,
+                                state = popularPullRefreshState,
                                 isRefreshing = isRefreshing,
                                 onRefresh = { viewModel.loadPopularGalleries(forceRefresh = true) },
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                // 置空，指示器画在顶部覆盖层之后
+                                indicator = {}
                             ) {
                                 when (val state = popularState) {
                                     is HomeViewModel.PopularState.Loading -> {
@@ -510,6 +526,25 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
+
+            // 指示器画在覆盖层之后，否则会被顶部工具栏完全盖住；工具栏收起时贴顶显示
+            if (!active) {
+                val (indicatorState, indicatorRefreshing) = when {
+                    searchQuery.isNotEmpty() ->
+                        searchPullRefreshState to (searchResults.loadState.refresh is LoadState.Loading)
+                    selectedTabIndex == 0 ->
+                        latestPullRefreshState to (latestGalleries.loadState.refresh is LoadState.Loading)
+                    else ->
+                        popularPullRefreshState to (popularState is HomeViewModel.PopularState.Loading)
+                }
+                PullToRefreshDefaults.Indicator(
+                    state = indicatorState,
+                    isRefreshing = indicatorRefreshing,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = if (isChromeVisible) chromeHeightDp else 0.dp)
+                )
             }
         }
     }

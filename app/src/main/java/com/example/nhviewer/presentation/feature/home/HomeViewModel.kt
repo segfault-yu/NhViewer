@@ -46,9 +46,16 @@ class HomeViewModel @Inject constructor(
     private val favoriteRepository: FavoriteRepository
 ) : ViewModel() {
 
+    // 下拉刷新时置位，PagingSource 重建时消费一次，确保只有该次刷新穿透 HTTP 缓存
+    private var forceNextLatestRefresh = false
+
     val latestGalleries: Flow<PagingData<GalleryListItem>> = Pager(
         config = PagingConfig(pageSize = 25, prefetchDistance = 5),
-        pagingSourceFactory = { GalleryPagingSource(repository) }
+        pagingSourceFactory = {
+            val bypassCache = forceNextLatestRefresh
+            forceNextLatestRefresh = false
+            GalleryPagingSource(repository, bypassCache)
+        }
     ).flow
         .cachedIn(viewModelScope)
         .combine(blacklistRepository.blacklistedTagIds) { pagingData, blacklistedIds ->
@@ -87,6 +94,11 @@ class HomeViewModel @Inject constructor(
     init {
         loadPopularGalleries()
         loadCdnConfig()
+    }
+
+    /** 最新列表下拉刷新入口：置位后由调用方触发 Paging 的 refresh() */
+    fun markLatestForceRefresh() {
+        forceNextLatestRefresh = true
     }
 
     fun loadPopularGalleries(forceRefresh: Boolean = false) {

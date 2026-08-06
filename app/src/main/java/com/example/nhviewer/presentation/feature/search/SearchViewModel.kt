@@ -69,6 +69,9 @@ class SearchViewModel @Inject constructor(
     private val _searchTrigger = MutableStateFlow<Pair<String, String>?>(null)
     val searchTrigger: StateFlow<Pair<String, String>?> = _searchTrigger.asStateFlow()
 
+    // 下拉刷新时置位，PagingSource 重建时消费一次，确保只有该次刷新穿透 HTTP 缓存
+    private var forceNextRefresh = false
+
     val searchResults: Flow<PagingData<GalleryListItem>> = _searchTrigger
         .flatMapLatest { trigger ->
             if (trigger == null || trigger.first.isBlank()) {
@@ -78,7 +81,9 @@ class SearchViewModel @Inject constructor(
                 Pager(
                     config = PagingConfig(pageSize = 25, prefetchDistance = 1),
                     pagingSourceFactory = {
-                        SearchPagingSource(searchRepository, trigger.first, trigger.second) { total ->
+                        val bypassCache = forceNextRefresh
+                        forceNextRefresh = false
+                        SearchPagingSource(searchRepository, trigger.first, trigger.second, bypassCache) { total ->
                             _totalResults.value = total
                         }
                     }
@@ -151,6 +156,11 @@ class SearchViewModel @Inject constructor(
                 searchHistoryUseCase.addSearchHistory(query)
             }
         }
+    }
+
+    /** 下拉刷新入口：置位后由调用方触发 Paging 的 refresh() */
+    fun markForceRefresh() {
+        forceNextRefresh = true
     }
 
     fun clearSearchHistory() {
