@@ -54,3 +54,4 @@ docs/motion-api-baseline.md
 .claude
 .agents/
 skills-lock.json
+app/keystore.b64

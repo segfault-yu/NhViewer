@@ -45,10 +45,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private val ThumbWidth = 4.dp
-private val ThumbTouchTargetWidth = 24.dp
-private val ThumbEndPadding = 4.dp
-private val MinThumbHeight = 40.dp
+private val ThumbWidth = 6.dp
+private val ThumbTouchTargetWidth = 32.dp
+private val ThumbEndPadding = 6.dp
+private val MinThumbHeight = 52.dp
 private const val AutoHideDelayMillis = 800L
 
 /** 统一三种 Lazy state 差异的最小接口，供 [FastScrollbarTrack] 复用同一套手势/绘制逻辑。 */
@@ -135,16 +135,17 @@ private fun FastScrollbarTrack(adapter: FastScrollbarAdapter, modifier: Modifier
         coroutineScope.launch { adapter.scrollToItem(targetIndex) }
     }
 
-    val scrollFraction = if (isDragging) {
-        dragFraction
-    } else {
+    // 滚动分数的读取放进 offset{} 的布局阶段惰性求值，而不是在组合阶段读 firstVisibleItemIndex；
+    // 快速滑动时该值逐帧变化，放在组合体里读会让整棵子树每帧都重组，是卡顿的根源。
+    fun currentScrollFraction(): Float {
+        if (isDragging) return dragFraction
         val maxIndex = (totalItemsCount - visibleItemsCount).coerceAtLeast(1)
-        (adapter.firstVisibleItemIndex().toFloat() / maxIndex).coerceIn(0f, 1f)
+        return (adapter.firstVisibleItemIndex().toFloat() / maxIndex).coerceIn(0f, 1f)
     }
+
     val thumbFraction = (visibleItemsCount.toFloat() / totalItemsCount).coerceIn(0.05f, 1f)
     val minThumbHeightPx = with(density) { MinThumbHeight.roundToPx() }
     val thumbHeightPx = (trackHeightPx * thumbFraction).roundToInt().coerceAtLeast(minThumbHeightPx)
-    val thumbOffsetPx = (scrollFraction * (trackHeightPx - thumbHeightPx).coerceAtLeast(0)).roundToInt()
 
     Box(
         modifier = modifier
@@ -171,7 +172,10 @@ private fun FastScrollbarTrack(adapter: FastScrollbarAdapter, modifier: Modifier
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .offset { IntOffset(0, thumbOffsetPx) }
+                        .offset {
+                            val maxOffsetPx = (trackHeightPx - thumbHeightPx).coerceAtLeast(0)
+                            IntOffset(0, (currentScrollFraction() * maxOffsetPx).roundToInt())
+                        }
                         .padding(end = ThumbEndPadding)
                         .width(ThumbWidth)
                         .height(with(density) { thumbHeightPx.toDp() })

@@ -99,8 +99,7 @@ class DetailViewModel @Inject constructor(
     }
 
     /**
-     * 用列表快照搭建首屏骨架：标题/封面/页数/收藏数都是卡片自带数据，直接展示。
-     * 标签、页面预览这些卡片没有的数据一律等详情接口（galleryApi）一次性补齐；
+     * 用列表快照搭建首屏骨架
      */
     private fun showPreviewSkeleton(galleryId: Int, item: GalleryListItem) {
         val current = _detailState.value
