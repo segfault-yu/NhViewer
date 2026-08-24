@@ -136,6 +136,12 @@ jobs:
 
           cat release_notes.md
 
+      - name: 清理同 tag 的旧 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "${GITHUB_REF_NAME}" --repo "${{ github.repository }}" --yes || true
+
       - name: 创建 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
