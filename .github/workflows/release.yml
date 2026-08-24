@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 校验 tag 版本号与 versionName 是否一致
         run: |
@@ -75,8 +77,67 @@ jobs:
           fi
           echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
 
+      - name: 按 commit 类型生成更新日志
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${GITHUB_REF_NAME}$" | head -n1)
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="$PREV_TAG..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+
+          declare -A TYPE_TITLES=(
+            [feat]="新功能"
+            [fix]="修复"
+            [refactor]="重构"
+            [perf]="性能优化"
+            [docs]="文档"
+            [style]="代码风格"
+            [test]="测试"
+            [build]="构建"
+            [ci]="CI/CD"
+            [chore]="杂项"
+            [revert]="回退"
+          )
+          declare -A COMMIT_GROUPS
+
+          while IFS='|' read -r hash subject; do
+            [ -z "$hash" ] && continue
+            type_raw=$(echo "$subject" | grep -oP '^[a-zA-Z]+(?=(\([^)]*\))?!?:)' || true)
+            type_lower=$(echo "$type_raw" | tr '[:upper:]' '[:lower:]')
+            if [ -n "$type_lower" ] && [ -n "${TYPE_TITLES[$type_lower]:-}" ]; then
+              entry="- ${subject#*: } (${hash})"
+              COMMIT_GROUPS[$type_lower]+="${entry}"$'\n'
+            else
+              entry="- ${subject} (${hash})"
+              COMMIT_GROUPS[other]+="${entry}"$'\n'
+            fi
+          done < <(git log $RANGE --pretty=format:"%h|%s" --no-merges)
+
+          {
+            for type in feat fix refactor perf docs style test build ci chore revert other; do
+              if [ -n "${COMMIT_GROUPS[$type]:-}" ]; then
+                if [ "$type" = "other" ]; then
+                  echo "### 其他改动"
+                else
+                  echo "### ${TYPE_TITLES[$type]}"
+                fi
+                echo
+                printf '%s' "${COMMIT_GROUPS[$type]}"
+                echo
+              fi
+            done
+          } > release_notes.md
+
+          if [ ! -s release_notes.md ]; then
+            echo "无新增提交记录" > release_notes.md
+          fi
+
+          cat release_notes.md
+
       - name: 创建 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.locate_apk.outputs.apk_path }}
-          generate_release_notes: true
+          body_path: release_notes.md
